@@ -1,0 +1,174 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'maven-publish'
+apply plugin: 'pmd'
+
+compileJava.dependsOn clean
+
+sourceCompatibility = 1.7
+
+configurations.all {
+	resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+	exclude group: 'log4j', module: 'log4j'
+	exclude group: "org.slf4j", module: "slf4j-log4j12"
+}
+    
+
+pmdMain {
+	ignoreFailures = true
+	reports {
+        include ( '**/*.java')
+        xml {
+           destination = new File(rootDir, "reports/pmd/${project.name}.xml" )
+        }
+    }
+}
+
+pmdTest {
+	ignoreFailures = true
+	reports {
+        include ( '**/*.java')
+        xml {
+           destination = new File(rootDir, "reports/pmd/${project.name}_test.xml" )
+        }
+    }
+}
+
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+repositories {
+    maven{ url "http://10.1.228.199:18081/nexus/content/groups/public/"  }
+}
+
+sourceSets {
+    main {
+        java { srcDirs = ['src/main/java']}
+         resources {
+               srcDirs = ['src/main/resources']
+         }
+    }
+    test{
+    	 java { srcDirs = ['src/test/java']}
+         resources {
+               srcDirs = ['src/test/resources']
+               srcDirs = ['src/test/resources']
+         }
+    }
+}
+
+ext {
+	moduleMode="-SNAPSHOT";
+	moduleName="ipaas-ses";
+	moduleVersion="0.2.1"+moduleMode
+	publishUserName = "devadm"
+	publishUserPassword = "Devadm@1212"
+	publishSnapShotsURL="http://10.1.228.199:18081/nexus/content/repositories/snapshots/"
+	publishReleaseURL="http://10.1.228.199:18081/nexus/content/repositories/releases/"
+	builtBy="gradle 2.1" 
+} 
+
+group = 'com.ai'
+
+dependencies{
+	compile 'com.ai:ipaas-common:0.3-SNAPSHOT'
+	compile 'com.ai:ipaas-uac:0.2'
+	compile 'com.ai:ipaas-ccs-inner:0.2'
+
+	testCompile(
+		"org.springframework:spring-test:3.2.13.RELEASE",
+		"junit:junit:4.11"
+	)
+	compile 'org.elasticsearch:elasticsearch:1.7.1'
+	
+
+	
+}
+
+
+jar {
+    baseName moduleName
+    version moduleVersion
+	manifest {
+        attributes 'packageName': moduleName, 'Built-By': builtBy,'create-date': new Date().format('yyyy-MM-dd HH:mm:ss')
+    }
+}
+task copyFiles << { 
+        copy{ 
+                from configurations.compile 
+                into "$buildDir/testlibs" 
+        } 
+} 
+
+task testJar(type:Jar){
+	dependsOn copyFiles
+    version moduleVersion
+    baseName moduleName
+    from sourceSets.main.output
+    from sourceSets.test.output
+    destinationDir file("$buildDir/testlibs")
+ 
+	manifest {
+        attributes 'packageName': moduleName, 'Built-By': builtBy,'create-date': new Date().format('yyyy-MM-dd HH:mm:ss')
+    }
+}
+
+task copy3rdJars(type: Copy) {
+	subprojects.each { subproject ->
+		from subproject.configurations.runtime
+		exclude "*iPaaS-*.*"
+		destinationDir file("$buildDir/3rd-libs")
+	}
+}
+
+publish.dependsOn build 
+
+
+publishing {
+    publications {
+       publishing.publications.create("${moduleName}", MavenPublication) {
+            groupId group
+            artifactId moduleName
+            version moduleVersion
+            artifact  jar
+            pom.withXml {
+	            asNode().children().last() + {
+	                delegate.dependencies {
+	                    delegate.dependency {
+	                        delegate.groupId("org.elasticsearch")
+	                        delegate.artifactId("elasticsearch")
+	                        delegate.version("1.7.1")
+	                    }
+						delegate.dependency {
+							delegate.groupId("com.ai")
+							delegate.artifactId("ipaas-common")
+							delegate.version("0.3-SNAPSHOT")
+						}
+						delegate.dependency {
+							delegate.groupId("com.ai")
+							delegate.artifactId("ipaas-uac")
+							delegate.version("0.2")
+						}
+						delegate.dependency {
+							delegate.groupId("com.ai")
+							delegate.artifactId("ipaas-ccs-inner")
+							delegate.version("0.2")
+						}
+	                }
+	            }
+	        }
+        }
+    }
+    repositories {
+         maven {
+            credentials {
+                username = publishUserName
+                password = publishUserPassword
+            }
+            if(moduleVersion.endsWith('-SNAPSHOT')) {
+                url publishSnapShotsURL
+            } else {
+                url publishReleaseURL
+            }
+        }
+    }
+}
