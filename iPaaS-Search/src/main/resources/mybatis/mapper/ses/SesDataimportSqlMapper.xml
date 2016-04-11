@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.ai.paas.ipaas.ses.dao.interfaces.SesDataimportSqlMapper" >
+  <resultMap id="BaseResultMap" type="com.ai.paas.ipaas.ses.dao.mapper.bo.SesDataimportSql" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="du_id" property="duId" jdbcType="INTEGER" />
+    <result column="ds_id" property="dsId" jdbcType="INTEGER" />
+    <result column="alias" property="alias" jdbcType="VARCHAR" />
+    <result column="is_primary" property="isPrimary" jdbcType="INTEGER" />
+    <result column="ds_alias" property="dsAlias" jdbcType="VARCHAR" />
+    <result column="info" property="info" jdbcType="VARCHAR" />
+    <result column="status" property="status" jdbcType="INTEGER" />
+    <result column="group_id" property="groupId" jdbcType="INTEGER" />
+  </resultMap>
+  <sql id="Example_Where_Clause" >
+    <where >
+      <foreach collection="oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Update_By_Example_Where_Clause" >
+    <where >
+      <foreach collection="example.oredCriteria" item="criteria" separator="or" >
+        <if test="criteria.valid" >
+          <trim prefix="(" suffix=")" prefixOverrides="and" >
+            <foreach collection="criteria.criteria" item="criterion" >
+              <choose >
+                <when test="criterion.noValue" >
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue" >
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue" >
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue" >
+                  and ${criterion.condition}
+                  <foreach collection="criterion.value" item="listItem" open="(" close=")" separator="," >
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Base_Column_List" >
+    id, du_id, ds_id, alias, is_primary, ds_alias, info, status, group_id
+  </sql>
+  <select id="selectByExample" resultMap="BaseResultMap" parameterType="com.ai.paas.ipaas.ses.dao.mapper.bo.SesDataimportSqlCriteria" >
+    select
+    <if test="distinct" >
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from ses_dataimport_sql
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null" >
+      order by ${orderByClause}
+    </if>
+    <if test="limitStart != null and limitStart>=0" >
+      limit #{limitStart} , #{limitEnd}
+    </if>
+  </select>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="Integer" >
+    select 
+    <include refid="Base_Column_List" />
+    from ses_dataimport_sql
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="Integer" >
+    delete from ses_dataimport_sql
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <delete id="deleteByExample" parameterType="com.ai.paas.ipaas.ses.dao.mapper.bo.SesDataimportSqlCriteria" >
+    delete from ses_dataimport_sql
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+  </delete>
+  <insert id="insert" parameterType="com.ai.paas.ipaas.ses.dao.mapper.bo.SesDataimportSql" >
+    insert into ses_dataimport_sql (id, du_id, ds_id, 
+      alias, is_primary, ds_alias, 
+      info, status, group_id
+      )
+    values (#{id,jdbcType=INTEGER}, #{duId,jdbcType=INTEGER}, #{dsId,jdbcType=INTEGER}, 
+      #{alias,jdbcType=VARCHAR}, #{isPrimary,jdbcType=INTEGER}, #{dsAlias,jdbcType=VARCHAR}, 
+      #{info,jdbcType=VARCHAR}, #{status,jdbcType=INTEGER}, #{groupId,jdbcType=INTEGER}
+      )
+  </insert>
+  <insert id="insertSelective" parameterType="com.ai.paas.ipaas.ses.dao.mapper.bo.SesDataimportSql" >
+    insert into ses_dataimport_sql
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        id,
+      </if>
+      <if test="duId != null" >
+        du_id,
+      </if>
+      <if test="dsId != null" >
+        ds_id,
+      </if>
+      <if test="alias != null" >
+        alias,
+      </if>
+      <if test="isPrimary != null" >
+        is_primary,
+      </if>
+      <if test="dsAlias != null" >
+        ds_alias,
+      </if>
+      <if test="info != null" >
+        info,
+      </if>
+      <if test="status != null" >
+        status,
+      </if>
+      <if test="groupId != null" >
+        group_id,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="id != null" >
+        #{id,jdbcType=INTEGER},
+      </if>
+      <if test="duId != null" >
+        #{duId,jdbcType=INTEGER},
+      </if>
+      <if test="dsId != null" >
+        #{dsId,jdbcType=INTEGER},
+      </if>
+      <if test="alias != null" >
+        #{alias,jdbcType=VARCHAR},
+      </if>
+      <if test="isPrimary != null" >
+        #{isPrimary,jdbcType=INTEGER},
+      </if>
+      <if test="dsAlias != null" >
+        #{dsAlias,jdbcType=VARCHAR},
+      </if>
+      <if test="info != null" >
+        #{info,jdbcType=VARCHAR},
+      </if>
+      <if test="status != null" >
+        #{status,jdbcType=INTEGER},
+      </if>
+      <if test="groupId != null" >
+        #{groupId,jdbcType=INTEGER},
+      </if>
+    </trim>
+  </insert>
+  <select id="countByExample" parameterType="com.ai.paas.ipaas.ses.dao.mapper.bo.SesDataimportSqlCriteria" resultType="java.lang.Integer" >
+    select count(*) from ses_dataimport_sql
+    <if test="_parameter != null" >
+      <include refid="Example_Where_Clause" />
+    </if>
+  </select>
+  <update id="updateByExampleSelective" parameterType="map" >
+    update ses_dataimport_sql
+    <set >
+      <if test="record.id != null" >
+        id = #{record.id,jdbcType=INTEGER},
+      </if>
+      <if test="record.duId != null" >
+        du_id = #{record.duId,jdbcType=INTEGER},
+      </if>
+      <if test="record.dsId != null" >
+        ds_id = #{record.dsId,jdbcType=INTEGER},
+      </if>
+      <if test="record.alias != null" >
+        alias = #{record.alias,jdbcType=VARCHAR},
+      </if>
+      <if test="record.isPrimary != null" >
+        is_primary = #{record.isPrimary,jdbcType=INTEGER},
+      </if>
+      <if test="record.dsAlias != null" >
+        ds_alias = #{record.dsAlias,jdbcType=VARCHAR},
+      </if>
+      <if test="record.info != null" >
+        info = #{record.info,jdbcType=VARCHAR},
+      </if>
+      <if test="record.status != null" >
+        status = #{record.status,jdbcType=INTEGER},
+      </if>
+      <if test="record.groupId != null" >
+        group_id = #{record.groupId,jdbcType=INTEGER},
+      </if>
+    </set>
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByExample" parameterType="map" >
+    update ses_dataimport_sql
+    set id = #{record.id,jdbcType=INTEGER},
+      du_id = #{record.duId,jdbcType=INTEGER},
+      ds_id = #{record.dsId,jdbcType=INTEGER},
+      alias = #{record.alias,jdbcType=VARCHAR},
+      is_primary = #{record.isPrimary,jdbcType=INTEGER},
+      ds_alias = #{record.dsAlias,jdbcType=VARCHAR},
+      info = #{record.info,jdbcType=VARCHAR},
+      status = #{record.status,jdbcType=INTEGER},
+      group_id = #{record.groupId,jdbcType=INTEGER}
+    <if test="_parameter != null" >
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByPrimaryKeySelective" parameterType="com.ai.paas.ipaas.ses.dao.mapper.bo.SesDataimportSql" >
+    update ses_dataimport_sql
+    <set >
+      <if test="duId != null" >
+        du_id = #{duId,jdbcType=INTEGER},
+      </if>
+      <if test="dsId != null" >
+        ds_id = #{dsId,jdbcType=INTEGER},
+      </if>
+      <if test="alias != null" >
+        alias = #{alias,jdbcType=VARCHAR},
+      </if>
+      <if test="isPrimary != null" >
+        is_primary = #{isPrimary,jdbcType=INTEGER},
+      </if>
+      <if test="dsAlias != null" >
+        ds_alias = #{dsAlias,jdbcType=VARCHAR},
+      </if>
+      <if test="info != null" >
+        info = #{info,jdbcType=VARCHAR},
+      </if>
+      <if test="status != null" >
+        status = #{status,jdbcType=INTEGER},
+      </if>
+      <if test="groupId != null" >
+        group_id = #{groupId,jdbcType=INTEGER},
+      </if>
+    </set>
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.ai.paas.ipaas.ses.dao.mapper.bo.SesDataimportSql" >
+    update ses_dataimport_sql
+    set du_id = #{duId,jdbcType=INTEGER},
+      ds_id = #{dsId,jdbcType=INTEGER},
+      alias = #{alias,jdbcType=VARCHAR},
+      is_primary = #{isPrimary,jdbcType=INTEGER},
+      ds_alias = #{dsAlias,jdbcType=VARCHAR},
+      info = #{info,jdbcType=VARCHAR},
+      status = #{status,jdbcType=INTEGER},
+      group_id = #{groupId,jdbcType=INTEGER}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+</mapper>

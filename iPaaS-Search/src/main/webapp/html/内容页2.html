@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width; initial-scale=0.8;  user-scalable=0;" />
+    <title>无标题文档</title>
+     <link href="css/bootstrap.css" rel="stylesheet" type="text/css">
+     <link href="css/font-awesome.css" rel="stylesheet" type="text/css">
+     <link href="css/main.css" rel="stylesheet" type="text/css">
+     <link href="css/app.css" rel="stylesheet" type="text/css">
+  
+     <script type="text/javascript" src="js/jquery-1.11.1.min.js" ></script>
+     <script type="text/javascript" src="js/bootstrap.js" ></script>
+     <script type="text/javascript" src="js/index.js" ></script>
+    
+</head>
+<body class="ui-v3 buildflow">
+    <nav class="navbar dao-navbar ng-scope" >
+        <div class="clearfix dao-container">
+            <div class="navbar-header">
+                
+                <div class="back-link ng-scope">
+                   
+                    <div class="ng-binding ng-scope"><div class="daima">代码构建</div><ul class="nav navbar-nav navbar-right">
+     <li><a href="#"><i class="icon-file-alt"></i> 文档</a></li>
+     <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><span class="icon-user"></span> smilence1986  <span class="icon-angle-down"></span></a>
+              <ul class="dropdown-menu">
+                <li> <a href="#">smilence1986<br>查看账户信息</a></li>
+                <li role="separator" class="divider"></li>
+                <li><a href="#">创建组织</a></li>
+                <li role="separator" class="divider"></li>
+                <li><a href="#">登出</a></li>
+              </ul>
+            </li>
+    </ul></div>
+                    
+                </div>
+            </div>
+            
+        </div>
+    </nav>
+    <div ng-if="pageClass !== 'dashboard'" class="ng-scope">
+        <div class="ui navbar ng-scope" ng-controller="NavbarCtrl">
+            <ul class="nav nav-pills nav-stacked">
+                <li class="logo">
+                    <a href="#"><i class="icon-qrcode"></i></a>
+                </li>
+                <li class="logo logoa">
+                    <a href="#"><i class="icon-wrench"></i></a>
+                </li>
+                <li class="logo logoa">
+                    <a href="#"><i class="icon-home"></i></a>
+                </li>
+                <li class="logo logoa">
+                    <a href="#"><i class="icon-sitemap"></i></a>
+                </li>
+                <li class="logo logoa">
+                    <a href="#"><i class="icon-tasks"></i></a>
+                </li>
+                <li class="logo logoa">
+                    <a href="#"><i class="icon-cogs"></i></a>
+                </li>
+                <li class="logo logoa">
+                    <a href="#"><i class="icon-reorder"></i></a>
+                </li>
+            </ul>
+
+            <ul class="nav nav-bottom nav-pills nav-stacked">
+                <li class="logo logoa">
+                    <a href="#"><i class="icon-fighter-jet"></i></a>
+                </li>
+                <li class="logo logoa">
+                    <a href="#"><i class="icon-user"></i></a>
+                    
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="main ng-scope"><div class="dao-container ng-scope">
+    <div class="panel panel-default panel-page-header">
+        <div class="panel-body">
+            <div class="primary-section" style="border:0;margin:0;padding-bottom:0;">
+                <h2>创建新项目</h2>
+                <p>项目描述了应用从代码源，通过集成测试，到可部署镜像的自动化构建过程。项目成功创建后，每当代码源有创建标签（tag）的行为，系统都会自动触发构建流程。构建成功后，会将创建的应用镜像自动发布到您的镜像仓库中，在那可以进一步管理和部署您的应用。</p>
+            </div>
+        </div>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <form class="project-form ng-pristine ng-valid">
+                <div class="setting-section">
+                    <div class="col-md-10 col-lg-10">
+                        <label class="setting-label">项目名称
+                        </label>
+                        <div class="setting-info">
+                            <input class="form-control ng-pristine ng-valid ng-touched" type="text" placeholder="给项目起一个名字..." ng-model="buildflow.package_name" ng-change="checkAppName()" autofocus tabindex="0" aria-invalid="false">
+                            <!-- ngIf: available.buildflowName -->
+                            <div class="ng-binding ng-hide" aria-hidden="true">项目镜像：daocloud.io/smilence1986/</div>
+                        </div>
+                    </div>
+                </div>
+             </form>
+                <div class="setting-section">
+                    <div class="col-md-9 col-lg-9">
+                        <label class="setting-label">持续集成
+                        </label>
+                        <div class="setting-info">
+                            <div>
+                                <p class="text-muted">持续集成是增加代码质量并降低业务风险的最佳实践。
+                                <br>您可以将持续集成加入到项目应用构建过程中，从而保证最终的应用镜像处于一个稳定可靠的状态。</p>
+                            </div>
+                            <div class="switch">
+                                <input type="checkbox" name="ci-on" id="ci-on" class="ng-pristine ng-untouched ng-valid" tabindex="0" aria-checked="true" aria-invalid="false">
+                                <label for="ci-on"></label>
+                            </div>
+                            <span style="position:relative;bottom:14px;" class="ng-binding text-success">已开启</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="setting-section">
+                    <div class="col-md-9 col-lg-9">
+                        <label class="setting-label">构建位置</label>
+                        <div class="setting-info">
+                            <div>
+                                <p class="text-muted">Dockerfile是指导镜像构建的描述文件，系统会根据您设置的构建目录查找Dockerfile并在该目录下执行镜像构建命令。</p>
+                            </div>
+                            <div class="form-horizontal">
+                                <div class="form-group row dockerfile" style="margin-bottom:0">
+                                    <label class="col-sm-2 control-label" style="font-size:14px;padding-top:7px;">构建目录</label>
+                                    <div class="">
+                                        <span style="margin-left:5px;">/</span>
+                                        <input type="text" class="form-control ng-pristine ng-untouched ng-valid">
+                                        <!-- ngIf: available.buildDir -->
+                                    </div>
+                                </div>
+                                <div class="form-group row dockerfile" style="margin-top:30px;">
+                                    <label class="col-sm-2 control-label" style="font-size:14px;padding-top:7px;">Dockerfile路径</label>
+                                    <div class="">
+                                        <span style="margin-left:5px;" class="ng-binding">/</span>
+                                        <input type="text" class="form-control ng-pristine ng-untouched ng-valid" placeholder="Dockerfile">
+                                        <small class="text-danger ng-binding" style="padding-top:7px;font-size:14px;margin-left:10px;"></small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="setting-section">
+                    <div class="col-md-9 col-lg-9">
+                        <label class="setting-label">发布应用镜像</label>
+                        <div class="setting-info">
+                            <div>
+                                <p class="text-muted">应用镜像是打通应用开发和业务运维之间通路的关键交付件，也是应用统一发布的重要一环。
+                                <br>为了方便您管理这一核心资产，应用构建成功后，系统会自动把应用镜像发布在DaoCloud镜像仓库（您的私有空间）中，同时也支持将应用镜像发布到第三方镜像仓库中。</p>
+                            </div>
+                            <ul class="radio-group">
+                                <li>
+                                    <div class="radio">
+                                        <label>
+                                            <input type="radio" name="docker_repo_type" value="daohub">镜像仓库
+                                        </label>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="radio">
+                                        <label class="text-disabled">
+                                            <input type="radio" name="docker_repo_type">Docker Hub
+                                            
+                                        </label>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="radio">
+                                        <label class="text-disabled">
+                                            <input type="radio" name="docker_repo_type" value="privatehub">私有 Registry
+                                        </label>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="setting-section">
+                    <p class="info-block open">
+                    <i class="fa fa-info-circle"></i>项目创建成功后，系统将自动根据您代码仓库的最新代码（Master分支）启动第一次应用构建过程。</p>
+                       <button class="btn btn-lg btn-block project-creation-btn ng-binding">开始创建</button></div>
+            
+        </div>
+    </div>
+</div>
+</div>
+
+
+
+
+  
+
+<div class="help"><a href="#"><i class="icon-comment"></i><span>?</span></a></div>
+
+
+<div class="xiaox">
+ <div class="p">
+      <a class="pull-right text-muted"><i class="icon-remove"></i></a>
+      DaoCloud
+    </div>
+ <div class="box-row">
+      <div class="box-cell">
+        <div class="box-inner">
+          <div class="list-group no-radius no-borders">
+            <a class="list-group-item p-h-md p-v-xs">
+                <i class="icon-circle text-success text-xs m-r-xs"></i>
+                <span>DaoCloud1</span>
+            </a>
+            <a class="list-group-item p-h-md p-v-xs">
+                <i class="icon-circle text-success text-xs m-r-xs"></i>
+                <span>商品发布信息2</span>
+            </a>
+            <a class="list-group-item p-h-md p-v-xs">
+                <i class="icon-circle text-warning text-xs m-r-xs"></i>
+                <span>商品发布信息3</span>
+            </a>
+            <a class="list-group-item p-h-md p-v-xs">
+                <i class="icon-circle text-muted-lt text-xs m-r-xs"></i>
+                <span>商品发布信息4</span>
+            </a>
+            <a class="list-group-item p-h-md p-v-xs">
+                <i class="icon-circle text-muted-lt text-xs m-r-xs"></i>
+                <span>商品发布信息5</span>
+            </a>
+            <a class="list-group-item p-h-md p-v-xs">
+                <i class="icon-circle text-muted-lt text-xs m-r-xs"></i>
+                <span>商品发布信息6</span>
+            </a>
+            <a class="list-group-item p-h-md p-v-xs">
+                <i class="icon-circle text-muted-lt text-xs m-r-xs"></i>
+                <span>商品发布信息7</span>
+            </a>
+            <a class="list-group-item p-h-md p-v-xs">
+                <i class="icon-circle text-muted-lt text-xs m-r-xs"></i>
+                <span>商品发布信息</span>
+            </a>
+            <a class="list-group-item p-h-md p-v-xs">
+                <i class="icon-circle text-muted-lt text-xs m-r-xs"></i>
+                <span>商品发布信息9</span>
+            </a>
+            <a class="list-group-item p-h-md p-v-xs">
+                <i class="icon-circle text-muted-lt text-xs m-r-xs"></i>
+                <span>商品发布信息10</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+</div>
+</body>
+</html>

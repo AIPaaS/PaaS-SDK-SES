@@ -1,0 +1,187 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'war'
+apply plugin: 'eclipse-wtp'
+apply plugin: 'maven-publish'
+apply plugin: 'pmd'
+apply plugin: 'findbugs'
+apply plugin: 'checkstyle'
+webAppDirName = 'src/main/webapp'
+
+compileJava.dependsOn clean
+
+sourceCompatibility = 1.7
+
+configurations.all {
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+    
+checkstyleMain {
+    ignoreFailures = false
+    reports {
+        include ( '**/*.java')
+        xml {
+           destination = new File(rootDir, "reports/checkstyle/${project.name}.xml" )
+        }
+    }
+    configFile = new File(rootDir, 'checkstyle.xml')
+}
+
+checkstyleTest {
+	ignoreFailures = false
+	reports {
+		include ( '**/*.java')
+		xml {
+			destination = new File(rootDir, "reports/checkstyle/${project.name}_test.xml" )
+		}
+	}
+	configFile = new File(rootDir, 'checkstyle.xml')
+}
+
+findbugsMain {
+	ignoreFailures = true
+	reports {
+        include ( '**/*.java')
+        xml {
+           destination = new File(rootDir, "reports/findbugs/${project.name}.xml" )
+        }
+    }
+	effort = "max"
+	reportLevel = "high"
+	omitVisitors = ["FindNonShortCircuit"]
+}
+
+findbugsTest {
+	ignoreFailures = true
+	reports {
+        include ( '**/*.java')
+        xml {
+           destination = new File(rootDir, "reports/findbugs/${project.name}_test.xml" )
+        }
+    }
+	effort = "max"
+	reportLevel = "high"
+	omitVisitors = ["FindNonShortCircuit"]
+}
+
+pmdMain {
+	ignoreFailures = true
+	reports {
+        include ( '**/*.java')
+        xml {
+           destination = new File(rootDir, "reports/pmd/${project.name}.xml" )
+        }
+    }
+}
+
+pmdTest {
+	ignoreFailures = true
+	reports {
+        include ( '**/*.java')
+        xml {
+           destination = new File(rootDir, "reports/pmd/${project.name}_test.xml" )
+        }
+    }
+}
+
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+repositories {
+    maven{ url "http://10.1.228.199:18081/nexus/content/groups/public/"}
+}
+
+sourceSets {
+    main {
+        java { srcDirs = ['src/main/java']}
+        resources {
+            srcDirs = ['src/main/resources']
+        }
+    }
+}
+
+ext {
+	moduleName="iPaas-Search";
+	moduleVersion="0.1-SNAPSHOT"
+	publishUserName = "devadm"
+	publishUserPassword = "Devadm@1212"
+	publishURL="http://10.1.228.199:18081/nexus/content/repositories/snapshots/"
+	builtBy="gradle 2.1" 
+} 
+
+group = 'com.ai'
+
+dependencies{
+	compile 'com.ai:ipaas-common:0.1-SNAPSHOT'
+	compile 'com.ai:ipaas-base:0.1-SNAPSHOT'
+	compile "jstl:jstl:1.2"
+	compile "org.springframework:spring-web:4.1.6.RELEASE"
+	compile "org.springframework:spring-webmvc:4.1.6.RELEASE"
+	compile "org.springframework:spring-context-support:4.1.6.RELEASE"
+	compile ("com.alibaba:dubbox:2.8.3") {
+		exclude group: 'org.springframework', module: 'spring'
+	}
+	compile ("com.101tec:zkclient:0.4") {
+		exclude group: 'org.apache.zookeeper', module: 'zookeeper'
+		exclude group: 'log4j', module: 'log4j'
+	}
+	compile 'org.apache.zookeeper:zookeeper:3.4.6'
+//	compile 'org.restlet.jee:org.restlet:2.2.1'
+	compile 'commons-httpclient:commons-httpclient:3.0'
+	
+	compile "javax.servlet:javax.servlet-api:3.1.0"
+	compile "javax.servlet.jsp:javax.servlet.jsp-api:2.3.1"
+	
+
+	compile 'org.javassist:javassist:3.19.0-GA'
+
+	// restful
+	compile 'org.jboss.resteasy:resteasy-jaxrs:3.0.11.Final'
+	compile 'org.jboss.resteasy:resteasy-client:3.0.11.Final'
+	compile 'org.jboss.resteasy:resteasy-jackson-provider:3.0.11.Final'
+	compile 'org.apache.tapestry:tapestry-kaptcha:5.4-SNAPSHOT'
+	compile 'org.apache.httpcomponents:httpclient:4.4.1'
+	
+	
+	compile 'com.ai:ipaas-dbs:0.3-SNAPSHOT'
+	compile 'com.ai:ipaas-ses:0.1.2-SNAPSHOT'
+	
+	
+	testCompile "org.springframework:spring-test:4.1.6.RELEASE"
+	testCompile "junit:junit:4.11"
+	
+	compile 'org.apache.tomcat:tomcat-jdbc:7.0.29'
+	compile 'org.apache.tomcat:tomcat-juli:7.0.29'
+	compile "com.ai:ipaas-agent-client:0.1-SNAPSHOT"
+	compile 'commons-fileupload:commons-fileupload:1.3.1'
+	compile 'commons-httpclient:commons-httpclient:3.0'
+	compile 'commons-codec:commons-codec:1.9'
+	compile 'commons-logging:commons-logging:1.2.1-SNAPSHOT'
+	
+	compile "org.apache.commons:commons-dbcp2:2.1"
+	compile "com.oracle:ojdbc14:10.2.0.4.0"
+	
+}
+
+war {
+    baseName = "iPaas-Search"
+}
+
+jar {
+    baseName moduleName
+    version moduleVersion
+	manifest {
+        attributes 'packageName': moduleName, 'Built-By': builtBy,'create-date': new Date().format('yyyy-MM-dd HH:mm:ss')
+    }
+}
+
+
+eclipse {
+    wtp {
+        facet {
+            facet name: 'java', version: '1.7'
+            facet name: 'jst.web', version: '3.0'
+            facet name: 'wst.jsdt.web', version: '1.0'
+        }
+    }
+}
+

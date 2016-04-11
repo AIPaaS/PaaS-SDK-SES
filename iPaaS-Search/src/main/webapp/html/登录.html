@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width; initial-scale=0.8;  user-scalable=0;" />
+    <title>无标题文档</title>
+     <link href="css/bootstrap.css" rel="stylesheet" type="text/css">
+     <link href="css/font-awesome.css" rel="stylesheet" type="text/css">
+     <link href="css/main.css" rel="stylesheet" type="text/css">
+     <link href="css/css.css" rel="stylesheet" type="text/css">
+  
+     <script type="text/javascript" src="js/jquery-1.11.1.min.js" ></script>
+     <script type="text/javascript" src="js/bootstrap.js" ></script>
+     <script type="text/javascript" src="js/index.js" ></script>
+    
+</head>
+
+<body class="body-blue theme-clean global-color_sun page-signin">
+<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+    <div class="container">
+      <div class="navbar-header">
+        <a class="navbar-brand" href="#"style="height: 36px;">
+          <img style="height: 35px;margin-top: -6px" src="images/logo.png">
+        </a>
+      </div>
+      <div class="navbar-collapse collapse">
+        <ul class="nav navbar-nav">
+        
+          <li class="dropdown">
+            <a href="#">控制台</a>
+          </li>
+          <li class="dropdown">
+            <a href="#" >文档</a>
+          </li>
+          <li class="dropdown">
+            <a href="#">下载</a>
+          </li>
+          <hr class="hidden-md hidden-sm hidden-lg index-xs-hr">
+          <li class="dropdown hidden-md hidden-sm hidden-lg">
+           <a id="nav-sign-up">登录
+            
+            </a>
+          </li>
+          <li class="dropdown hidden-md hidden-sm hidden-lg">
+           <a id="nav-sign-in">注册
+            </a>
+          </li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right hidden-xs">
+          <li id="sign-up">
+            <button type="button" class="btn btn-success" ng-click="gotosignup()">注册</button>
+          </li>
+          <li id="sign-in">
+            <button type="button" class="btn btn-default" ng-click="gotosignin()">登录</button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  
+  
+  
+  
+  <div class="wrapper body-inverse">
+  <ng-view class="ng-scope">
+<div class="signin-container ng-scope">
+    <h2 class="signin-head">登录</h2>
+    <div class="signin-form">
+
+        <form id="signin-form_id" class="ng-pristine ng-valid">
+            <div class="signin-text">
+            </div>
+
+            <div class="form-group w-icon">
+                <input type="text" id="username_id" class="form-control input-md ng-pristine ng-untouched ng-valid" placeholder="NT账号" >
+                <span class="fa fa-user signin-form-icon"></span>
+            </div>
+            
+            <div class="form-group w-icon">
+                <input type="text" id="username_id" class="form-control input-md ng-pristine ng-untouched ng-valid" placeholder="服务ID" >
+                <span class="fa fa-user signin-form-icon"></span>
+            </div>
+
+
+            <div class="form-group w-icon">
+                <input type="password" id="password_id" class="form-control input-md ng-pristine ng-untouched ng-valid" placeholder="密码" >
+                <span class="fa fa-lock signin-form-icon"></span>
+            </div>
+
+            <div class="form-actions">
+                <input type="button" value="登录" class="signin-btn bg-primary" id="submit">
+                <a href="#" class="forgot-password" id="forgot-password-link">忘记密码?</a>
+            </div>
+
+        </form>
+    </div>
+</div>
+<!-- / Container -->
+</ng-view>
+  </div>
+  
+  
+  
+  
+  <div class="footer-wrapper">
+    <!-- footer wrapper -->
+    <hr>
+    <div class="container">
+      <footer>
+        <ul class="list-inline pull-left">
+            <li>
+            <a href="#">沪ICP备14048409号-1</a>
+          </li> 
+         <!--  <li>
+            <a href="about-us.html">About Us</a>
+          </li>
+          <li>
+            <a href="#">Privacy Policy</a>
+          </li>
+          <li>
+            <a href="#">Terms and Conditions</a>
+          </li>
+          <li>
+            <a href="contact-us.html">Contact Us</a>
+          </li> -->
+        </ul>
+        <span class="pull-right-xs text-muted">© DaoCloud</span>
+        <div class="clearfix"></div>
+      </footer>
+    </div>
+    <!-- /container -->
+  </div>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<%@ page language="java" import="java.util.*" pageEncoding="utf-8"%>  
+<%  
+    String path = request.getContextPath();  
+    String basePath = request.getScheme() + "://"  
+            + request.getServerName() + ":" + request.getServerPort()  
+            + path + "/";  
+%>  
+  
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">  
+<html>  
+    <head>  
+        <base href="<%=basePath%>">  
+  
+        <title>Java解密javascript加密</title>  
+        <meta http-equiv="pragma" content="no-cache">  
+        <meta http-equiv="cache-control" content="no-cache">  
+        <meta http-equiv="expires" content="0">  
+        <meta http-equiv="keywords" content="keyword1,keyword2,keyword3">  
+        <meta http-equiv="description" content="This is my page">  
+        <script type="text/javascript" src="js/RSA.js"></script>    
+        <script type="text/javascript" src="js/BigInt.js"></script>    
+        <script type="text/javascript" src="js/Barrett.js"></script>    
+        <script type="text/javascript">  
+            var key ;  
+            function bodyRSA()  
+            {  
+                setMaxDigits(130);  
+                key = new RSAKeyPair("10001","","90e5ef845b5bdbed9b7e7a4a893333a135ed7300e85cf5f7ae6db9df07cf96c1f11911abad5c4187725f59422e82af2696168fffffd24ffec26f45e2b35281854170795947b690db8fbb45d8aa34409115941af25d5c1006a1caf396ff9e6fcc1cbbc74e95d13d964af366497783089c6d67772e2594c4e62a367e91490e799f");   
+                
+            }  
+          
+            function submit1() {  
+                bodyRSA();  
+                var result = encryptedString(key, document.getElementById("name").value);  
+                document.getElementById("name").value=result;  
+                alert(document.getElementById("name").value);  
+                document.forms[0].action="JavaDecodeJsServlet";  
+                document.forms[0].submit();  
+            }  
+        </script>  
+    </head>  
+  
+    <body>  
+        <form name="form1" action="JavaDecodeJsServlet" method="post">  
+            请输入：  
+            <input type="text" id="name" name="name" />  
+            <input type="button" value="提交" onclick="submit1()" />  
+        </form>  
+    </body>  
+</html> 
