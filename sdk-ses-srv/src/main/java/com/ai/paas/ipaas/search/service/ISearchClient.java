@@ -64,5 +64,9 @@ public interface ISearchClient {
     
     
     //获得推荐列表
-    List<String> getSuggest(String fieldName, String value, int count);
+    List<String> getSuggest(String fieldName, String value, int count);//                                        @Nullable String soreType);
+
+
+    Results<Map<String, Object>> search(List<SearchfieldVo> searchfieldVos, int from, int offset,
+                                        @Nullable String sortField, @Nullable String sortType);
 }
