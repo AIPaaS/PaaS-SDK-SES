@@ -129,6 +129,17 @@ public class SearchClientImpl implements ISearchClient {
         }
     }
 
+    @Override
+    public boolean deleteData(String index, String type, String id) {
+        try {
+            searchClient.prepareDelete(index, type, id).execute().actionGet();
+            return true;
+        } catch (Exception e) {
+            this.logger.error(e.getMessage(), e);
+            throw new SearchClientException("ES delete error", e);
+        }
+    }
+
 
     @SuppressWarnings("deprecation")
     public boolean cleanData() {
