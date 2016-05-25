@@ -618,9 +618,9 @@ public class SearchClientImpl implements ISearchClient {
                     .setQuery(queryBuild).addAggregation(AggregationBuilders.terms(sortFields + "_Aggregate")
                             .field(sortFields)).execute().get();
 
-            Terms sortAggrate = searchResponse.getAggregations().get(sortFields + "_Aggregate");
+            Terms sortAggregate = searchResponse.getAggregations().get(sortFields + "_Aggregate");
             Map<String, Long> resultMap = new HashMap<String, Long>();
-            for (Terms.Bucket entry : sortAggrate.getBuckets()) {
+            for (Terms.Bucket entry : sortAggregate.getBuckets()) {
                 resultMap.put(entry.getKey(), entry.getDocCount());
             }
 
