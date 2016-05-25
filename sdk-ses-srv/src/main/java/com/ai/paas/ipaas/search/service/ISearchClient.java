@@ -71,4 +71,6 @@ public interface ISearchClient {
 
     Results<Map<String, Object>> search(List<SearchfieldVo> searchfieldVos, int from, int offset,
                                         @Nullable String sortField, @Nullable String sortType);
+
+    Results<Map<String, Long>> simpleAggregation(List<SearchfieldVo> searchfieldVos, String sortFields);
 }

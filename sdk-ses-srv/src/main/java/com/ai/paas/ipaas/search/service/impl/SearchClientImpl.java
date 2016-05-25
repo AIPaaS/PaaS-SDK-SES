@@ -25,6 +25,8 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.*;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.highlight.HighlightField;
 import org.elasticsearch.search.suggest.completion.CompletionSuggestion.Entry.Option;
 import org.elasticsearch.search.suggest.completion.CompletionSuggestionBuilder;
@@ -591,10 +593,43 @@ public class SearchClientImpl implements ISearchClient {
     public Results<Map<String, Object>> search(List<SearchfieldVo> fieldList, int from, int offset, @Nullable String sortField, @Nullable String sortType) {
         Results<Map<String, Object>> result = new Results<Map<String, Object>>();
         result.setResultCode("999999");
-        QueryBuilder queryBuild = this.generateBoolQueryBuilder(fieldList);
-        if (queryBuild == null)
-            return result;
-        searchAction(fieldList, from, offset, sortField, sortType, result, queryBuild);
+        try {
+            QueryBuilder queryBuild = this.generateBoolQueryBuilder(fieldList);
+            if (queryBuild == null)
+                return result;
+            searchAction(fieldList, from, offset, sortField, sortType, result, queryBuild);
+        } catch (Exception e) {
+            this.logger.error(e.getMessage(), e);
+            throw new SearchClientException("ES search error", e);
+        }
+        return result;
+    }
+
+    @Override
+    public Results<Map<String, Long>> simpleAggregation(List<SearchfieldVo> fieldList, String sortFields) {
+        Results<Map<String, Long>> result = new Results<Map<String, Long>>();
+        result.setResultCode("999999");
+        try {
+            QueryBuilder queryBuild = this.generateBoolQueryBuilder(fieldList);
+            if (queryBuild == null)
+                return result;
+            ;
+            SearchResponse searchResponse = searchClient.prepareSearch(indexName).setSearchType(SearchType.DEFAULT)
+                    .setQuery(queryBuild).addAggregation(AggregationBuilders.terms(sortFields + "_Aggregate")
+                            .field(sortFields)).execute().get();
+
+            Terms sortAggrate = searchResponse.getAggregations().get(sortFields + "_Aggregate");
+            Map<String, Long> resultMap = new HashMap<String, Long>();
+            for (Terms.Bucket entry : sortAggrate.getBuckets()) {
+                resultMap.put(entry.getKey(), entry.getDocCount());
+            }
+
+            result.setCounts(resultMap.size());
+            result.addSearchList(resultMap);
+        } catch (Exception e) {
+            this.logger.error(e.getMessage(), e);
+            throw new SearchClientException("ES simpleAggregation error", e);
+        }
         return result;
     }
 
@@ -684,7 +719,7 @@ public class SearchClientImpl implements ISearchClient {
         }
 
         try {
-    	  /* 查询搜索总数    */
+          /* 查询搜索总数    */
 
             SearchRequestBuilder searchRequestBuilder = null;
             searchRequestBuilder = searchClient.prepareSearch(indexName).setSearchType(SearchType.DEFAULT)
@@ -726,7 +761,7 @@ public class SearchClientImpl implements ISearchClient {
             String field = fieldVo.getFiledName();
             SearchOption mySearchOption = fieldVo.getOption();
             if (mySearchOption.isHighlight()) {
-			  /*
+              /*
                * http://www.elasticsearch.org/guide/reference/api/search/highlighting.html
                *
                * fragment_size设置成1000，默认值会造成返回的数据被截断
@@ -749,7 +784,7 @@ public class SearchClientImpl implements ISearchClient {
         Results<Map<String, Object>> result = new Results<Map<String, Object>>();
         result.setResultCode("999999");
         try {
-    	  /* 查询搜索总数    */
+          /* 查询搜索总数    */
             SearchRequestBuilder searchRequestBuilder = this.searchClient.prepareSearch(indexName).setSearchType(SearchType.DEFAULT)
                     .setExplain(true);
 
