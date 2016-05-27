@@ -675,8 +675,10 @@ public class SearchClientImpl implements ISearchClient {
                 }
             }
 
-            fieldVo.getOption().getSearchLogic().convertQueryBuilder(rootQueryBuilder, createSingleFieldQueryBuilder
-                    (fieldVo.getFormatFieldName(), fieldVo.getFiledValue(), fieldVo.getOption()));
+            if (fieldVo.getFiledName() != null && fieldVo.getFiledName().length() > 0) {
+                fieldVo.getOption().getSearchLogic().convertQueryBuilder(rootQueryBuilder, createSingleFieldQueryBuilder
+                        (fieldVo.getFormatFieldName(), fieldVo.getFiledValue(), fieldVo.getOption()));
+            }
         }
 
         return rootQueryBuilder;

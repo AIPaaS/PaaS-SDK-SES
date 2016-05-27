@@ -1,11 +1,12 @@
 package com.ai.paas.ipaas.search.vo;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
 public class Results<T> {
 	//搜索的结果集
-	private List<T> searchList;
+	private List<T> searchList = new ArrayList<T>();
 	//总数
 	private long count;
 	
@@ -22,6 +23,10 @@ public class Results<T> {
 	}
 	public void setSearchList(List<T> searchList) {
 		this.searchList = searchList;
+	}
+
+	public void addSearchList(T t){
+		searchList.add(t);
 	}
 	public long getCount() {
 		return count;

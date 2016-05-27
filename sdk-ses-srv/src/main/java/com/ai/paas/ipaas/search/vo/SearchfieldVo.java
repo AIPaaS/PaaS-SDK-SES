@@ -18,6 +18,7 @@ public class SearchfieldVo implements Serializable {
     public SearchfieldVo() {
         filedValue = new ArrayList<String>();
         subSearchFieldVos = new ArrayList<SearchfieldVo>();
+        this.option = new SearchOption();
     }
 
     public SearchfieldVo(String filedName, SearchOption searchOption) {
