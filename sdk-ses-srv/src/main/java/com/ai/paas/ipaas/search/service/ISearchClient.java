@@ -1,15 +1,15 @@
 package com.ai.paas.ipaas.search.service;
 //接口定义
 
-import java.util.List;
-import java.util.Map;
-
-import org.elasticsearch.common.Nullable;
-
 import com.ai.paas.ipaas.search.vo.Results;
 import com.ai.paas.ipaas.search.vo.SearchOption.SearchLogic;
 import com.ai.paas.ipaas.search.vo.SearchVo;
 import com.ai.paas.ipaas.search.vo.SearchfieldVo;
+import com.ai.paas.ipaas.search.vo.SortField;
+import org.elasticsearch.common.Nullable;
+
+import java.util.List;
+import java.util.Map;
 
 /*new Object[] { "TESTNAME1,TESTNAME2"}会识别为一个搜索条件*/
 /*new Object[] { "TESTNAME1","TESTNAME2"}会识别为两个搜索条件*/
@@ -70,7 +70,7 @@ public interface ISearchClient {
 
 
     Results<Map<String, Object>> search(List<SearchfieldVo> searchfieldVos, int from, int offset,
-                                        @Nullable String sortField, @Nullable String sortType);
+                                        @Nullable List<SortField> sortField);
 
     Results<Map<String, Long>> simpleAggregation(List<SearchfieldVo> searchfieldVos, String sortFields);
 }

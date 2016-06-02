@@ -590,19 +590,52 @@ public class SearchClientImpl implements ISearchClient {
     }
 
     @Override
-    public Results<Map<String, Object>> search(List<SearchfieldVo> fieldList, int from, int offset, @Nullable String sortField, @Nullable String sortType) {
+    public Results<Map<String, Object>> search(List<SearchfieldVo> fieldList, int from, int offset, @Nullable List<SortField> sortFields) {
         Results<Map<String, Object>> result = new Results<Map<String, Object>>();
         result.setResultCode("999999");
         try {
             QueryBuilder queryBuild = this.generateBoolQueryBuilder(fieldList);
             if (queryBuild == null)
                 return result;
-            searchAction(fieldList, from, offset, sortField, sortType, result, queryBuild);
+            searchActions(fieldList, from, offset, sortFields, result, queryBuild);
         } catch (Exception e) {
             this.logger.error(e.getMessage(), e);
             throw new SearchClientException("ES search error", e);
         }
         return result;
+    }
+
+    private void searchActions(List<SearchfieldVo> fieldList, int from, int offset, @Nullable List<SortField> sortFields,
+                               Results<Map<String, Object>> result, QueryBuilder queryBuild) {
+        try {
+          /* 查询搜索总数    */
+            SearchResponse searchResponse = this.searchCountRequest(indexName, queryBuild);
+            long count = searchResponse.getHits().totalHits();
+
+            SearchRequestBuilder searchRequestBuilder = null;
+            searchRequestBuilder = searchClient.prepareSearch(indexName).setSearchType(SearchType.DEFAULT)
+                    .setQuery(queryBuild).setFrom(from).setSize(offset).setExplain(true);
+            if (sortFields == null || sortFields.isEmpty()) {
+              /*如果不需要排序*/
+            } else {
+              /*如果需要排序*/
+                for (SortField sortField : sortFields) {
+                    org.elasticsearch.search.sort.SortOrder sortOrder = sortField.getSortType().equals("desc") ?
+                            org.elasticsearch.search.sort.SortOrder.DESC : org.elasticsearch.search.sort.SortOrder.ASC;
+
+                    searchRequestBuilder = searchRequestBuilder.addSort(sortField.getSortField().toLowerCase(), sortOrder);
+                }
+            }
+            searchRequestBuilder = this.createHighlight(searchRequestBuilder, fieldList);
+            searchResponse = searchRequestBuilder.execute().actionGet();
+            List<Map<String, Object>> list = this.getSearchResult(searchResponse);
+            result.setSearchList(list);
+            result.setCounts(count);
+            result.setResultCode("000000");
+        } catch (Exception e) {
+            this.logger.error(e.getMessage(), e);
+            throw new SearchClientException("ES searchIndex error", e);
+        }
     }
 
     @Override
