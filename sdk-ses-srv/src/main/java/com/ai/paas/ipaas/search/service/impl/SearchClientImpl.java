@@ -2,850 +2,970 @@ package com.ai.paas.ipaas.search.service.impl;
 
 //搜索实现定义
 
-import com.ai.paas.ipaas.search.constants.SearchClientException;
-import com.ai.paas.ipaas.search.service.ISearchClient;
-import com.ai.paas.ipaas.search.vo.*;
-import com.ai.paas.ipaas.search.vo.SearchOption.SearchLogic;
-import com.ai.paas.ipaas.util.StringUtil;
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.elasticsearch.action.WriteConsistencyLevel;
+import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexResponse;
+import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
+import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
+import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsRequest;
+import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsResponse;
+import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
+import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
+import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.delete.DeleteResponse;
+import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
-import org.elasticsearch.action.suggest.SuggestResponse;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.Nullable;
-import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.index.query.*;
+import org.elasticsearch.index.query.MatchQueryBuilder.Operator;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
-import org.elasticsearch.search.highlight.HighlightField;
-import org.elasticsearch.search.suggest.completion.CompletionSuggestion.Entry.Option;
-import org.elasticsearch.search.suggest.completion.CompletionSuggestionBuilder;
+import org.elasticsearch.search.aggregations.bucket.terms.TermsBuilder;
+import org.elasticsearch.search.sort.SortOrder;
+import org.elasticsearch.search.sort.SortParseElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.regex.Pattern;
-
+import com.ai.paas.ipaas.PaaSConstant;
+import com.ai.paas.ipaas.search.SearchRuntimeException;
+import com.ai.paas.ipaas.search.common.JsonBuilder;
+import com.ai.paas.ipaas.search.service.ISearchClient;
+import com.ai.paas.ipaas.search.vo.AggResult;
+import com.ai.paas.ipaas.search.vo.Result;
+import com.ai.paas.ipaas.search.vo.SearchCriteria;
+import com.ai.paas.ipaas.search.vo.Sort;
+import com.ai.paas.ipaas.util.Assert;
+import com.ai.paas.ipaas.util.StringUtil;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
 
 public class SearchClientImpl implements ISearchClient {
-    private Logger logger = LoggerFactory.getLogger(SearchClientImpl.class);
-    //  private Client searchClient = null;
-    private String highlightCSS = "span,span";
-    private String indexName;
-    private JsonObject mapping;
-    private String _id;
-
-    //创建私有对象
-    private TransportClient searchClient;
-
-    public SearchClientImpl(String hosts, String indexName,
-                            JsonObject mapping, JsonObject idObj) {
-        this.indexName = indexName;
-        this.mapping = mapping;
-        _id = idObj.get("path").toString().replaceAll("\"", "");
-        List<String> clusterList = new ArrayList<String>();
-        try {
-            Class<?> clazz = Class.forName(TransportClient.class.getName());
-            Constructor<?> constructor = clazz
-                    .getDeclaredConstructor(Settings.class);
-            constructor.setAccessible(true);
-            searchClient = (TransportClient) constructor.newInstance(settings);
-            if (!StringUtil.isBlank(hosts)) {
-                clusterList = Arrays.asList(hosts.split(","));
-            }
-            for (String item : clusterList) {
-                String address = item.split(":")[0];
-                int port = Integer.parseInt(item.split(":")[1]);
-                /* 通过tcp连接搜索服务器，如果连接不上，有一种可能是服务器端与客户端的jar包版本不匹配 */
-                searchClient
-                        .addTransportAddress(new InetSocketTransportAddress(
-                                address, port));
-            }
-        } catch (Exception e) {
-            this.logger.error(e.getMessage(), e);
-            throw new SearchClientException("ES init client error", e);
-        }
-
-    }
-
-    static Settings settings = ImmutableSettings.settingsBuilder()
-//        .put(this.searchClientConfigureMap)
-            .put("client.transport.ping_timeout", "10s")
-            .put("client.transport.sniff", "true")
-            .put("client.transport.ignore_cluster_name", "true")
-            .build();
-
-
-    //取得实例
-    public synchronized TransportClient getTransportClient() {
-        return searchClient;
-    }
-
-    public void setHighlightCSS(String highlightCSS) {
-        this.highlightCSS = highlightCSS;
-    }
-
-
-    private boolean _bulkInsertData(String indexName, XContentBuilder xContentBuilder) {
-        try {
-            BulkRequestBuilder bulkRequest = searchClient.prepareBulk();
-            bulkRequest.add(searchClient.prepareIndex(indexName, indexName).setSource(xContentBuilder));
-            BulkResponse bulkResponse = bulkRequest.execute().actionGet();
-            if (!bulkResponse.hasFailures()) {
-                return true;
-            } else {
-                this.logger.error("FailureMessage", bulkResponse.buildFailureMessage());
-                throw new SearchClientException("ES insert error", bulkResponse.buildFailureMessage());
-            }
-        } catch (Exception e) {
-            this.logger.error(e.getMessage(), e);
-            throw new SearchClientException("ES insert error", e);
-        }
-    }
-
-
-    @SuppressWarnings("deprecation")
-    public boolean deleteData(List<SearchfieldVo> fieldList) {
-        try {
-            QueryBuilder queryBuilder = null;
-            queryBuilder = this.createQueryBuilder(fieldList, SearchLogic.must);
-            this.logger.warn("[" + indexName + "]" + queryBuilder.toString());
-            searchClient.prepareDeleteByQuery(indexName).setQuery(queryBuilder).execute().actionGet();
-            return true;
-        } catch (Exception e) {
-            this.logger.error(e.getMessage(), e);
-            throw new SearchClientException("ES delete error", e);
-        }
-    }
-
-    @Override
-    public boolean deleteData(String index, String type, String id) {
-        try {
-            searchClient.prepareDelete(index, type, id).execute().actionGet();
-            return true;
-        } catch (Exception e) {
-            this.logger.error(e.getMessage(), e);
-            throw new SearchClientException("ES delete error", e);
-        }
-    }
-
-
-    @SuppressWarnings("deprecation")
-    public boolean cleanData() {
-        try {
-            QueryBuilder queryBuilder = QueryBuilders.boolQuery();
-            this.logger.warn("[" + indexName + "]" + queryBuilder.toString());
-            searchClient.prepareDeleteByQuery(indexName).setQuery(queryBuilder).execute().actionGet();
-            return true;
-        } catch (Exception e) {
-            this.logger.error(e.getMessage(), e);
-            throw new SearchClientException("ES delete error", e);
-        }
-    }
-
-
-    @SuppressWarnings("unchecked")
-    public boolean insertData(String jsonData) {
-
-        if (jsonData == null || "".equals(jsonData)) {
-            throw new SearchClientException("插入数据参数为空");
-        }
-        XContentBuilder xContentBuilder = null;
-        try {
-            xContentBuilder = XContentFactory.jsonBuilder().startObject();
-        } catch (IOException e) {
-            this.logger.error(e.getMessage());
-            throw new SearchClientException("插入数据异常", e);
-        }
-
-        Map<String, Object> dataMap = new HashMap<String, Object>();
-        Gson gson = new Gson();
-        dataMap = gson.fromJson(jsonData, dataMap.getClass());
-        Iterator<Entry<String, Object>> iterator = dataMap.entrySet().iterator();
-        boolean flag = false;
-        while (iterator.hasNext()) {
-            Entry<String, Object> entry = iterator.next();
-            String field = entry.getKey().toLowerCase();
-            Object values = entry.getValue();
-            if (_id.equals(field)) {
-                flag = true;
-            }
-            //判断该字段是否是推荐类型字段   type为 completion
-
-            JsonElement fieldElement = mapping.get(field);
-            if (fieldElement == null) {
-                throw new SearchClientException("the field is not exist in index：" + field, "the field is not exist in index：" + field);
-            }
-            JsonObject fieldObject = fieldElement.getAsJsonObject();
-
-            if ("string".equals(fieldObject.get("type").getAsString())) {
-                values = String.valueOf(values);
-            }
-            if ("integer".equals(fieldObject.get("type").getAsString())) {
-                values = Double.valueOf(String.valueOf(values)).intValue();
-            }
-            if ("completion".equals(fieldObject.get("type").getAsString())) {
-                Map<String, Object> map = new HashMap<String, Object>();
-                Map<String, Object> inputmap = new HashMap<String, Object>();
-                inputmap.put("input", values);
-                map.put(field, inputmap);
-                values = inputmap;
-            }
-            try {
-                xContentBuilder = xContentBuilder.field(field, values);
-            } catch (IOException e) {
-                this.logger.error(e.getMessage(), e);
-                throw new SearchClientException("插入数据异常", e);
-            }
-        }
-        if (!flag) {
-            this.logger.error("the unique key is null", "the unique key is null" + _id);
-            throw new SearchClientException("the unique key is null,please check your data", "the unique key is null" + _id);
-        }
-        try {
-            xContentBuilder = xContentBuilder.endObject();
-        } catch (IOException e) {
-            this.logger.error(e.getMessage(), e);
-            throw new SearchClientException("插入数据异常", e);
-        }
-        try {
-            xContentBuilder.string();
-        } catch (IOException e) {
-            this.logger.error(e.getMessage(), e);
-            throw new SearchClientException("插入数据异常", e);
-        }
-        return this._bulkInsertData(indexName, xContentBuilder);
-    }
-
-
-    @SuppressWarnings("unchecked")
-    public boolean bulkInsertData(List<String> datalist) {
-        BulkRequestBuilder bulkRequest = searchClient.prepareBulk();
-        for (String data : datalist) {
-            XContentBuilder xContentBuilder = null;
-            try {
-                xContentBuilder = XContentFactory.jsonBuilder().startObject();
-            } catch (IOException e) {
-                this.logger.error(e.getMessage(), e);
-                throw new SearchClientException("插入数据异常", e);
-            }
-
-            Map<String, Object> dataMap = new HashMap<String, Object>();
-            Gson gson = new Gson();
-            dataMap = gson.fromJson(data, dataMap.getClass());
-            Iterator<Entry<String, Object>> iterator = dataMap.entrySet().iterator();
-            boolean flag = false;
-            while (iterator.hasNext()) {
-                Entry<String, Object> entry = iterator.next();
-                String field = entry.getKey().toLowerCase();
-                Object values = entry.getValue();
-                if (_id.equals(field)) {
-                    flag = true;
-                }
-                //判断该字段是否是推荐类型字段   type为 completion
-                JsonElement fieldElement = mapping.get(field);
-                if (fieldElement == null) {
-                    throw new SearchClientException("the field is not exist in index：" + field, "the field is not exist in index：" + field);
-                }
-                JsonObject fieldObject = fieldElement.getAsJsonObject();
-                if (fieldObject.get("type") != null) {
-                    if ("string".equals(fieldObject.get("type").getAsString())) {
-                        values = String.valueOf(values);
-                    }
-                    if ("integer".equals(fieldObject.get("type").getAsString())) {
-                        values = Double.valueOf(String.valueOf(values)).intValue();
-                    }
-
-                    if ("object".equals(fieldObject.get("type").getAsString())) {
-                        values = gson.toJson(values);
-                    }
-                    if ("completion".equals(fieldObject.get("type").getAsString())) {
-                        Map<String, Object> map = new HashMap<String, Object>();
-                        Map<String, Object> inputmap = new HashMap<String, Object>();
-                        inputmap.put("input", values);
-                        map.put(field, inputmap);
-                        values = inputmap;
-                    }
-                    try {
-                        xContentBuilder = xContentBuilder.field(field, values);
-                    } catch (IOException e) {
-                        this.logger.error(e.getMessage(), e);
-                        throw new SearchClientException("插入数据异常", e);
-                    }
-                } else {
-                    if (values instanceof Map) {
-
-                        String val = gson.toJson(values);
-                        Map<String, Object> map = new HashMap<String, Object>();
-
-                        map = gson.fromJson(val, map.getClass());
-                        try {
-                            xContentBuilder = xContentBuilder.field(field, map);
-                        } catch (IOException e) {
-                            this.logger.error(e.getMessage(), e);
-                            throw new SearchClientException("插入数据异常", e);
-                        }
-                    } else if (values instanceof List) {
-                        String val = gson.toJson(values);
-                        List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
-
-                        list = gson.fromJson(val, list.getClass());
-                        try {
-                            xContentBuilder = xContentBuilder.field(field, list);
-                        } catch (IOException e) {
-                            this.logger.error(e.getMessage(), e);
-                            throw new SearchClientException("插入数据异常", e);
-                        }
-                    }
-                }
-            }
-            if (!flag) {
-                this.logger.error("the unique key is null", "the unique key is null" + _id);
-                throw new SearchClientException("the unique key is null,please check your data", "the unique key is null" + _id);
-            }
-            try {
-                xContentBuilder = xContentBuilder.endObject();
-            } catch (IOException e) {
-                this.logger.error(e.getMessage(), e);
-                throw new SearchClientException("插入数据异常", e);
-            }
-            bulkRequest.add(searchClient.prepareIndex(indexName, indexName).setSource(xContentBuilder));
-//		  this.insertData(data);
-        }
-        try {
-            BulkResponse bulkResponse = bulkRequest.execute().actionGet();
-            if (!bulkResponse.hasFailures()) {
-                return true;
-            } else {
-                this.logger.error("insert error", bulkResponse.buildFailureMessage());
-                throw new SearchClientException("insert error", "insert error" + bulkResponse.buildFailureMessage());
-            }
-        } catch (Exception e) {
-            this.logger.error(e.getMessage(), e);
-            throw new SearchClientException("ES insert error", e);
-        }
-    }
-
-    public boolean insertData(List<InsertFieldVo> fieldList) {
-        XContentBuilder xContentBuilder = null;
-        try {
-
-            xContentBuilder = XContentFactory.jsonBuilder().startObject();
-        } catch (IOException e) {
-            this.logger.error(e.getMessage());
-            return false;
-        }
-        for (InsertFieldVo vo : fieldList) {
-            String field = vo.getFiledName();
-            Object value = vo.getFiledValue();
-            if (vo.getFileType().equals(InsertFieldVo.FiledType.completion)) {
-                if (!(value instanceof HashMap)) {
-                    this.logger.error("param error", "param error");
-                    throw new SearchClientException("param error", "please check the completion param");
-                }
-            } else {
-                if (value instanceof String) {
-                    if (SearchOption.isDate(value))
-                        value = SearchOption.formatDate(value);
-                }
-            }
-            try {
-                xContentBuilder = xContentBuilder.field(field, value);
-            } catch (IOException e) {
-                this.logger.error(e.getMessage(), e);
-
-                return false;
-            }
-        }
-        try {
-            xContentBuilder = xContentBuilder.endObject();
-        } catch (IOException e) {
-            this.logger.error(e.getMessage(), e);
-            return false;
-        }
-
-        return this._bulkInsertData(indexName, xContentBuilder);
-
-    }
-
-
-    public boolean updateData(List<SearchfieldVo> delFiledList, List<String> datalist) {
-        return this.bulkInsertData(datalist);
-    }
-
-
-    public boolean updateData(List<String> datalist) {
-        return this.bulkInsertData(datalist);
-    }
-
-
-    private RangeQueryBuilder createRangeQueryBuilder(String field, List<String> valuesSet) {
-        String[] array = new String[2];
-        String[] values = (String[]) valuesSet.toArray(array);
-        if (values.length == 1 || values[1] == null || values[1].toString().trim().isEmpty()) {
-            this.logger.warn("error", "[区间搜索]必须传递两个值，但是只传递了一个值，所以返回null");
-            return null;
-        }
-        boolean timeType = false;
-        if (SearchOption.isDate(values[0])) {
-            if (SearchOption.isDate(values[1])) {
-                timeType = true;
-            }
-        }
-        String begin = "", end = "";
-        if (timeType) {
-          /*
-           * 如果时间类型的区间搜索出现问题，有可能是数据类型导致的：
-           *     （1）在监控页面（elasticsearch-head）中进行range搜索，看看什么结果，如果也搜索不出来，则：
-           *     （2）请确定mapping中是date类型，格式化格式是yyyy-MM-dd HH:mm:ss
-           *    （3）请确定索引里的值是类似2012-01-01 00:00:00的格式
-           *    （4）如果是从数据库导出的数据，请确定数据库字段是char或者varchar类型，而不是date类型（此类型可能会有问题）
-           * */
-            begin = SearchOption.formatDate(values[0]);
-            end = SearchOption.formatDate(values[1]);
-        } else {
-            begin = values[0].toString();
-            end = values[1].toString();
-        }
-        return QueryBuilders.rangeQuery(field).from(begin).to(end);
-    }
-
-    /*
-     * 创建过滤条件
-     * */
-    private QueryBuilder createSingleFieldQueryBuilder(String field, List<String> values, SearchOption mySearchOption) {
-        try {
-            if (mySearchOption.getSearchType() == SearchOption.SearchType.range) {
-              /*区间搜索*/
-                return this.createRangeQueryBuilder(field, values);
-            }
-            BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
-            if (values != null) {
-
-                Iterator<String> iterator = values.iterator();
-                while (iterator.hasNext()) {
-                    QueryBuilder queryBuilder = null;
-                    String formatValue = iterator.next().toString().trim().replace("*", "").toLowerCase();//格式化搜索数据
-                    if (mySearchOption.getSearchType() == SearchOption.SearchType.term) {
-                        queryBuilder = QueryBuilders.termQuery(field, formatValue).boost(mySearchOption.getBoost());
-                    } else if (mySearchOption.getSearchType() == SearchOption.SearchType.querystring) {
-                        if (formatValue.length() == 1) {
-                          /*如果搜索长度为1的非数字的字符串，格式化为通配符搜索，暂时这样，以后有时间改成multifield搜索，就不需要通配符了*/
-                            if (!Pattern.matches("[0-9]", formatValue)) {
-                                formatValue = "*" + formatValue + "*";
-                            }
-                        }
-                        @SuppressWarnings("deprecation")
-                        QueryStringQueryBuilder queryStringQueryBuilder = QueryBuilders.queryString(formatValue).minimumShouldMatch(mySearchOption.getQueryStringPrecision());
-                        queryBuilder = queryStringQueryBuilder.field(field).boost(mySearchOption.getBoost());
-                    }
-                    if (mySearchOption.getSearchLogic() == SearchLogic.should) {
-                        boolQueryBuilder = boolQueryBuilder.should(queryBuilder);
-                    } else {
-                        boolQueryBuilder = boolQueryBuilder.must(queryBuilder);
-                    }
-                }
-            }
-            return boolQueryBuilder;
-        } catch (Exception e) {
-            this.logger.error(e.getMessage(), e);
-            throw new SearchClientException("ES create builder error", e);
-        }
-    }
-
-    /*
-     * 创建搜索条件
-     * */
-    private QueryBuilder createQueryBuilder(List<SearchfieldVo> fieldList, SearchLogic searchLogic) {
-        try {
-            if (fieldList == null || fieldList.size() == 0) {
-                return null;
-            }
-            BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
-            for (SearchfieldVo fieldVo : fieldList) {
-                String field = fieldVo.getFiledName().toLowerCase();
-                SearchOption mySearchOption = fieldVo.getOption();
-                QueryBuilder queryBuilder = this.createSingleFieldQueryBuilder(field, fieldVo.getFiledValue(), mySearchOption);
-                if (queryBuilder != null) {
-                    if (searchLogic == SearchLogic.should) {
-                      /*should关系，也就是说，在A索引里有或者在B索引里有都可以*/
-                        boolQueryBuilder = boolQueryBuilder.should(queryBuilder);
-                    } else {
-                      /*must关系，也就是说，在A索引里有，在B索引里也必须有*/
-                        boolQueryBuilder = boolQueryBuilder.must(queryBuilder);
-                    }
-                }
-
-            }
-            return boolQueryBuilder;
-        } catch (Exception e) {
-            this.logger.error(e.getMessage(), e);
-            throw new SearchClientException("ES create builder error", e);
-
-        }
-    }
-
-
-    private SearchResponse searchCountRequest(String indexNames, Object queryBuilder) {
-        try {
-            SearchRequestBuilder searchRequestBuilder = searchClient.prepareSearch(indexNames).setSearchType(SearchType.COUNT);
-            if (queryBuilder instanceof QueryBuilder) {
-                searchRequestBuilder = searchRequestBuilder.setQuery((QueryBuilder) queryBuilder);
-            }
-            if (queryBuilder instanceof byte[]) {
-                String query = new String((byte[]) queryBuilder);
-                searchRequestBuilder = searchRequestBuilder.setQuery(QueryBuilders.wrapperQuery(query));
-            }
-            return searchRequestBuilder.execute().actionGet();
-        } catch (Exception e) {
-            this.logger.error("search count error", e.getMessage(), e);
-            throw new SearchClientException("ES search count error", e);
-        }
-    }
-
-
-    /*获得搜索结果*/
-    private List<Map<String, Object>> getSearchResult(SearchResponse searchResponse) {
-        try {
-            List<Map<String, Object>> resultList = new ArrayList<Map<String, Object>>();
-            for (SearchHit searchHit : searchResponse.getHits()) {
-                Iterator<Entry<String, Object>> iterator = searchHit.getSource().entrySet().iterator();
-                HashMap<String, Object> resultMap = new HashMap<String, Object>();
-                while (iterator.hasNext()) {
-                    Entry<String, Object> entry = iterator.next();
-                    resultMap.put(entry.getKey(), entry.getValue());
-                }
-                Map<String, HighlightField> highlightMap = searchHit.highlightFields();
-                Iterator<Entry<String, HighlightField>> highlightIterator = highlightMap.entrySet().iterator();
-                while (highlightIterator.hasNext()) {
-                    Entry<String, HighlightField> entry = highlightIterator.next();
-                    Object[] contents = entry.getValue().fragments();
-                    if (contents.length == 1) {
-                        resultMap.put(entry.getKey(), contents[0].toString());
-                    } else {
-                        this.logger.warn("搜索结果中的高亮结果出现多数据contents.length ", contents.length);
-                    }
-                }
-                resultList.add(resultMap);
-            }
-            return resultList;
-        } catch (Exception e) {
-            this.logger.error("ES search error", e.getMessage());
-            throw new SearchClientException("ES search error", e);
-        }
-    }
-
-
-    /*获得搜索建议
-     * 服务器端安装elasticsearch-plugin-suggest
-     * 客户端加入elasticsearch-plugin-suggest的jar包
-     * https://github.com/spinscale/elasticsearch-suggest-plugin
-     * */
-    public List<String> getSuggest(String fieldName, String value, int count) {
-        try {
-            CompletionSuggestionBuilder suggestionsBuilder = new CompletionSuggestionBuilder(
-                    "complete");
-            suggestionsBuilder.text(value);
-            suggestionsBuilder.field(fieldName.toLowerCase());
-            suggestionsBuilder.size(count);
-            SuggestResponse resp = searchClient.prepareSuggest(indexName)
-                    .addSuggestion(suggestionsBuilder).execute().actionGet();
-            List<? extends org.elasticsearch.search.suggest.Suggest.Suggestion.Entry<? extends org.elasticsearch.search.suggest.Suggest.Suggestion.Entry.Option>> list =
-                    resp.getSuggest().getSuggestion("complete").getEntries();
-            List<String> returnList = new ArrayList<String>();
-            for (int i = 0; i < list.size(); i++) {
-
-                List<?> options = list.get(i).getOptions();
-                returnList.add(list.get(i).getText().toString());
-                for (int j = 0; j < options.size(); j++) {
-                    if (options.get(j) instanceof Option) {
-                        Option op = (Option) options.get(j);
-                        returnList.add(op.getText().toString());
-
-                    }
-
-                }
-
-            }
-
-            return returnList;
-        } catch (Exception e) {
-            e.printStackTrace();
-            this.logger.error(e.getMessage(), e);
-            throw new SearchClientException("ES suggest error", e);
-        }
-    }
-
-    @Override
-    public Results<Map<String, Object>> search(List<SearchfieldVo> fieldList, int from, int offset, @Nullable List<SortField> sortFields) {
-        Results<Map<String, Object>> result = new Results<Map<String, Object>>();
-        result.setResultCode("999999");
-        try {
-            QueryBuilder queryBuild = this.generateBoolQueryBuilder(fieldList);
-            if (queryBuild == null)
-                return result;
-            searchActions(fieldList, from, offset, sortFields, result, queryBuild);
-        } catch (Exception e) {
-            this.logger.error(e.getMessage(), e);
-            throw new SearchClientException("ES search error", e);
-        }
-        return result;
-    }
-
-    private void searchActions(List<SearchfieldVo> fieldList, int from, int offset, @Nullable List<SortField> sortFields,
-                               Results<Map<String, Object>> result, QueryBuilder queryBuild) {
-        try {
-          /* 查询搜索总数    */
-            SearchResponse searchResponse = this.searchCountRequest(indexName, queryBuild);
-            long count = searchResponse.getHits().totalHits();
-
-            SearchRequestBuilder searchRequestBuilder = null;
-            searchRequestBuilder = searchClient.prepareSearch(indexName).setSearchType(SearchType.DEFAULT)
-                    .setQuery(queryBuild).setFrom(from).setSize(offset).setExplain(true);
-            if (sortFields == null || sortFields.isEmpty()) {
-              /*如果不需要排序*/
-            } else {
-              /*如果需要排序*/
-                for (SortField sortField : sortFields) {
-                    org.elasticsearch.search.sort.SortOrder sortOrder = sortField.getSortType().equals("desc") ?
-                            org.elasticsearch.search.sort.SortOrder.DESC : org.elasticsearch.search.sort.SortOrder.ASC;
-
-                    searchRequestBuilder = searchRequestBuilder.addSort(sortField.getSortField().toLowerCase(), sortOrder);
-                }
-            }
-            searchRequestBuilder = this.createHighlight(searchRequestBuilder, fieldList);
-            searchResponse = searchRequestBuilder.execute().actionGet();
-            List<Map<String, Object>> list = this.getSearchResult(searchResponse);
-            result.setSearchList(list);
-            result.setCounts(count);
-            result.setResultCode("000000");
-        } catch (Exception e) {
-            this.logger.error(e.getMessage(), e);
-            throw new SearchClientException("ES searchIndex error", e);
-        }
-    }
-
-    @Override
-    public Results<Map<String, Long>> simpleAggregation(List<SearchfieldVo> fieldList, String sortFields) {
-        Results<Map<String, Long>> result = new Results<Map<String, Long>>();
-        result.setResultCode("999999");
-        try {
-            QueryBuilder queryBuild = this.generateBoolQueryBuilder(fieldList);
-            if (queryBuild == null)
-                return result;
-            ;
-            SearchResponse searchResponse = searchClient.prepareSearch(indexName).setSearchType(SearchType.DEFAULT)
-                    .setQuery(queryBuild).addAggregation(AggregationBuilders.terms(sortFields + "_Aggregate")
-                            .field(sortFields)).execute().get();
-
-            Terms sortAggregate = searchResponse.getAggregations().get(sortFields + "_Aggregate");
-            Map<String, Long> resultMap = new HashMap<String, Long>();
-            for (Terms.Bucket entry : sortAggregate.getBuckets()) {
-                resultMap.put(entry.getKey(), entry.getDocCount());
-            }
-
-            result.setCounts(resultMap.size());
-            result.addSearchList(resultMap);
-        } catch (Exception e) {
-            this.logger.error(e.getMessage(), e);
-            throw new SearchClientException("ES simpleAggregation error", e);
-        }
-        return result;
-    }
-
-    private void searchAction(List<SearchfieldVo> fieldList, int from, int offset, @Nullable String sortField, @Nullable String sortType, Results<Map<String, Object>> result, QueryBuilder queryBuild) {
-        try {
-          /* 查询搜索总数    */
-            SearchResponse searchResponse = this.searchCountRequest(indexName, queryBuild);
-            long count = searchResponse.getHits().totalHits();
-
-            SearchRequestBuilder searchRequestBuilder = null;
-            searchRequestBuilder = searchClient.prepareSearch(indexName).setSearchType(SearchType.DEFAULT)
-                    .setQuery(queryBuild).setFrom(from).setSize(offset).setExplain(true);
-            if (sortField == null || sortField.isEmpty() || sortType == null || sortType.isEmpty()) {
-              /*如果不需要排序*/
-            } else {
-              /*如果需要排序*/
-                org.elasticsearch.search.sort.SortOrder sortOrder = sortType.equals("desc") ? org.elasticsearch.search.sort.SortOrder.DESC : org.elasticsearch.search.sort.SortOrder.ASC;
-                searchRequestBuilder = searchRequestBuilder.addSort(sortField.toLowerCase(), sortOrder);
-
-            }
-            searchRequestBuilder = this.createHighlight(searchRequestBuilder, fieldList);
-            searchResponse = searchRequestBuilder.execute().actionGet();
-            List<Map<String, Object>> list = this.getSearchResult(searchResponse);
-            result.setSearchList(list);
-            result.setCounts(count);
-            result.setResultCode("000000");
-        } catch (Exception e) {
-            this.logger.error(e.getMessage(), e);
-            throw new SearchClientException("ES searchIndex error", e);
-        }
-    }
-
-    private QueryBuilder generateBoolQueryBuilder(List<SearchfieldVo> fieldList) {
-        if (fieldList == null || fieldList.size() == 0)
-            return null;
-
-        BoolQueryBuilder rootQueryBuilder = QueryBuilders.boolQuery();
-        for (SearchfieldVo fieldVo : fieldList) {
-            if (fieldVo.hasSubSearchFieldVo()) {
-                QueryBuilder tmpQueryBuilder = generateBoolQueryBuilder(fieldVo.getSubSearchFieldVo());
-                if (tmpQueryBuilder != null) {
-                    fieldVo.getOption().getSearchLogic().convertQueryBuilder(rootQueryBuilder, tmpQueryBuilder);
-                }
-            }
-
-            if (fieldVo.getFiledName() != null && fieldVo.getFiledName().length() > 0) {
-                fieldVo.getOption().getSearchLogic().convertQueryBuilder(rootQueryBuilder, createSingleFieldQueryBuilder
-                        (fieldVo.getFormatFieldName(), fieldVo.getFiledValue(), fieldVo.getOption()));
-            }
-        }
-
-        return rootQueryBuilder;
-    }
-
-
-    public Results<Map<String, Object>> searchIndex(List<SearchfieldVo> fieldList,
-                                                    int from, int offset, SearchLogic logic, @Nullable String sortField, @Nullable String sortType) {
-        Results<Map<String, Object>> result = new Results<Map<String, Object>>();
-        result.setResultCode("999999");
-      /*创建must搜索条件*/
-        QueryBuilder queryBuilder = this.createQueryBuilder(fieldList, logic);
-        if (queryBuilder == null) {
-            return result;
-        }
-        BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
-        boolQueryBuilder = boolQueryBuilder.must(queryBuilder);
-        searchAction(fieldList, from, offset, sortField, sortType, result, boolQueryBuilder);
-        return result;
-    }
-
-
-    public Results<Map<String, Object>> complexSearch(List<SearchVo> searchList,
-                                                      int from, int offset, SearchLogic logic, @Nullable String sortField, @Nullable String sortType) {
-        Results<Map<String, Object>> result = new Results<Map<String, Object>>();
-        result.setResultCode("999999");
-      /*创建must搜索条件*/
-        BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
-        for (SearchVo searchVo : searchList) {
-            List<SearchfieldVo> fieldList = searchVo.getSearchFieldList();
-            SearchLogic searchLogic = searchVo.getSearchLogic();
-            QueryBuilder queryBuilder = this.createQueryBuilder(fieldList, searchLogic);
-
-            if (logic == SearchLogic.should) {
-                boolQueryBuilder = boolQueryBuilder.should(queryBuilder);
-            } else {
-                boolQueryBuilder = boolQueryBuilder.must(queryBuilder);
-            }
-
-        }
-
-        try {
-          /* 查询搜索总数    */
-
-            SearchRequestBuilder searchRequestBuilder = null;
-            searchRequestBuilder = searchClient.prepareSearch(indexName).setSearchType(SearchType.DEFAULT)
-                    .setQuery(boolQueryBuilder).setFrom(from).setSize(offset).setExplain(true);
-            if (sortField == null || sortField.isEmpty() || sortType == null || sortType.isEmpty()) {
-              /*如果不需要排序*/
-            } else {
-              /*如果需要排序*/
-                org.elasticsearch.search.sort.SortOrder sortOrder = sortType.equals("desc") ? org.elasticsearch.search.sort.SortOrder.DESC : org.elasticsearch.search.sort.SortOrder.ASC;
-                searchRequestBuilder = searchRequestBuilder.addSort(sortField.toLowerCase(), sortOrder);
-
-            }
-            for (SearchVo searchVo : searchList) {
-                List<SearchfieldVo> fieldList = searchVo.getSearchFieldList();
-                searchRequestBuilder = this.createHighlight(searchRequestBuilder, fieldList);
-            }
-            SearchResponse searchResponse = searchRequestBuilder.execute().actionGet();
-            long count = searchResponse.getHits().totalHits();
-            List<Map<String, Object>> list = this.getSearchResult(searchResponse);
-            result.setSearchList(list);
-            result.setCounts(count);
-            result.setResultCode("000000");
-        } catch (Exception e) {
-            this.logger.error(e.getMessage(), e);
-            throw new SearchClientException("ES searchIndex error", e);
-        }
-        return result;
-    }
-
-    /**
-     * 创建高亮
-     *
-     * @param searchRequestBuilder
-     * @param searchContentMap
-     * @return
-     */
-    private SearchRequestBuilder createHighlight(SearchRequestBuilder searchRequestBuilder, List<SearchfieldVo> fieldList) {
-        for (SearchfieldVo fieldVo : fieldList) {
-            String field = fieldVo.getFiledName();
-            SearchOption mySearchOption = fieldVo.getOption();
-            if (mySearchOption.isHighlight()) {
-              /*
-               * http://www.elasticsearch.org/guide/reference/api/search/highlighting.html
-               *
-               * fragment_size设置成1000，默认值会造成返回的数据被截断
-               * */
-                searchRequestBuilder = searchRequestBuilder.addHighlightedField(field, 1000)
-                        .setHighlighterPreTags("<" + this.highlightCSS.split(",")[0] + ">")
-                        .setHighlighterPostTags("</" + this.highlightCSS.split(",")[1] + ">");
-
-            }
-        }
-
-        return searchRequestBuilder;
-    }
-
-
-    public Results<Map<String, Object>> simpleSearch(byte[] query, int from, int offset, String sortField, String sortType) {
-        if (offset <= 0) {
-            return null;
-        }
-        Results<Map<String, Object>> result = new Results<Map<String, Object>>();
-        result.setResultCode("999999");
-        try {
-          /* 查询搜索总数    */
-            SearchRequestBuilder searchRequestBuilder = this.searchClient.prepareSearch(indexName).setSearchType(SearchType.DEFAULT)
-                    .setExplain(true);
-
-
-            if (sortField == null || sortField.isEmpty() || sortType == null || sortType.isEmpty()) {
-              /*如果不需要排序*/
-            } else {
-              /*如果需要排序*/
-                org.elasticsearch.search.sort.SortOrder sortOrder = sortType.equals("desc") ? org.elasticsearch.search.sort.SortOrder.DESC : org.elasticsearch.search.sort.SortOrder.ASC;
-                searchRequestBuilder = searchRequestBuilder.addSort(sortField.toLowerCase(), sortOrder);
-            }
-            searchRequestBuilder.setFrom(from).setSize(offset);
-            String queryStr = new String(query);
-            searchRequestBuilder = searchRequestBuilder.setQuery(QueryBuilders.wrapperQuery(queryStr));
-            this.logger.debug(queryStr);
-
-            SearchResponse searchResponse = searchRequestBuilder.execute().actionGet();
-            long count = searchResponse.getHits().totalHits();
-            List<Map<String, Object>> list = this.getSearchResult(searchResponse);
-            result.setSearchList(list);
-            result.setCounts(count);
-            result.setResultCode("000000");
-        } catch (Exception e) {
-            this.logger.error(e.getMessage());
-        }
-        return null;
-    }
-
+	private Logger logger = LoggerFactory.getLogger(SearchClientImpl.class);
+	private String highlightCSS = "span,span";
+	private String indexName;
+	@SuppressWarnings("unused")
+	private JsonObject mapping;
+	private String _id = null;
+	private static Settings settings = Settings.settingsBuilder()
+			.put("client.transport.ping_timeout", "60s")
+			.put("client.transport.sniff", "true")
+			.put("client.transport.ignore_cluster_name", "true").build();
+
+	// 创建私有对象
+	private TransportClient client;
+
+	public SearchClientImpl(String hosts, String indexName, JsonObject mapping,
+			String id) {
+		this.indexName = indexName;
+		this.mapping = mapping;
+		_id = id;
+		List<String> clusterList = new ArrayList<String>();
+		try {
+			client = TransportClient.builder().settings(settings).build();
+			if (!StringUtil.isBlank(hosts)) {
+				clusterList = Arrays.asList(hosts.split(","));
+			}
+			for (String item : clusterList) {
+				String address = item.split(":")[0];
+				int port = Integer.parseInt(item.split(":")[1]);
+				/* 通过tcp连接搜索服务器，如果连接不上，有一种可能是服务器端与客户端的jar包版本不匹配 */
+				client.addTransportAddress(new InetSocketTransportAddress(
+						new InetSocketAddress(address, port)));
+			}
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
+			throw new SearchRuntimeException("ES init client error", e);
+		}
+
+	}
+
+	// 取得实例
+	public synchronized TransportClient getTransportClient() {
+		return client;
+	}
+
+	public void setHighlightCSS(String highlightCSS) {
+		this.highlightCSS = highlightCSS;
+	}
+
+	private SearchResponse count(String indexName, Object queryBuilder) {
+		try {
+			SearchRequestBuilder searchRequestBuilder = client.prepareSearch(
+					indexName).setSize(0);
+			if (queryBuilder instanceof QueryBuilder) {
+				searchRequestBuilder = searchRequestBuilder
+						.setQuery((QueryBuilder) queryBuilder);
+			}
+			if (queryBuilder instanceof byte[]) {
+				String query = new String((byte[]) queryBuilder);
+				searchRequestBuilder = searchRequestBuilder
+						.setQuery(QueryBuilders.wrapperQuery(query));
+			}
+			return searchRequestBuilder.get();
+		} catch (Exception e) {
+			logger.error("search count error", e);
+			throw new SearchRuntimeException("ES search count error", e);
+		}
+	}
+
+	public List<String> getSuggest(String value, int count) {
+		return getSuggest("_all", value, count);
+	}
+
+	public List<String> getSuggest(String field, String value, int count) {
+		SearchResponse response = client
+				.prepareSearch(indexName)
+				.setQuery(
+						QueryBuilders.matchQuery(field, value).operator(
+								Operator.AND)).setFrom(0).setSize(count).get();
+		if (null == response)
+			return null;
+		SearchHits hits = response.getHits();
+		if (hits.getTotalHits() == 0) {
+			return null;
+		}
+		List<String> suggests = new ArrayList<>();
+		for (SearchHit searchHit : hits.getHits()) {
+			suggests.add(searchHit.getSourceAsString());
+		}
+		return suggests;
+	}
+
+	@Override
+	public boolean insert(Map<String, Object> data) {
+		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ")
+				.create();
+		return insert(gson.toJson(data));
+	}
+
+	@Override
+	public boolean insert(String json) {
+		IndexResponse response = null;
+		// 判断一下是否有id字段
+		String id = SearchHelper.getId(json, _id);
+		if (StringUtil.isBlank(id)) {
+			response = client.prepareIndex(indexName, indexName)
+					.setOpType(IndexRequest.OpType.CREATE).setSource(json)
+					.get();
+		} else {
+			response = client.prepareIndex(indexName, indexName, id)
+					.setOpType(IndexRequest.OpType.CREATE).setSource(json)
+					.get();
+		}
+		if (null != response && response.isCreated()) {
+			return true;
+		} else {
+			throw new SearchRuntimeException("index error!" + json,
+					response.toString());
+		}
+	}
+
+	@Override
+	public <T> boolean insert(T data) {
+		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ")
+				.create();
+		return insert(gson.toJson(data));
+	}
+
+	@Override
+	public boolean insert(JsonBuilder jsonBuilder) {
+		// 判断是否有id
+		XContentBuilder builder = null;
+		try {
+			builder = jsonBuilder.getBuilder();
+			SearchHelper.hasId(builder, _id);
+			IndexResponse response = client.prepareIndex(indexName, indexName)
+					.setSource(builder).get();
+			if (null != response && response.isCreated()) {
+				return true;
+			} else {
+				throw new SearchRuntimeException("index error!", jsonBuilder
+						.getBuilder().toString());
+			}
+		} catch (Exception e) {
+			throw new SearchRuntimeException(jsonBuilder.toString(), e);
+		} finally {
+			if (null != builder)
+				builder.close();
+		}
+	}
+
+	@Override
+	public boolean delete(String id) {
+		if (StringUtil.isBlank(id))
+			throw new SearchRuntimeException("Illegel argument,id=" + id);
+		DeleteResponse response = client
+				.prepareDelete(indexName, indexName, id).get();
+		if (null != response && response.isFound())
+			return true;
+		return false;
+	}
+
+	@Override
+	public boolean bulkDelete(List<String> ids) {
+		BulkRequestBuilder bulkRequest = client.prepareBulk();
+		for (String id : ids) {
+			bulkRequest.add(client.prepareDelete(indexName, indexName, id));
+		}
+		BulkResponse bulkResponse = bulkRequest.get();
+		if (!bulkResponse.hasFailures()) {
+			return true;
+		} else {
+			// 这里要做个日志，哪些成功了
+			for (BulkItemResponse response : bulkResponse.getItems()) {
+				logger.error("Doc id:" + response.getId() + " is falided:"
+						+ response.isFailed());
+			}
+			return false;
+		}
+	}
+
+	@Override
+	public boolean delete(List<SearchCriteria> searchCriteria) {
+		// 此处要先scan出来，然后再批量删除
+		List<String> ids = new ArrayList<>();
+		QueryBuilder queryBuilder = null;
+		queryBuilder = SearchHelper.createQueryBuilder(searchCriteria);
+		SearchResponse scrollResp = client.prepareSearch(indexName)
+				.addSort(SortParseElement.DOC_FIELD_NAME, SortOrder.ASC)
+				.setScroll(new TimeValue(60000)).setQuery(queryBuilder)
+				.setSize(100).execute().actionGet();
+		while (true) {
+			// 循环获取所有ids
+			for (SearchHit hit : scrollResp.getHits()) {
+				ids.add(hit.getId());
+			}
+			scrollResp = client.prepareSearchScroll(scrollResp.getScrollId())
+					.setScroll(new TimeValue(600000)).execute().actionGet();
+			// Break condition: No hits are returned
+			if (scrollResp.getHits().getHits().length == 0) {
+				break;
+			}
+		}
+		return bulkDelete(ids);
+	}
+
+	@Override
+	public boolean clean() {
+		// 全部删除，只能清除index，然后创建？
+		// 先取出type定义
+		GetMappingsResponse mappings;
+		try {
+			mappings = client.admin().indices()
+					.getMappings(new GetMappingsRequest().indices(indexName))
+					.get();
+			DeleteIndexResponse delete = client.admin().indices()
+					.delete(new DeleteIndexRequest(indexName)).get();
+			if (!delete.isAcknowledged()) {
+				logger.error("Index wasn't deleted");
+				return false;
+			} else {
+				// 看看是否包含这个type
+				if (mappings.getMappings().containsKey(indexName)) {
+
+					CreateIndexResponse indexResponse = client
+							.admin()
+							.indices()
+							.prepareCreate(indexName)
+							.setSource(
+									mappings.getMappings().get(indexName)
+											.get(indexName).source().string())
+							.get();
+					if (indexResponse.isAcknowledged())
+						return true;
+					else
+						return false;
+				} else
+					return false;
+			}
+		} catch (Exception e) {
+			throw new SearchRuntimeException("", e);
+		}
+	}
+
+	@Override
+	public boolean update(String id, Map<String, Object> data) {
+		UpdateResponse response = client
+				.prepareUpdate(indexName, indexName, id).setRefresh(true)
+				.setConsistencyLevel(WriteConsistencyLevel.DEFAULT)
+				.setDoc(data).get();
+		if (!StringUtil.isBlank(response.getId()))
+			return true;
+		else
+			return false;
+	}
+
+	@Override
+	public boolean update(String id, String json) {
+		UpdateResponse response = client
+				.prepareUpdate(indexName, indexName, id).setRefresh(true)
+				.setConsistencyLevel(WriteConsistencyLevel.DEFAULT)
+				.setDoc(json).get();
+		if (!StringUtil.isBlank(response.getId()))
+			return true;
+		else
+			return false;
+	}
+
+	@Override
+	public <T> boolean update(String id, T data) {
+		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ")
+				.create();
+		return update(id, gson.toJson(data));
+	}
+
+	@Override
+	public boolean update(String id, JsonBuilder jsonBuilder) {
+		UpdateResponse response = client
+				.prepareUpdate(indexName, indexName, id).setRefresh(true)
+				.setConsistencyLevel(WriteConsistencyLevel.DEFAULT)
+				.setDoc(jsonBuilder.getBuilder()).get();
+		if (!StringUtil.isBlank(response.getId()))
+			return true;
+		else
+			return false;
+	}
+
+	@Override
+	public boolean upsert(String id, Map<String, Object> data) {
+		UpdateResponse response = client
+				.prepareUpdate(indexName, indexName, id).setRefresh(true)
+				.setConsistencyLevel(WriteConsistencyLevel.DEFAULT)
+				.setUpsert(data).setDoc(data).get();
+		if (!StringUtil.isBlank(response.getId()))
+			return true;
+		else
+			return false;
+	}
+
+	@Override
+	public boolean upsert(String id, String json) {
+		UpdateResponse response = client
+				.prepareUpdate(indexName, indexName, id).setRefresh(true)
+				.setConsistencyLevel(WriteConsistencyLevel.DEFAULT)
+				.setUpsert(json).setDoc(json).get();
+		if (!StringUtil.isBlank(response.getId()))
+			return true;
+		else
+			return false;
+	}
+
+	@Override
+	public <T> boolean upsert(String id, T data) {
+		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ")
+				.create();
+		return upsert(id, gson.toJson(data));
+	}
+
+	@Override
+	public boolean upsert(String id, JsonBuilder jsonBuilder) {
+		UpdateResponse response = client
+				.prepareUpdate(indexName, indexName, id).setRefresh(true)
+				.setConsistencyLevel(WriteConsistencyLevel.DEFAULT)
+				.setUpsert(jsonBuilder.getBuilder())
+				.setDoc(jsonBuilder.getBuilder()).get();
+		if (!StringUtil.isBlank(response.getId()))
+			return true;
+		else
+			return false;
+	}
+
+	private void logBulkRespone(BulkResponse bulkResponse) {
+		for (BulkItemResponse response : bulkResponse.getItems()) {
+			logger.error("insert error," + response.getId() + ","
+					+ response.getFailure());
+		}
+	}
+
+	@Override
+	public boolean bulkMapInsert(List<Map<String, Object>> datas) {
+		BulkRequestBuilder bulkRequest = client.prepareBulk();
+		BulkResponse bulkResponse = null;
+		for (Map<String, Object> data : datas) {
+			if (null != data.get(_id)) {
+				bulkRequest.add(client.prepareIndex(indexName, indexName,
+						data.get(_id).toString()).setSource(data));
+			} else {
+				bulkRequest.add(client.prepareIndex(indexName, indexName)
+						.setSource(data));
+			}
+			if (bulkRequest.numberOfActions() > 100) {
+				bulkResponse = bulkRequest.get();
+				logger.info("rebuildIndex(): indexed {}, hasFailures: {}",
+						bulkRequest.numberOfActions(),
+						bulkResponse.hasFailures());
+			}
+		}
+		if (bulkRequest.numberOfActions() > 0) {
+			bulkResponse = bulkRequest.get();
+		}
+		if (!bulkResponse.hasFailures()) {
+			return true;
+		} else {
+			logger.error("insert error", bulkResponse.buildFailureMessage());
+			logBulkRespone(bulkResponse);
+			throw new SearchRuntimeException("insert error", "insert error"
+					+ bulkResponse.buildFailureMessage());
+		}
+	}
+
+	@Override
+	public boolean bulkJsonInsert(List<String> jsons) {
+		BulkRequestBuilder bulkRequest = client.prepareBulk();
+		BulkResponse bulkResponse = null;
+		for (String json : jsons) {
+			if (SearchHelper.hasId(json, _id)) {
+				bulkRequest.add(client.prepareIndex(indexName, indexName,
+						SearchHelper.getId(json, _id).toString()).setSource(
+						json));
+			} else {
+				bulkRequest.add(client.prepareIndex(indexName, indexName)
+						.setSource(json));
+			}
+			if (bulkRequest.numberOfActions() > 100) {
+				bulkResponse = bulkRequest.get();
+				logger.info("rebuildIndex(): indexed {}, hasFailures: {}",
+						bulkRequest.numberOfActions(),
+						bulkResponse.hasFailures());
+			}
+		}
+		if (bulkRequest.numberOfActions() > 0) {
+			bulkResponse = bulkRequest.get();
+		}
+		if (!bulkResponse.hasFailures()) {
+			return true;
+		} else {
+			this.logger.error("insert error",
+					bulkResponse.buildFailureMessage());
+			logBulkRespone(bulkResponse);
+			throw new SearchRuntimeException("insert error", "insert error"
+					+ bulkResponse.buildFailureMessage());
+		}
+	}
+
+	@Override
+	public <T> boolean bulkInsert(List<T> datas) {
+		List<String> jsons = new ArrayList<>();
+		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ")
+				.create();
+		for (T t : datas) {
+			jsons.add(gson.toJson(t));
+		}
+		return bulkJsonInsert(jsons);
+	}
+
+	@Override
+	public boolean bulkInsert(Set<JsonBuilder> jsonBuilders) {
+		BulkRequestBuilder bulkRequest = client.prepareBulk();
+		BulkResponse bulkResponse = null;
+		for (JsonBuilder jsonBuilder : jsonBuilders) {
+			if (SearchHelper.hasId(jsonBuilder.getBuilder(), _id)) {
+				bulkRequest.add(client.prepareIndex(
+						indexName,
+						indexName,
+						SearchHelper.getId(jsonBuilder.getBuilder(), _id)
+								.toString())
+						.setSource(jsonBuilder.getBuilder()));
+			} else {
+				bulkRequest.add(client.prepareIndex(indexName, indexName)
+						.setSource(jsonBuilder.getBuilder()));
+			}
+			if (bulkRequest.numberOfActions() > 100) {
+				bulkResponse = bulkRequest.get();
+				logger.info("rebuildIndex(): indexed {}, hasFailures: {}",
+						bulkRequest.numberOfActions(),
+						bulkResponse.hasFailures());
+			}
+		}
+		if (bulkRequest.numberOfActions() > 0) {
+			bulkResponse = bulkRequest.get();
+		}
+		if (!bulkResponse.hasFailures()) {
+			return true;
+		} else {
+			this.logger.error("insert error",
+					bulkResponse.buildFailureMessage());
+			logBulkRespone(bulkResponse);
+			throw new SearchRuntimeException("insert error", "insert error"
+					+ bulkResponse.buildFailureMessage());
+		}
+	}
+
+	@Override
+	public boolean bulkMapUpdate(List<String> ids,
+			List<Map<String, Object>> datas) {
+		if (null == ids || null == datas || ids.size() != datas.size())
+			throw new SearchRuntimeException(
+					"Null parameters or size not equal!");
+		BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
+		int i = 0;
+		for (String documentId : ids) {
+			bulkRequestBuilder.add(client
+					.prepareUpdate(indexName, indexName, documentId)
+					.setUpsert(datas.get(i)).setDoc(datas.get(i++)));
+		}
+
+		BulkResponse bulkResponse = bulkRequestBuilder.get();
+		if (!bulkResponse.hasFailures())
+			return true;
+		else {
+			this.logger.error("update error",
+					bulkResponse.buildFailureMessage());
+			logBulkRespone(bulkResponse);
+			throw new SearchRuntimeException("update error", "update error"
+					+ bulkResponse.buildFailureMessage());
+		}
+	}
+
+	@Override
+	public boolean bulkJsonUpdate(List<String> ids, List<String> jsons) {
+		if (null == ids || null == jsons || ids.size() != jsons.size())
+			throw new SearchRuntimeException(
+					"Null parameters or size not equal!");
+		BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
+		int i = 0;
+		for (String documentId : ids) {
+			bulkRequestBuilder.add(client
+					.prepareUpdate(indexName, indexName, documentId)
+					.setUpsert(jsons.get(i)).setDoc(jsons.get(i++)));
+		}
+
+		BulkResponse bulkResponse = bulkRequestBuilder.get();
+		if (!bulkResponse.hasFailures())
+			return true;
+		else {
+			this.logger.error("update error",
+					bulkResponse.buildFailureMessage());
+			logBulkRespone(bulkResponse);
+			throw new SearchRuntimeException("update error", "update error"
+					+ bulkResponse.buildFailureMessage());
+		}
+	}
+
+	@Override
+	public <T> boolean bulkUpdate(List<String> ids, List<T> datas) {
+		if (null == ids || null == datas || ids.size() != datas.size())
+			throw new SearchRuntimeException(
+					"Null parameters or size not equal!");
+		BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
+		int i = 0;
+		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ")
+				.create();
+		for (String documentId : ids) {
+			bulkRequestBuilder.add(client
+					.prepareUpdate(indexName, indexName, documentId)
+					.setUpsert(gson.toJson(datas.get(i)))
+					.setDoc(gson.toJson(datas.get(i++))));
+		}
+
+		BulkResponse bulkResponse = bulkRequestBuilder.get();
+		if (!bulkResponse.hasFailures())
+			return true;
+		else {
+			this.logger.error("update error",
+					bulkResponse.buildFailureMessage());
+			logBulkRespone(bulkResponse);
+			throw new SearchRuntimeException("update error", "update error"
+					+ bulkResponse.buildFailureMessage());
+		}
+	}
+
+	@Override
+	public boolean bulkUpdate(List<String> ids, Set<JsonBuilder> jsonBuilders) {
+		if (null == ids || null == jsonBuilders
+				|| ids.size() != jsonBuilders.size())
+			throw new SearchRuntimeException(
+					"Null parameters or size not equal!");
+		BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
+		int i = 0;
+		for (JsonBuilder jsonBuilder : jsonBuilders) {
+			bulkRequestBuilder.add(client
+					.prepareUpdate(indexName, indexName, ids.get(i++))
+					.setUpsert(jsonBuilder.getBuilder())
+					.setDoc(jsonBuilder.getBuilder()));
+		}
+		BulkResponse bulkResponse = bulkRequestBuilder.get();
+		if (!bulkResponse.hasFailures())
+			return true;
+		else {
+			this.logger.error("update error",
+					bulkResponse.buildFailureMessage());
+			logBulkRespone(bulkResponse);
+			throw new SearchRuntimeException("update error", "update error"
+					+ bulkResponse.buildFailureMessage());
+		}
+	}
+
+	@Override
+	public boolean bulkMapUpsert(List<String> ids,
+			List<Map<String, Object>> datas) {
+		return bulkMapUpdate(ids, datas);
+	}
+
+	@Override
+	public boolean bulkJsonUpsert(List<String> ids, List<String> jsons) {
+		return bulkJsonUpdate(ids, jsons);
+	}
+
+	@Override
+	public <T> boolean bulkUpsert(List<String> ids, List<T> datas) {
+		return bulkUpdate(ids, datas);
+	}
+
+	@Override
+	public boolean bulkUpsert(List<String> ids, Set<JsonBuilder> jsonBuilders) {
+		return bulkUpsert(ids, jsonBuilders);
+	}
+
+	private <T> Result<T> search(QueryBuilder queryBuilder, int from,
+			int offset, List<Sort> sorts, Class<T> clazz,
+			List<SearchCriteria> searchCriterias) {
+		Result<T> result = new Result<>();
+		result.setResultCode(PaaSConstant.ExceptionCode.SYSTEM_ERROR);
+		try {
+			/* 查询搜索总数 */
+			SearchResponse searchResponse = count(indexName, queryBuilder);
+			long count = searchResponse.getHits().totalHits();
+
+			SearchRequestBuilder searchRequestBuilder = null;
+			searchRequestBuilder = client.prepareSearch(indexName)
+					.setSearchType(SearchType.DEFAULT).setQuery(queryBuilder)
+					.setFrom(from).setSize(offset).setExplain(true);
+			if (sorts == null || sorts.isEmpty()) {
+				/* 如果不需要排序 */
+			} else {
+				/* 如果需要排序 */
+				for (Sort sort : sorts) {
+					SortOrder sortOrder = sort.getOrder().compareTo(
+							Sort.SortOrder.DESC) == 0 ? SortOrder.DESC
+							: SortOrder.ASC;
+
+					searchRequestBuilder = searchRequestBuilder.addSort(sort
+							.getSortBy().toLowerCase(), sortOrder);
+				}
+			}
+			// 增加高亮
+			if (null != searchCriterias) {
+				searchRequestBuilder = SearchHelper.createHighlight(
+						searchRequestBuilder, searchCriterias, highlightCSS);
+			}
+			searchResponse = searchRequestBuilder.get();
+			List<T> list = SearchHelper.getSearchResult(searchResponse, clazz);
+
+			result.setSearchList(list);
+			result.setCounts(count);
+			result.setResultCode(PaaSConstant.RPC_CALL_OK);
+		} catch (Exception e) {
+			this.logger.error(e.getMessage(), e);
+			throw new SearchRuntimeException("ES searchIndex error", e);
+		}
+		return result;
+	}
+
+	@Override
+	public <T> Result<T> searchBySQL(String query, int from, int offset,
+			List<Sort> sorts, Class<T> clazz) {
+		// 创建query
+		QueryBuilder queryBuilder = SearchHelper.createStringSQLBuilder(query);
+		return search(queryBuilder, from, offset, sorts, clazz, null);
+	}
+
+	@Override
+	public <T> Result<T> search(List<SearchCriteria> searchCriterias, int from,
+			int offset, List<Sort> sorts, Class<T> clazz) {
+		// 创建query
+		QueryBuilder queryBuilder = SearchHelper
+				.createQueryBuilder(searchCriterias);
+		return search(queryBuilder, from, offset, sorts, clazz, searchCriterias);
+	}
+
+	public <T> Result<T> searchByDSL(String dslJson, int from, int offset,
+			@Nullable List<Sort> sorts, Class<T> clazz) {
+		QueryBuilder queryBuilder = QueryBuilders.wrapperQuery(dslJson);
+		return search(queryBuilder, from, offset, sorts, clazz, null);
+	}
+
+	@Override
+	public Result<Map<String, Long>> aggregate(
+			List<SearchCriteria> searchCriterias, String field) {
+		Result<Map<String, Long>> result = new Result<Map<String, Long>>();
+		result.setResultCode(PaaSConstant.ExceptionCode.SYSTEM_ERROR);
+		try {
+			QueryBuilder queryBuilder = SearchHelper
+					.createQueryBuilder(searchCriterias);
+			if (queryBuilder == null)
+				return result;
+			SearchResponse searchResponse = client
+					.prepareSearch(indexName)
+					.setSearchType(SearchType.DEFAULT)
+					.setQuery(queryBuilder)
+					.addAggregation(
+							AggregationBuilders.terms(field + "_aggs")
+									.field(field + ".raw").size(100))
+					.setSize(0).get();
+
+			Terms sortAggregate = searchResponse.getAggregations().get(
+					field + "_aggs");
+			Map<String, Long> resultMap = new HashMap<String, Long>();
+			for (Terms.Bucket entry : sortAggregate.getBuckets()) {
+				resultMap.put(entry.getKeyAsString(), entry.getDocCount());
+			}
+			result.setCounts(resultMap.size());
+			result.addSearchList(resultMap);
+			result.setResultCode(PaaSConstant.RPC_CALL_OK);
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
+			throw new SearchRuntimeException("ES simpleAggregation error", e);
+		}
+		return result;
+	}
+
+	@Override
+	public Result<List<AggResult>> aggregate(
+			List<SearchCriteria> searchCriterias, List<String> fields) {
+		if (null == searchCriterias || null == fields
+				|| searchCriterias.size() <= 0 || fields.size() <= 0)
+			throw new SearchRuntimeException("IllegelArguments! null");
+		Result<List<AggResult>> result = new Result<List<AggResult>>();
+		result.setResultCode(PaaSConstant.ExceptionCode.SYSTEM_ERROR);
+		try {
+			QueryBuilder queryBuilder = SearchHelper
+					.createQueryBuilder(searchCriterias);
+			if (queryBuilder == null)
+				return result;
+			result.setResultCode(PaaSConstant.RPC_CALL_OK);
+			SearchRequestBuilder searchRequestBuilder = client
+					.prepareSearch(indexName).setSearchType(SearchType.DEFAULT)
+					.setQuery(queryBuilder);
+
+			TermsBuilder termBuilder = AggregationBuilders
+					.terms(fields.get(0) + "_aggs")
+					.field(fields.get(0) + ".raw").size(0);
+			for (int i = 1; i < fields.size(); i++) {
+				termBuilder.subAggregation(
+						AggregationBuilders.terms(fields.get(i) + "_aggs")
+								.field(fields.get(i) + ".raw")).size(100);
+			}
+			SearchResponse searchResponse = searchRequestBuilder
+					.addAggregation(termBuilder).setSize(0).get();
+
+			result.setCounts(searchResponse.getHits().getTotalHits());
+			result.addSearchList(SearchHelper.getAgg(searchResponse, fields));
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
+			throw new SearchRuntimeException("ES simpleAggregation error", e);
+		}
+		return result;
+	}
+
+	@Override
+	public <T> Result<T> fullTextSearch(String text, int from, int offset,
+			List<Sort> sorts, Class<T> clazz) {
+		Result<T> result = new Result<>();
+		result.setResultCode(PaaSConstant.ExceptionCode.SYSTEM_ERROR);
+		try {
+			SearchRequestBuilder searchRequestBuilder = client
+					.prepareSearch(indexName)
+					.setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+					.setQuery(
+							QueryBuilders.matchQuery("_all", text)
+									.operator(Operator.AND)
+									.minimumShouldMatch("75%")).setFrom(from)
+					.setSize(offset).setExplain(true)
+					.setHighlighterRequireFieldMatch(true);
+			SearchResponse response = searchRequestBuilder.get();
+
+			List<T> list = SearchHelper.getSearchResult(response, clazz);
+
+			result.setSearchList(list);
+			result.setCounts(response.getHits().totalHits());
+			result.setResultCode(PaaSConstant.RPC_CALL_OK);
+		} catch (Exception e) {
+			this.logger.error(e.getMessage(), e);
+			throw new SearchRuntimeException("ES searchIndex error", e);
+		}
+		return result;
+	}
+
+	@Override
+	public <T> T getById(String id, Class<T> clazz) {
+		GetResponse response = client.prepareGet(indexName, indexName, id)
+				.get();
+		if (null != response && response.isExists()) {
+			Gson gson = new GsonBuilder().setDateFormat(
+					"yyyy-MM-dd'T'HH:mm:ssZZZ").create();
+			return gson.fromJson(response.getSourceAsString(), clazz);
+		} else
+			return null;
+	}
+
+	@Override
+	public String getById(String id) {
+		GetResponse response = client.prepareGet(indexName, indexName, id)
+				.get();
+		if (null != response && response.isExists())
+			return response.getSourceAsString();
+		else
+			return null;
+	}
+
+	@Override
+	public boolean createIndex(String indexName, int shards, int replicas) {
+		if (shards <= 0)
+			shards = 1;
+		if (replicas <= 0)
+			replicas = 1;
+		String setting = " {" + "\"number_of_shards\":\"" + shards + "\","
+				+ "\"number_of_replicas\":\"" + replicas + "\","
+				+ "\"client.transport.ping_timeout\":\"60s\","
+				+ " \"analysis\": {" + "         \"filter\": {"
+				+ "            \"nGram_filter\": {"
+				+ "               \"type\": \"nGram\","
+				+ "               \"min_gram\": 1,"
+				+ "               \"max_gram\": 10" + "            }"
+				+ "         }," + "         \"analyzer\": {"
+				+ "            \"nGram_analyzer\": {"
+				+ "               \"type\": \"custom\","
+				+ "               \"tokenizer\": \"ik_max_word\","
+				+ "               \"filter\": ["
+				+ "                  \"lowercase\","
+				+ "                  \"nGram_filter\"" + "               ]"
+				+ "            }" + "         }" + "      }" + "   " + "}";
+		CreateIndexResponse createResponse = client.admin().indices()
+				.prepareCreate(indexName).setSettings(setting).get();
+		if (createResponse.isAcknowledged()) {
+			return true;
+		}
+		return false;
+	}
+
+	@Override
+	public boolean deleteIndex(String indexName) {
+		DeleteIndexResponse delete;
+		try {
+			delete = client.admin().indices()
+					.delete(new DeleteIndexRequest(indexName)).get();
+			if (!delete.isAcknowledged()) {
+				logger.error("Index wasn't deleted!index=" + indexName);
+				return false;
+			}
+			return true;
+		} catch (Exception e) {
+			logger.error(indexName, e);
+			throw new SearchRuntimeException("ES delete index error", e);
+		}
+	}
+
+	@Override
+	public boolean addMapping(String indexName, String type, String json) {
+		// 这里要做些处理，如果用户没有type,或者对应不上应该报错
+		Assert.notNull(indexName, "Index Name can not null");
+		Assert.notNull(type, "type can not null");
+		Assert.notNull(json, "mapping can not null");
+		// 转换成json看看
+		JsonObject typeObj = null;
+		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ")
+				.create();
+		JsonObject jsonObj = gson.fromJson(json, JsonObject.class);
+		if (null == jsonObj.get(type)) {
+			// 看看有没有properties
+			if (null == jsonObj.get("properties")) {
+				// 这里好办了,补上两层
+				JsonObject properties = new JsonObject();
+				properties.add("properties", jsonObj);
+				typeObj = new JsonObject();
+				typeObj.add(type, properties);
+			} else {
+				// 这里也好办了,补上一层
+				typeObj = new JsonObject();
+				typeObj.add(type, jsonObj);
+			}
+		} else {
+			// 存在就看自己是否正确构造
+			typeObj = jsonObj;
+		}
+
+		PutMappingResponse putMappingResponse = client.admin().indices()
+				.preparePutMapping(indexName).setType(type)
+				.setSource(gson.toJson(typeObj)).get();
+		gson = null;
+		if (putMappingResponse.isAcknowledged())
+			return true;
+		else
+			return false;
+	}
+
+	@Override
+	public boolean existIndex(String indexName) {
+		Assert.notNull(indexName, "Index Name can not null");
+		try {
+			IndicesExistsResponse response = client.admin().indices()
+					.exists(new IndicesExistsRequest(indexName)).get();
+			if (null != response && response.isExists())
+				return true;
+			else
+				return false;
+		} catch (Exception e) {
+			logger.error(indexName, e);
+			throw new SearchRuntimeException("ES delete index error", e);
+		}
+	}
+
+	@Override
+	public boolean refresh() {
+		RefreshResponse response = client.admin().indices()
+				.prepareRefresh(indexName).get();
+		if (null != response && response.getFailedShards() <= 0)
+			return true;
+		return false;
+	}
+
+	@Override
+	public String searchBySQL(String querySQL, int from, int offset,
+			List<Sort> sorts) {
+		Gson gson = new Gson();
+		return gson.toJson(searchBySQL(querySQL, from, offset, sorts,
+				String.class));
+	}
+
+	@Override
+	public String search(List<SearchCriteria> searchCriterias, int from,
+			int offset, List<Sort> sorts) {
+		Gson gson = new Gson();
+		return gson.toJson(search(searchCriterias, from, offset, sorts,
+				String.class));
+	}
+
+	@Override
+	public String searchByDSL(String dslJson, int from, int offset,
+			List<Sort> sorts) {
+		Gson gson = new Gson();
+		return gson.toJson(searchByDSL(dslJson, from, offset, sorts,
+				String.class));
+	}
 }

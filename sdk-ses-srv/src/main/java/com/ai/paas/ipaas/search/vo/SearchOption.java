@@ -36,7 +36,7 @@ public class SearchOption implements Serializable {
       /*逻辑should关系*/, should;
 
         public void convertQueryBuilder(BoolQueryBuilder rootQueryBuilder, QueryBuilder childQueryBuilder) {
-            switch (this) {
+        	switch (this) {
                 case should: {
                     rootQueryBuilder.should(childQueryBuilder);
                     break;
@@ -145,7 +145,7 @@ public class SearchOption implements Serializable {
     }
 
     public static String formatDateFromDate(Date date) {
-        SimpleDateFormat dateFormat_hms = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SimpleDateFormat dateFormat_hms = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ");
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
         try {
             String result = dateFormat_hms.format(date);
@@ -161,7 +161,7 @@ public class SearchOption implements Serializable {
     }
 
     public static String formatDateFromString(String date) {
-        SimpleDateFormat dateFormat_hms = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SimpleDateFormat dateFormat_hms = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ");
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
         try {
             Date value = dateFormat_hms.parse(date);
