@@ -1,3 +1,11 @@
 /.project
 /.classpath
 /.settings
+/sdk-ses-srv/.settings
+/sdk-ses-srv/.gradle
+/sdk-ses-srv/.classpath
+/sdk-ses-srv/.project
+/ses-web/.gradle
+/ses-web/.settings
+/ses-web/.classpath
+/ses-web/.project
