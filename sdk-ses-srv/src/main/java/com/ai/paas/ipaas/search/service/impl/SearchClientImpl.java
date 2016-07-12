@@ -831,8 +831,22 @@ public class SearchClientImpl implements ISearchClient {
 			SearchRequestBuilder searchRequestBuilder = client
 					.prepareSearch(indexName)
 					.setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-					.setQuery(queryBuilder).setFrom(from).setSize(offset)
-					.setExplain(false).setHighlighterRequireFieldMatch(true);
+					.setQuery(queryBuilder).setFrom(from).setSize(offset);
+			if (sorts == null || sorts.isEmpty()) {
+				/* 如果不需要排序 */
+			} else {
+				/* 如果需要排序 */
+				for (Sort sort : sorts) {
+					SortOrder sortOrder = sort.getOrder().compareTo(
+							Sort.SortOrder.DESC) == 0 ? SortOrder.DESC
+							: SortOrder.ASC;
+
+					searchRequestBuilder = searchRequestBuilder.addSort(sort
+							.getSortBy().toLowerCase(), sortOrder);
+				}
+			}
+			searchRequestBuilder.setExplain(false)
+					.setHighlighterRequireFieldMatch(true);
 			// 此处加上聚合内容
 			for (AggField aggField : aggFields) {
 				// 先建第一级
@@ -1014,6 +1028,15 @@ public class SearchClientImpl implements ISearchClient {
 		Gson gson = new Gson();
 		return gson.toJson(searchByDSL(dslJson, from, offset, sorts,
 				String.class));
+	}
+
+	@Override
+	public <T> Result<T> fullTextSearch(String text, List<AggField> aggFields,
+			int from, int offset, List<Sort> sorts, Class<T> clazz) {
+		List<String> qryFields = new ArrayList<>();
+		qryFields.add("_all");
+		return fullTextSearch(text, qryFields, aggFields, from, offset, sorts,
+				clazz);
 	}
 
 }

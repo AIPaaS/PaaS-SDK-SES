@@ -362,9 +362,10 @@ public interface ISearchClient {
 	public <T> Result<T> fullTextSearch(String text, int from, int offset,
 			@Nullable List<Sort> sorts, Class<T> clazz);
 
+
 	/**
 	 * 全文检索
-	 * 如果带聚合必须指定对哪些字段进行全文索引，各字段是或者关系
+	 * 指定对哪些字段进行全文索引，各字段是或者关系
 	 * @param text
 	 * @param qryFields 全文索引字段
 	 * @param aggFields 聚合字段，如品牌、价格、类型等
@@ -377,6 +378,21 @@ public interface ISearchClient {
 	public <T> Result<T> fullTextSearch(String text, List<String> qryFields,
 			List<AggField> aggFields, int from, int offset,
 			@Nullable List<Sort> sorts, Class<T> clazz);
+	
+	/**
+	 * 全文检索 对所有字段进行
+	 * @param text
+	 * @param aggFields
+	 * @param from
+	 * @param offset
+	 * @param sorts
+	 * @param clazz
+	 * @return
+	 */
+	public <T> Result<T> fullTextSearch(String text,
+			List<AggField> aggFields, int from, int offset,
+			@Nullable List<Sort> sorts, Class<T> clazz);
+
 
 	/**
 	 * 根据id获取文档，

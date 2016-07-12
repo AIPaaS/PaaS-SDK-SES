@@ -27,6 +27,8 @@ import com.ai.paas.ipaas.search.vo.SearchCriteria;
 import com.ai.paas.ipaas.search.vo.SearchOption;
 import com.ai.paas.ipaas.search.vo.SearchOption.SearchLogic;
 import com.ai.paas.ipaas.search.vo.SearchOption.SearchType;
+import com.ai.paas.ipaas.search.vo.Sort;
+import com.ai.paas.ipaas.search.vo.Sort.SortOrder;
 import com.ai.paas.ipaas.util.DateTimeUtil;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -603,6 +605,53 @@ public class SearchTest {
 	}
 
 	@Test
+	public void testFullTextSearchWithFieldWithAgg() {
+		String mapping = "{"
+				+ "   \"user\" : {"
+				+ "  \"_all\": {"
+				+ "\"analyzer\": \"nGram_analyzer\","
+				+ "\"search_analyzer\": \"ik_max_word\","
+				+ "\"term_vector\": \"no\","
+				+ "\"store\": \"false\""
+				+ "},"
+				+ "     \"properties\" : {"
+				+ "     	\"userId\" :  {\"type\" : \"string\", \"store\" : \"yes\",\"index\": \"not_analyzed\"},"
+				+ "       	\"name\" : {\"type\" : \"string\", \"analyzer\":\"nGram_analyzer\","
+				+ " \"fields\": {"
+				+ "     \"raw\": {"
+				+ "        \"type\": \"string\","
+				+ "        \"index\": \"not_analyzed\""
+				+ "     }}"
+				+ "},"
+				+ "       	\"age\" : {\"type\" : \"integer\","
+				+ " \"fields\": {"
+				+ "     \"raw\": {"
+				+ "        \"type\": \"integer\","
+				+ "        \"index\": \"not_analyzed\""
+				+ "     }}"
+				+ "},"
+				+ "       	\"created\" : {\"type\" : \"date\", \"format\" : \"strict_date_optional_time||epoch_millis\"}"
+				+ "     }" + "   }" + " }";
+
+		client.addMapping("user", "user", mapping);
+		testBulkInsertListOfT();
+		testBulkJsonInsert();
+		client.refresh();
+		String text = "开发";
+		List<AggField> fields = new ArrayList<>();
+		fields.add(new AggField("name"));
+		fields.add(new AggField("age"));
+		List<String> qryFields = new ArrayList<>();
+		qryFields.add("name");
+		List<Sort> sorts=new ArrayList<>();
+		Sort sort=new Sort("age", SortOrder.ASC);
+		sorts.add(sort);
+		Result<User> result = client.fullTextSearch(text, fields, 0,
+				10, sorts, User.class);
+		assertTrue(result.getCount() == 6);
+	}
+
+	@Test
 	public void testFullTextSearchWithAgg() {
 		String mapping = "{"
 				+ "   \"user\" : {"
@@ -645,7 +694,6 @@ public class SearchTest {
 				10, null, User.class);
 		assertTrue(result.getCount() == 6);
 	}
-
 	@Test
 	public void testFullTextSearch() {
 		testBulkInsertListOfT();
