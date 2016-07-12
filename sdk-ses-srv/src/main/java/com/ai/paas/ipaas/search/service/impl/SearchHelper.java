@@ -16,15 +16,19 @@ import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
+import org.elasticsearch.search.aggregations.bucket.terms.TermsBuilder;
 
 import com.ai.paas.ipaas.search.SearchRuntimeException;
+import com.ai.paas.ipaas.search.vo.AggField;
 import com.ai.paas.ipaas.search.vo.AggResult;
 import com.ai.paas.ipaas.search.vo.SearchCriteria;
 import com.ai.paas.ipaas.search.vo.SearchOption;
 import com.ai.paas.ipaas.search.vo.SearchOption.SearchLogic;
 import com.ai.paas.ipaas.util.StringUtil;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 
 public class SearchHelper {
@@ -33,7 +37,8 @@ public class SearchHelper {
 	}
 
 	public static String getId(String json, String id) {
-		Gson gson = new Gson();
+		Gson gson = new GsonBuilder().setDateFormat(
+				"yyyy-MM-dd'T'HH:mm:ss").create();
 		JsonObject obj = gson.fromJson(json, JsonObject.class);
 		if (null != obj.get(id))
 			return obj.get(id).getAsString();
@@ -62,7 +67,8 @@ public class SearchHelper {
 	}
 
 	public static boolean hasId(String json, String id) {
-		Gson gson = new Gson();
+		Gson gson = new GsonBuilder().setDateFormat(
+				"yyyy-MM-dd'T'HH:mm:ss").create();
 		JsonObject obj = gson.fromJson(json, JsonObject.class);
 		if (null != obj.get(id))
 			return true;
@@ -226,7 +232,8 @@ public class SearchHelper {
 			if (hits.getTotalHits() == 0) {
 				return results;
 			}
-			Gson gson = new Gson();
+			Gson gson = new GsonBuilder().setDateFormat(
+					"yyyy-MM-dd'T'HH:mm:ss").create();
 			for (SearchHit searchHit : hits.getHits()) {
 				String source = searchHit.getSourceAsString();
 				if (null != clazz
@@ -247,7 +254,8 @@ public class SearchHelper {
 			if (hits.getTotalHits() == 0) {
 				return null;
 			}
-			Gson gson = new Gson();
+			Gson gson = new GsonBuilder().setDateFormat(
+					"yyyy-MM-dd'T'HH:mm:ss").create();
 			String source = null;
 			List<String> results = new ArrayList<>();
 			for (SearchHit searchHit : hits.getHits()) {
@@ -287,47 +295,65 @@ public class SearchHelper {
 	}
 
 	public static List<AggResult> getAgg(SearchResponse searchResponse,
-			List<String> fields) {
+			List<AggField> fields) {
 		List<AggResult> aggResults = new ArrayList<>();
-		int i = 0;
-		Terms sortAggregate = searchResponse.getAggregations().get(
-				fields.get(i) + "_aggs");
-		if (null != sortAggregate && null != sortAggregate.getBuckets()) {
-			for (Terms.Bucket entry : sortAggregate.getBuckets()) {
-				// 新建一个对象
-				AggResult aggResult = new AggResult(entry.getKeyAsString(),
-						entry.getDocCount());
-				// 嵌套循环
-				List<AggResult> temp = getSubAgg(entry, fields, i);
-				if (null != temp)
-					aggResult.setSubResult(temp);
-				// 加到list
-				aggResults.add(aggResult);
+		for (AggField field : fields) {
+			Terms sortAggregate = searchResponse.getAggregations().get(
+					field.getField() + "_aggs");
+			if (null != sortAggregate && null != sortAggregate.getBuckets()) {
+				for (Terms.Bucket entry : sortAggregate.getBuckets()) {
+					// 新建一个对象
+					AggResult aggResult = new AggResult(entry.getKeyAsString(),
+							entry.getDocCount(), field.getField());
+					// 嵌套循环
+					List<AggResult> temp = getSubAgg(entry, field.getSubAggs());
+					if (null != temp)
+						aggResult.setSubResult(temp);
+					// 加到list
+					aggResults.add(aggResult);
+				}
 			}
 		}
 		return aggResults;
 	}
 
 	private static List<AggResult> getSubAgg(Terms.Bucket entry,
-			List<String> fields, int i) {
-		if (null == entry || i >= fields.size() - 1)
+			List<AggField> fields) {
+		if (null == entry || null == fields || fields.size() <= 0)
 			return null;
 		List<AggResult> aggResults = null;
-		Terms subAgg = entry.getAggregations().get(fields.get(i + 1) + "_aggs");
-		if (null != subAgg) {
-			aggResults = new ArrayList<>();
-			for (Terms.Bucket subEntry : subAgg.getBuckets()) {
-				AggResult aggResult = new AggResult(subEntry.getKeyAsString(),
-						entry.getDocCount());
-				// 嵌套循环
-				List<AggResult> temp = getSubAgg(entry, fields, i + 1);
-				if (null != temp)
-					aggResult.setSubResult(temp);
-				// 加到list
-				aggResults.add(aggResult);
+		for (AggField field : fields) {
+			Terms subAgg = entry.getAggregations().get(
+					field.getField() + "_aggs");
+			if (null != subAgg) {
+				aggResults = new ArrayList<>();
+				for (Terms.Bucket subEntry : subAgg.getBuckets()) {
+					AggResult aggResult = new AggResult(
+							subEntry.getKeyAsString(), entry.getDocCount(),
+							field.getField());
+					// 嵌套循环
+					List<AggResult> temp = getSubAgg(entry, field.getSubAggs());
+					if (null != temp)
+						aggResult.setSubResult(temp);
+					// 加到list
+					aggResults.add(aggResult);
+				}
 			}
 		}
 		return aggResults;
+	}
+
+	public static TermsBuilder addSubAggs(TermsBuilder termBuilder,
+			List<AggField> subFields) {
+		if (null == subFields || subFields.size() <= 0)
+			return termBuilder;
+		for (AggField field : subFields) {
+			termBuilder.subAggregation(
+					AggregationBuilders.terms(field.getField() + "_aggs")
+							.field(field.getField() + ".raw")).size(100);
+			termBuilder = addSubAggs(termBuilder, field.getSubAggs());
+		}
+		return termBuilder;
 	}
 
 	public static void main(String[] args) {

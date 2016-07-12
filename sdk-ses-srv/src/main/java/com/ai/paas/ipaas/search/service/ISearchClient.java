@@ -3,6 +3,7 @@ package com.ai.paas.ipaas.search.service;
 //接口定义
 
 import com.ai.paas.ipaas.search.common.JsonBuilder;
+import com.ai.paas.ipaas.search.vo.AggField;
 import com.ai.paas.ipaas.search.vo.AggResult;
 import com.ai.paas.ipaas.search.vo.Result;
 import com.ai.paas.ipaas.search.vo.SearchCriteria;
@@ -261,7 +262,10 @@ public interface ISearchClient {
 
 	/**
 	 * 按照条件查询，age:(>=10 AND <50) | age:(>=10 AND <50) AND name:1234
-	 * 具体语法请参见：https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html
+	 * 具体语法请参见：https
+	 * ://www.elastic.co/guide/en/elasticsearch/reference/current/query
+	 * -dsl-query-string-query.html
+	 * 
 	 * @param query
 	 * @param from
 	 * @param offset
@@ -271,10 +275,13 @@ public interface ISearchClient {
 	 */
 	public <T> Result<T> searchBySQL(String querySQL, int from, int offset,
 			@Nullable List<Sort> sorts, Class<T> clazz);
-	
+
 	/**
 	 * 按照条件查询，age:(>=10 AND <50) | age:(>=10 AND <50) AND name:1234
-	 * 具体语法请参见：https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html
+	 * 具体语法请参见：https
+	 * ://www.elastic.co/guide/en/elasticsearch/reference/current/query
+	 * -dsl-query-string-query.html
+	 * 
 	 * @param query
 	 * @param from
 	 * @param offset
@@ -283,7 +290,7 @@ public interface ISearchClient {
 	 * @return json格式的结果
 	 */
 	public String searchBySQL(String querySQL, int from, int offset,
-			@Nullable List<Sort> sorts);	
+			@Nullable List<Sort> sorts);
 
 	/**
 	 * 
@@ -297,7 +304,7 @@ public interface ISearchClient {
 	 */
 	public <T> Result<T> search(List<SearchCriteria> searchCriterias, int from,
 			int offset, @Nullable List<Sort> sorts, Class<T> clazz);
-	
+
 	/**
 	 * @param searchCriterias
 	 * @param from
@@ -311,20 +318,10 @@ public interface ISearchClient {
 	/**
 	 * DSL格式的查询
 	 * 
-	 * {
-	 *   "query": { 
-	 *     "bool": { 
-	 *       "must": [
-	 *         { "match": { "name":   "开发"}},
-	 *         { "match": { "age": 51 }}  
-	 *       ],
-	 *       "filter": [ 
-	 *         { "term":  { "userId": "107" }},
-	 *         { "range": { "created": { "gte": "2016-06-20" }}} 
-	 *       ]
-	 *     }
-	 *   }
-	 * }
+	 * { "query": { "bool": { "must": [ { "match": { "name": "开发"}}, { "match":
+	 * { "age": 51 }} ], "filter": [ { "term": { "userId": "107" }}, { "range":
+	 * { "created": { "gte": "2016-06-20" }}} ] } } }
+	 * 
 	 * @param dslJson
 	 * @param from
 	 * @param offset
@@ -334,23 +331,14 @@ public interface ISearchClient {
 	 */
 	public <T> Result<T> searchByDSL(String dslJson, int from, int offset,
 			@Nullable List<Sort> sorts, Class<T> clazz);
+
 	/**
 	 * DSL格式的查询
 	 * 
-	 * {
-	 *   "query": { 
-	 *     "bool": { 
-	 *       "must": [
-	 *         { "match": { "name":   "开发"}},
-	 *         { "match": { "age": 51 }}  
-	 *       ],
-	 *       "filter": [ 
-	 *         { "term":  { "userId": "107" }},
-	 *         { "range": { "created": { "gte": "2016-06-20" }}} 
-	 *       ]
-	 *     }
-	 *   }
-	 * }
+	 * { "query": { "bool": { "must": [ { "match": { "name": "开发"}}, { "match":
+	 * { "age": 51 }} ], "filter": [ { "term": { "userId": "107" }}, { "range":
+	 * { "created": { "gte": "2016-06-20" }}} ] } } }
+	 * 
 	 * @param dslJson
 	 * @param from
 	 * @param offset
@@ -359,7 +347,7 @@ public interface ISearchClient {
 	 * @return
 	 */
 	public String searchByDSL(String dslJson, int from, int offset,
-			@Nullable List<Sort> sorts);	
+			@Nullable List<Sort> sorts);
 
 	/**
 	 * 全文检索
@@ -372,6 +360,22 @@ public interface ISearchClient {
 	 * @return
 	 */
 	public <T> Result<T> fullTextSearch(String text, int from, int offset,
+			@Nullable List<Sort> sorts, Class<T> clazz);
+
+	/**
+	 * 全文检索
+	 * 如果带聚合必须指定对哪些字段进行全文索引，各字段是或者关系
+	 * @param text
+	 * @param qryFields 全文索引字段
+	 * @param aggFields 聚合字段，如品牌、价格、类型等
+	 * @param from
+	 * @param offset
+	 * @param sorts
+	 * @param clazz
+	 * @return
+	 */
+	public <T> Result<T> fullTextSearch(String text, List<String> qryFields,
+			List<AggField> aggFields, int from, int offset,
 			@Nullable List<Sort> sorts, Class<T> clazz);
 
 	/**
@@ -434,7 +438,7 @@ public interface ISearchClient {
 	 * @return
 	 */
 	public Result<List<AggResult>> aggregate(
-			List<SearchCriteria> searchCriterias, List<String> fields);
+			List<SearchCriteria> searchCriterias, List<AggField> fields);
 
 	/**
 	 * 创建索引
@@ -481,10 +485,10 @@ public interface ISearchClient {
 	 * @return
 	 */
 	public boolean addMapping(String indexName, String type, String json);
-	
-	
+
 	/**
 	 * 刷新插入或者更新
+	 * 
 	 * @return
 	 */
 	public boolean refresh();

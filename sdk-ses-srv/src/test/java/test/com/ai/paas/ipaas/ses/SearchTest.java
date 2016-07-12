@@ -21,6 +21,7 @@ import com.ai.paas.ipaas.search.common.JsonBuilder;
 import com.ai.paas.ipaas.search.service.ISearchClient;
 import com.ai.paas.ipaas.search.service.impl.SearchClientImpl;
 import com.ai.paas.ipaas.search.vo.AggResult;
+import com.ai.paas.ipaas.search.vo.AggField;
 import com.ai.paas.ipaas.search.vo.Result;
 import com.ai.paas.ipaas.search.vo.SearchCriteria;
 import com.ai.paas.ipaas.search.vo.SearchOption;
@@ -583,11 +584,65 @@ public class SearchTest {
 		values.add("开发");
 		searchCriteria.setFieldValue(values);
 		searchCriterias.add(searchCriteria);
-		List<String> fields = new ArrayList<>();
-		fields.add("name");
-		fields.add("age");
+		List<AggField> fields = new ArrayList<>();
+		fields.add(new AggField("name"));
+		fields.add(new AggField("age"));
 		Result<List<AggResult>> result = client.aggregate(searchCriterias,
 				fields);
+		assertTrue(result.getAggs().size() == 7);
+		// 测试一下嵌套
+		fields = new ArrayList<>();
+		AggField name = new AggField("name");
+		List<AggField> subfields = new ArrayList<>();
+		subfields.add(new AggField("age"));
+		name.setSubAggs(subfields);
+		fields.add(name);
+		fields.add(new AggField("age"));
+		result = client.aggregate(searchCriterias, fields);
+		assertTrue(result.getAggs().size() == 7);
+	}
+
+	@Test
+	public void testFullTextSearchWithAgg() {
+		String mapping = "{"
+				+ "   \"user\" : {"
+				+ "  \"_all\": {"
+				+ "\"analyzer\": \"nGram_analyzer\","
+				+ "\"search_analyzer\": \"ik_max_word\","
+				+ "\"term_vector\": \"no\","
+				+ "\"store\": \"false\""
+				+ "},"
+				+ "     \"properties\" : {"
+				+ "     	\"userId\" :  {\"type\" : \"string\", \"store\" : \"yes\",\"index\": \"not_analyzed\"},"
+				+ "       	\"name\" : {\"type\" : \"string\", \"analyzer\":\"nGram_analyzer\","
+				+ " \"fields\": {"
+				+ "     \"raw\": {"
+				+ "        \"type\": \"string\","
+				+ "        \"index\": \"not_analyzed\""
+				+ "     }}"
+				+ "},"
+				+ "       	\"age\" : {\"type\" : \"integer\","
+				+ " \"fields\": {"
+				+ "     \"raw\": {"
+				+ "        \"type\": \"integer\","
+				+ "        \"index\": \"not_analyzed\""
+				+ "     }}"
+				+ "},"
+				+ "       	\"created\" : {\"type\" : \"date\", \"format\" : \"strict_date_optional_time||epoch_millis\"}"
+				+ "     }" + "   }" + " }";
+
+		client.addMapping("user", "user", mapping);
+		testBulkInsertListOfT();
+		testBulkJsonInsert();
+		client.refresh();
+		String text = "开发";
+		List<AggField> fields = new ArrayList<>();
+		fields.add(new AggField("name"));
+		fields.add(new AggField("age"));
+		List<String> qryFields = new ArrayList<>();
+		qryFields.add("name");
+		Result<User> result = client.fullTextSearch(text, qryFields, fields, 0,
+				10, null, User.class);
 		assertTrue(result.getCount() == 6);
 	}
 

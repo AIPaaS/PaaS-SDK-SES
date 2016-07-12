@@ -5,7 +5,9 @@ import java.util.List;
 
 public class Result<T> {
 	// 搜索的结果集
-	private List<T> searchList = new ArrayList<T>();
+	private List<T> contents = new ArrayList<T>();
+
+	private List<AggResult> aggs = new ArrayList<>();
 	// 总数
 	private long count;
 
@@ -19,16 +21,16 @@ public class Result<T> {
 		this.resultCode = resultCode;
 	}
 
-	public List<T> getSearchList() {
-		return searchList;
+	public List<T> getContents() {
+		return contents;
 	}
 
-	public void setSearchList(List<T> searchList) {
-		this.searchList = searchList;
+	public void setContents(List<T> contents) {
+		this.contents = contents;
 	}
 
-	public void addSearchList(T t) {
-		searchList.add(t);
+	public void addContent(T t) {
+		contents.add(t);
 	}
 
 	public long getCount() {
@@ -37,6 +39,18 @@ public class Result<T> {
 
 	public void setCounts(long count) {
 		this.count = count;
+	}
+
+	public List<AggResult> getAggs() {
+		return aggs;
+	}
+
+	public void setAggs(List<AggResult> aggs) {
+		this.aggs = aggs;
+	}
+
+	public void addAgg(AggResult agg) {
+		aggs.add(agg);
 	}
 
 }

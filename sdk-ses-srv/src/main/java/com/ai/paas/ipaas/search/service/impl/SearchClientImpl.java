@@ -5,7 +5,6 @@ package com.ai.paas.ipaas.search.service.impl;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,6 +37,7 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.MatchQueryBuilder.Operator;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
@@ -54,6 +54,7 @@ import com.ai.paas.ipaas.PaaSConstant;
 import com.ai.paas.ipaas.search.SearchRuntimeException;
 import com.ai.paas.ipaas.search.common.JsonBuilder;
 import com.ai.paas.ipaas.search.service.ISearchClient;
+import com.ai.paas.ipaas.search.vo.AggField;
 import com.ai.paas.ipaas.search.vo.AggResult;
 import com.ai.paas.ipaas.search.vo.Result;
 import com.ai.paas.ipaas.search.vo.SearchCriteria;
@@ -677,7 +678,7 @@ public class SearchClientImpl implements ISearchClient {
 			searchResponse = searchRequestBuilder.get();
 			List<T> list = SearchHelper.getSearchResult(searchResponse, clazz);
 
-			result.setSearchList(list);
+			result.setContents(list);
 			result.setCounts(count);
 			result.setResultCode(PaaSConstant.RPC_CALL_OK);
 		} catch (Exception e) {
@@ -731,12 +732,11 @@ public class SearchClientImpl implements ISearchClient {
 
 			Terms sortAggregate = searchResponse.getAggregations().get(
 					field + "_aggs");
-			Map<String, Long> resultMap = new HashMap<String, Long>();
 			for (Terms.Bucket entry : sortAggregate.getBuckets()) {
-				resultMap.put(entry.getKeyAsString(), entry.getDocCount());
+				result.addAgg(new AggResult(entry.getKeyAsString(), entry
+						.getDocCount(), field));
 			}
-			result.setCounts(resultMap.size());
-			result.addSearchList(resultMap);
+			result.setCounts(searchResponse.getHits().getTotalHits());
 			result.setResultCode(PaaSConstant.RPC_CALL_OK);
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
@@ -747,7 +747,7 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public Result<List<AggResult>> aggregate(
-			List<SearchCriteria> searchCriterias, List<String> fields) {
+			List<SearchCriteria> searchCriterias, List<AggField> fields) {
 		if (null == searchCriterias || null == fields
 				|| searchCriterias.size() <= 0 || fields.size() <= 0)
 			throw new SearchRuntimeException("IllegelArguments! null");
@@ -763,19 +763,21 @@ public class SearchClientImpl implements ISearchClient {
 					.prepareSearch(indexName).setSearchType(SearchType.DEFAULT)
 					.setQuery(queryBuilder);
 
-			TermsBuilder termBuilder = AggregationBuilders
-					.terms(fields.get(0) + "_aggs")
-					.field(fields.get(0) + ".raw").size(0);
-			for (int i = 1; i < fields.size(); i++) {
-				termBuilder.subAggregation(
-						AggregationBuilders.terms(fields.get(i) + "_aggs")
-								.field(fields.get(i) + ".raw")).size(100);
+			for (AggField aggField : fields) {
+				// 先建第一级
+				TermsBuilder termBuilder = AggregationBuilders
+						.terms(aggField.getField() + "_aggs")
+						.field(aggField.getField() + ".raw").size(0);
+				// 循环创建子聚合
+				termBuilder = SearchHelper.addSubAggs(termBuilder,
+						aggField.getSubAggs());
+				searchRequestBuilder.addAggregation(termBuilder);
 			}
-			SearchResponse searchResponse = searchRequestBuilder
-					.addAggregation(termBuilder).setSize(0).get();
+			SearchResponse searchResponse = searchRequestBuilder.setSize(0)
+					.get();
 
 			result.setCounts(searchResponse.getHits().getTotalHits());
-			result.addSearchList(SearchHelper.getAgg(searchResponse, fields));
+			result.setAggs(SearchHelper.getAgg(searchResponse, fields));
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
 			throw new SearchRuntimeException("ES simpleAggregation error", e);
@@ -802,8 +804,53 @@ public class SearchClientImpl implements ISearchClient {
 
 			List<T> list = SearchHelper.getSearchResult(response, clazz);
 
-			result.setSearchList(list);
+			result.setContents(list);
 			result.setCounts(response.getHits().totalHits());
+
+			result.setResultCode(PaaSConstant.RPC_CALL_OK);
+		} catch (Exception e) {
+			this.logger.error(e.getMessage(), e);
+			throw new SearchRuntimeException("ES searchIndex error", e);
+		}
+		return result;
+	}
+
+	@Override
+	public <T> Result<T> fullTextSearch(String text, List<String> qryFields,
+			List<AggField> aggFields, int from, int offset, List<Sort> sorts,
+			Class<T> clazz) {
+		Result<T> result = new Result<>();
+		result.setResultCode(PaaSConstant.ExceptionCode.SYSTEM_ERROR);
+		try {
+			// 如果带聚合必须指定对哪些字段
+			BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
+			for (String qryField : qryFields) {
+				queryBuilder.should(QueryBuilders.matchQuery(qryField, text)
+						.operator(Operator.AND).minimumShouldMatch("75%"));
+			}
+			SearchRequestBuilder searchRequestBuilder = client
+					.prepareSearch(indexName)
+					.setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+					.setQuery(queryBuilder).setFrom(from).setSize(offset)
+					.setExplain(false).setHighlighterRequireFieldMatch(true);
+			// 此处加上聚合内容
+			for (AggField aggField : aggFields) {
+				// 先建第一级
+				TermsBuilder termBuilder = AggregationBuilders
+						.terms(aggField.getField() + "_aggs")
+						.field(aggField.getField() + ".raw").size(0);
+				// 循环创建子聚合
+				termBuilder = SearchHelper.addSubAggs(termBuilder,
+						aggField.getSubAggs());
+				searchRequestBuilder.addAggregation(termBuilder);
+			}
+			SearchResponse response = searchRequestBuilder.get();
+
+			List<T> list = SearchHelper.getSearchResult(response, clazz);
+
+			result.setContents(list);
+			result.setCounts(response.getHits().totalHits());
+			result.setAggs(SearchHelper.getAgg(response, aggFields));
 			result.setResultCode(PaaSConstant.RPC_CALL_OK);
 		} catch (Exception e) {
 			this.logger.error(e.getMessage(), e);
@@ -968,4 +1015,5 @@ public class SearchClientImpl implements ISearchClient {
 		return gson.toJson(searchByDSL(dslJson, from, offset, sorts,
 				String.class));
 	}
+
 }

@@ -6,13 +6,15 @@ import java.util.List;
 public class AggResult {
 	private String key = null;
 	private long count = 0;
+
+	private String group = null;
 	// 开始嵌套
 	private List<AggResult> subResult = null;
 
-	public AggResult(String key, long count) {
+	public AggResult(String key, long count, String group) {
 		this.key = key;
 		this.count = count;
-
+		this.group = group;
 	}
 
 	public void addSubAgg(AggResult subAgg) {
@@ -47,6 +49,14 @@ public class AggResult {
 
 	public void setSubResult(List<AggResult> subResult) {
 		this.subResult = subResult;
+	}
+
+	public String getGroup() {
+		return group;
+	}
+
+	public void setGroup(String group) {
+		this.group = group;
 	}
 
 }
