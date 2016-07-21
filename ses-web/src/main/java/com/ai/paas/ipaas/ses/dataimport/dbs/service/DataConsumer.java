@@ -17,39 +17,37 @@ import org.slf4j.LoggerFactory;
 
 import com.ai.paas.ipaas.ses.dataimport.constant.SesDataImportConstants;
 import com.ai.paas.ipaas.ses.dataimport.dbs.config.ExportFormatConfig;
-import com.ai.paas.ipaas.ses.dataimport.model.DataBaseAttr;
-import com.ai.paas.ipaas.ses.dataimport.model.FiledSql;
 import com.ai.paas.ipaas.ses.dataimport.util.GsonUtil;
 import com.ai.paas.ipaas.ses.dataimport.util.JdbcUtil;
 import com.ai.paas.ipaas.txs.dtm.TransactionContext;
+import com.ai.paas.ipaas.vo.ses.SesDataSourceInfo;
+import com.ai.paas.ipaas.vo.ses.SesIndexFiledSql;
 
-public class DataConsumer implements Runnable{
-	
-	private static final Logger log = LoggerFactory.getLogger(DataConsumer.class);
+public class DataConsumer implements Runnable {
 
-	
+	private static final Logger log = LoggerFactory
+			.getLogger(DataConsumer.class);
+
 	private ExportFormatConfig ec;
-	
+
 	private TransferQueue<String> dataBase;
 	private TransferQueue<String> dataDoc;
 	private CountDownLatch overLatch;
 	private CountDownLatch producerOverLatch;
 	private int maxQueueSize = 8192;
 	private boolean exist = false;
-	
-	public DataConsumer(
-			ExportFormatConfig ec,
-			TransferQueue<String> dataBase,TransferQueue<String> dataDoc,
-			CountDownLatch overLatch,CountDownLatch producerOverLatch,
-			int maxQueueSize ){
+
+	public DataConsumer(ExportFormatConfig ec, TransferQueue<String> dataBase,
+			TransferQueue<String> dataDoc, CountDownLatch overLatch,
+			CountDownLatch producerOverLatch, int maxQueueSize) {
 		this.ec = ec;
 		this.overLatch = overLatch;
 		this.producerOverLatch = producerOverLatch;
 		this.dataBase = dataBase;
 		this.dataDoc = dataDoc;
 		this.maxQueueSize = maxQueueSize;
-		
-	} 
+
+	}
 
 	@Override
 	public void run() {
@@ -74,14 +72,16 @@ public class DataConsumer implements Runnable{
 						if (dataDoc.size() < maxQueueSize) {
 							dataDoc.put(doc);
 						} else {
-							log.info("----"+this.toString()+"----dataDoc.transfer---");
+							log.info("----" + this.toString()
+									+ "----dataDoc.transfer---");
 							dataDoc.transfer(doc);
 						}
 					}
 				}
 
 			} catch (Exception e) {
-				log.error("baseInfo Consume Thread wait count down latch error!",
+				log.error(
+						"baseInfo Consume Thread wait count down latch error!",
 						e);
 			} finally {
 				try {
@@ -104,38 +104,44 @@ public class DataConsumer implements Runnable{
 		overLatch.countDown();
 		// 可以退出了，退出
 		log.info("baseInfo Consume Thread " + this.toString() + " existed!");
-		
+
 	}
-	
+
+	@SuppressWarnings("unchecked")
 	private String writeFileds(String baseInfo) {
-		HashMap<String,Object> datas = GsonUtil.gsonToObject(baseInfo, HashMap.class);
-		
-		for(Map.Entry<String,Object> entry : datas.entrySet()){
+		HashMap<String, Object> datas = GsonUtil.gsonToObject(baseInfo,
+				HashMap.class);
+
+		for (Map.Entry<String, Object> entry : datas.entrySet()) {
 			String cv = entry.getValue().toString();
-    		final String af = ec.getDataSql().getPrimarySql().getAlias()+"."+entry.getKey();
-    		if(ec.getAfIndexFiledSqls().containsKey(af)){
-    			List<FiledSql> fss = ec.getAfIndexFiledSqls().get(af);
-    			for(FiledSql fs:fss){
-    				getFiledValueUseIndex(datas,fs,entry.getKey(),cv,af);
-    			}
-    		}
-    		if(ec.getAfFiledSqls().containsKey(af)){
-    			List<FiledSql> fss = ec.getAfFiledSqls().get(af);
-    			for(FiledSql fs:fss){
-    				try {
-						getFiledValue(datas,fs,entry.getKey(),cv,af);
+			final String af = ec.getDataSql().getPrimarySql().getAlias() + "."
+					+ entry.getKey();
+			if (ec.getAfIndexFiledSqls().containsKey(af)) {
+				List<SesIndexFiledSql> fss = ec.getAfIndexFiledSqls().get(af);
+				for (SesIndexFiledSql fs : fss) {
+					getFiledValueUseIndex(datas, fs, entry.getKey(), cv, af);
+				}
+			}
+			if (ec.getAfFiledSqls().containsKey(af)) {
+				List<SesIndexFiledSql> fss = ec.getAfFiledSqls().get(af);
+				for (SesIndexFiledSql fs : fss) {
+					try {
+						getFiledValue(datas, fs, entry.getKey(), cv, af);
 					} catch (Exception e) {
-						log.error("--------------getFiledValue exception:"+e.getMessage(),e);
+						log.error(
+								"--------------getFiledValue exception:"
+										+ e.getMessage(), e);
 					}
-    			}
-    		}
+				}
+			}
 		}
 		return GsonUtil.objToGson(datas);
 	}
 
-	private void getFiledValue(Map datas, FiledSql fs, String cn, String cv,
-			String af) throws Exception {
-		DataBaseAttr attr = ec.getDb().get(fs.getDrAlias());
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private void getFiledValue(Map datas, SesIndexFiledSql fs, String cn,
+			String cv, String af) throws Exception {
+		SesDataSourceInfo attr = ec.getDb().get(fs.getDrAlias());
 		Connection conn = null;
 		PreparedStatement preparedStatement = null;
 		ResultSet resultSet = null;
@@ -145,13 +151,13 @@ public class DataConsumer implements Runnable{
 		}
 
 		try {
-			if (SesDataImportConstants.DBS_DB_TYPE==attr.getType()&&attr.isHaveTXS())
+			if (SesDataImportConstants.DBS_DB_TYPE == attr.getType()
+					&& attr.isHaveTXS())
 				TransactionContext.initVisualContext();
 			conn = JdbcUtil.getConnection(attr);
-			String temp = fs.getSql()
-					.toLowerCase().replace(af, cv);
+			String temp = fs.getSql().toLowerCase().replace(af, cv);
 			preparedStatement = conn.prepareStatement(temp);
-			
+
 			resultSet = preparedStatement.executeQuery();
 			while (resultSet.next()) {
 				for (int i = 0; i < resultSet.getMetaData().getColumnCount(); i++) {
@@ -169,13 +175,15 @@ public class DataConsumer implements Runnable{
 						List<String> afs = ec.getPafAfs().get(saf);
 						for (String tempAf : afs) {
 							getFiledValue(datas,
-									ec.getFiledSql().get(tempAf.split("\\.")[0]),
-									rcn, rcv, saf);
+									ec.getFiledSql()
+											.get(tempAf.split("\\.")[0]), rcn,
+									rcv, saf);
 						}
 					}
 				}
 			}
-			if (SesDataImportConstants.DBS_DB_TYPE==attr.getType()&&attr.isHaveTXS())
+			if (SesDataImportConstants.DBS_DB_TYPE == attr.getType()
+					&& attr.isHaveTXS())
 				TransactionContext.clear();
 		} catch (Exception e) {
 			log.error("--------------db exception:" + e.getMessage(), e);
@@ -201,9 +209,10 @@ public class DataConsumer implements Runnable{
 
 	}
 
-	private void getFiledValueUseIndex(Map datas, FiledSql fs, String cn,
-			String cv, String af) {
-		DataBaseAttr attr = ec.getDb().get(fs.getDrAlias());
+	@SuppressWarnings("rawtypes")
+	private void getFiledValueUseIndex(Map datas, SesIndexFiledSql fs,
+			String cn, String cv, String af) {
+		SesDataSourceInfo attr = ec.getDb().get(fs.getDrAlias());
 		Connection conn = null;
 		PreparedStatement preparedStatement = null;
 		ResultSet resultSet = null;

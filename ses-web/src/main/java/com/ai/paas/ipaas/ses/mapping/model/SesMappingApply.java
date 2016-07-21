@@ -1,5 +1,6 @@
 package com.ai.paas.ipaas.ses.mapping.model;
 
+import java.io.Serializable;
 
 /**
  * 创建mapping入参
@@ -7,7 +8,7 @@ package com.ai.paas.ipaas.ses.mapping.model;
  * @author jianhua.ma
  * @version
  */
-public class SesMappingApply  {
+public class SesMappingApply implements Serializable {
 
 	private static final long serialVersionUID = -7276753137909397154L;
 	private String userId;
@@ -53,8 +54,8 @@ public class SesMappingApply  {
 	/**
 	 * userId.
 	 *
-	 * @return  the userId
-	 * @since   JDK 1.7
+	 * @return the userId
+	 * @since JDK 1.7
 	 */
 	public String getUserId() {
 		return userId;
@@ -63,8 +64,9 @@ public class SesMappingApply  {
 	/**
 	 * userId.
 	 *
-	 * @param   userId    the userId to set
-	 * @since   JDK 1.7
+	 * @param userId
+	 *            the userId to set
+	 * @since JDK 1.7
 	 */
 	public void setUserId(String userId) {
 		this.userId = userId;
@@ -73,8 +75,8 @@ public class SesMappingApply  {
 	/**
 	 * serviceId.
 	 *
-	 * @return  the serviceId
-	 * @since   JDK 1.7
+	 * @return the serviceId
+	 * @since JDK 1.7
 	 */
 	public String getServiceId() {
 		return serviceId;
@@ -83,8 +85,9 @@ public class SesMappingApply  {
 	/**
 	 * serviceId.
 	 *
-	 * @param   serviceId    the serviceId to set
-	 * @since   JDK 1.7
+	 * @param serviceId
+	 *            the serviceId to set
+	 * @since JDK 1.7
 	 */
 	public void setServiceId(String serviceId) {
 		this.serviceId = serviceId;
@@ -93,8 +96,8 @@ public class SesMappingApply  {
 	/**
 	 * copyto.
 	 *
-	 * @return  the copyto
-	 * @since   JDK 1.7
+	 * @return the copyto
+	 * @since JDK 1.7
 	 */
 	public String getCopyto() {
 		return copyto;
@@ -103,8 +106,9 @@ public class SesMappingApply  {
 	/**
 	 * copyto.
 	 *
-	 * @param   copyto    the copyto to set
-	 * @since   JDK 1.7
+	 * @param copyto
+	 *            the copyto to set
+	 * @since JDK 1.7
 	 */
 	public void setCopyto(String copyto) {
 		this.copyto = copyto;

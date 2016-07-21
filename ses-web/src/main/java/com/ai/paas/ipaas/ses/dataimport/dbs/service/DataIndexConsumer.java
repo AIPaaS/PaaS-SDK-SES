@@ -53,7 +53,7 @@ public class DataIndexConsumer implements Runnable {
 				}
 
 				if (dataTemp.size() >= commitSize) {
-					is.bulkInsertData(dataTemp);
+					is.bulkInsert(dataTemp);
 					total += dataTemp.size();
 					dataTemp.clear();
 				}
@@ -75,7 +75,7 @@ public class DataIndexConsumer implements Runnable {
 		// 把最后的提交
 		try {
 			if (null != dataTemp && !dataTemp.isEmpty()) {
-				is.bulkInsertData(dataTemp);
+				is.bulkInsert(dataTemp);
 				total += dataTemp.size();
 				dataTemp.clear();
 			}

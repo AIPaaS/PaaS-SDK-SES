@@ -2,116 +2,105 @@ package com.ai.paas.ipaas.ses.dataimport.dbs.config;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import com.ai.paas.ipaas.ses.dataimport.model.DataBaseAttr;
-import com.ai.paas.ipaas.ses.dataimport.model.DataSql;
-import com.ai.paas.ipaas.ses.dataimport.model.FiledSql;
 import com.ai.paas.ipaas.ses.dataimport.model.LineMapParam;
+import com.ai.paas.ipaas.vo.ses.SesDataSourceInfo;
+import com.ai.paas.ipaas.vo.ses.SesIndexFiledSql;
+import com.ai.paas.ipaas.vo.ses.SesIndexSqlInfo;
 
-/**
- * Export format config
- * Created by gaoht on 15/6/9.
- */
-public class ExportFormatConfig extends FormatConfig{
+public class ExportFormatConfig extends FormatConfig {
 
-    private String[] tables;
+	private String[] tables;
 
-    private String targetPath;
-    
-    //liwx3 add
-    private DataSql dataSql;
-    private List<DataBaseAttr> dataBaseAttrs;
-    
-    //alias--db
-    private Map<String,DataBaseAttr> db;
-    //alias--sql
-    private Map<String,FiledSql> filedSql;
-    //palias.filed--filesSql.alias
-//    private Map<String,String> sqlRalitions;
-    //palias.filed--indexSql.alias
-//    private Map<String,String> indexSqlRalitions;
-    
-    
-    
-    //a.f--filedsql
-    private Map<String,List<FiledSql>> afIndexFiledSqls;
-    //pa.f--a.f
-//    private Map<String,List<String>> pafIndexAfs;
-    
-    //a.f--filedsql （roles.roleId -- memuSql）
-    private Map<String,List<FiledSql>> afFiledSqls;
-    //pa.f--a.f
-    private Map<String,List<String>> pafAfs;
-    
+	private String targetPath;
 
-    //a.b as c   -->  a.c--b    2015-11-17 
-    private Map<String,String> tableFileds;
-    
-    
-    //mapping中的Object
-    private List<LineMapParam> lineMapParams;
-    private boolean hasObj;
-    
-    private String sesUserInfo;
-    private int type;
-    
-    
+	// liwx3 add
+	private SesIndexSqlInfo dataSql;
+	private List<SesDataSourceInfo> dataBaseAttrs;
 
-    public String[] getTables() {
-        return tables;
-    }
+	// alias--db
+	private Map<String, SesDataSourceInfo> db;
+	// alias--sql
+	private Map<String, SesIndexFiledSql> filedSql;
+	// palias.filed--filesSql.alias
+	// private Map<String,String> sqlRalitions;
+	// palias.filed--indexSql.alias
+	// private Map<String,String> indexSqlRalitions;
 
-    public void setTables(String tables) {
-        this.tables = tables.split(",");
-    }
+	// a.f--filedsql
+	private Map<String, List<SesIndexFiledSql>> afIndexFiledSqls;
+	// pa.f--a.f
+	// private Map<String,List<String>> pafIndexAfs;
 
-    public String getTargetPath() {
-        return targetPath;
-    }
+	// a.f--filedsql （roles.roleId -- memuSql）
+	private Map<String, List<SesIndexFiledSql>> afFiledSqls;
+	// pa.f--a.f
+	private Map<String, List<String>> pafAfs;
 
-    public void setTargetPath(String targetPath) {
-        this.targetPath = targetPath;
-    }
+	// a.b as c --> a.c--b 2015-11-17
+	private Map<String, String> tableFileds;
 
-	public DataSql getDataSql() {
+	// mapping中的Object
+	private List<LineMapParam> lineMapParams;
+	@SuppressWarnings("unused")
+	private boolean hasObj;
+
+	private String sesUserInfo;
+	private int type;
+
+	public String[] getTables() {
+		return tables;
+	}
+
+	public void setTables(String tables) {
+		this.tables = tables.split(",");
+	}
+
+	public String getTargetPath() {
+		return targetPath;
+	}
+
+	public void setTargetPath(String targetPath) {
+		this.targetPath = targetPath;
+	}
+
+	public SesIndexSqlInfo getDataSql() {
 		return dataSql;
 	}
 
-	public void setDataSql(DataSql dataSql) {
+	public void setDataSql(SesIndexSqlInfo dataSql) {
 		this.dataSql = dataSql;
 	}
 
-	public List<DataBaseAttr> getDataBaseAttrs() {
+	public List<SesDataSourceInfo> getDataBaseAttrs() {
 		return dataBaseAttrs;
 	}
 
-	public void setDataBaseAttrs(List<DataBaseAttr> dataBaseAttrs) {
+	public void setDataBaseAttrs(List<SesDataSourceInfo> dataBaseAttrs) {
 		this.dataBaseAttrs = dataBaseAttrs;
 	}
 
-	public Map<String, DataBaseAttr> getDb() {
+	public Map<String, SesDataSourceInfo> getDb() {
 		return db;
 	}
 
-	public void setDb(Map<String, DataBaseAttr> db) {
+	public void setDb(Map<String, SesDataSourceInfo> db) {
 		this.db = db;
 	}
 
-	public Map<String, FiledSql> getFiledSql() {
+	public Map<String, SesIndexFiledSql> getFiledSql() {
 		return filedSql;
 	}
 
-	public void setFiledSql(Map<String, FiledSql> filedSql) {
+	public void setFiledSql(Map<String, SesIndexFiledSql> filedSql) {
 		this.filedSql = filedSql;
 	}
 
-
-	public Map<String, List<FiledSql>> getAfFiledSqls() {
+	public Map<String, List<SesIndexFiledSql>> getAfFiledSqls() {
 		return afFiledSqls;
 	}
 
-	public void setAfFiledSqls(Map<String, List<FiledSql>> afFiledSqls) {
+	public void setAfFiledSqls(Map<String, List<SesIndexFiledSql>> afFiledSqls) {
 		this.afFiledSqls = afFiledSqls;
 	}
 
@@ -123,14 +112,15 @@ public class ExportFormatConfig extends FormatConfig{
 		this.pafAfs = pafAfs;
 	}
 
-	public Map<String, List<FiledSql>> getAfIndexFiledSqls() {
+	public Map<String, List<SesIndexFiledSql>> getAfIndexFiledSqls() {
 		return afIndexFiledSqls;
 	}
 
-	public void setAfIndexFiledSqls(Map<String, List<FiledSql>> afIndexFiledSqls) {
+	public void setAfIndexFiledSqls(
+			Map<String, List<SesIndexFiledSql>> afIndexFiledSqls) {
 		this.afIndexFiledSqls = afIndexFiledSqls;
 	}
-	
+
 	public Map<String, String> getTableFileds() {
 		return tableFileds;
 	}
@@ -164,7 +154,7 @@ public class ExportFormatConfig extends FormatConfig{
 	}
 
 	public boolean isHasObj() {
-		if(lineMapParams==null||lineMapParams.isEmpty())
+		if (lineMapParams == null || lineMapParams.isEmpty())
 			return false;
 		return true;
 	}
@@ -173,6 +163,4 @@ public class ExportFormatConfig extends FormatConfig{
 		this.hasObj = hasObj;
 	}
 
-    
-    
 }

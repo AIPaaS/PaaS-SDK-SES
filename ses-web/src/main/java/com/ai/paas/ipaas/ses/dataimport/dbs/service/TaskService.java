@@ -42,7 +42,7 @@ public class TaskService {
 		final Result result = new Result();
 		
 		ISearchClient is = SesUtil.getSesClient(exportFormatConfig.getSesUserInfo());
-		is.cleanData();
+		is.clean();
 		
 		
 		for (String dbName : config.getLogicDbMap().keySet()) {

@@ -2,7 +2,6 @@ package com.ai.paas.ipaas.ses.dataimport.model;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class LineMapParam {
@@ -58,12 +57,14 @@ public class LineMapParam {
 	public void setCv(String cv) {
 		this.cv = cv;
 	}
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void put(String key,Object value){
 		if(!isMany&&rs instanceof HashMap){
 			HashMap map = (HashMap) rs;
 			map.put(key, value);
 		}
 	}
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public void add(Map map,String cv){
 		if(isMany&&rs instanceof ArrayList){
 			ArrayList lists = (ArrayList) rs;

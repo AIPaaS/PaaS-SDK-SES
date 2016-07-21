@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.slf4j.Logger;
@@ -71,6 +70,7 @@ public class LoginController {
 	}
 	
 	
+	@SuppressWarnings("unchecked")
 	@ResponseBody
 	@RequestMapping(value = "/login")
 	public Map<String, Object> login(HttpServletRequest request) {

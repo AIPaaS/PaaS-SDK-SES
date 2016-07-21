@@ -25,13 +25,13 @@ import com.ai.paas.ipaas.ses.dataimport.dbs.config.ExportFormatConfig;
 import com.ai.paas.ipaas.ses.dataimport.dbs.config.TableRuleConfig;
 import com.ai.paas.ipaas.ses.dataimport.dbs.config.TableRuleConfig.LogicDb;
 import com.ai.paas.ipaas.ses.dataimport.impt.model.Result;
-import com.ai.paas.ipaas.ses.dataimport.model.DataBaseAttr;
-import com.ai.paas.ipaas.ses.dataimport.model.FiledSql;
 import com.ai.paas.ipaas.ses.dataimport.model.LineMapParam;
 import com.ai.paas.ipaas.ses.dataimport.util.GsonUtil;
 import com.ai.paas.ipaas.ses.dataimport.util.JdbcUtil;
 import com.ai.paas.ipaas.ses.dataimport.util.ParamUtil;
 import com.ai.paas.ipaas.txs.dtm.TransactionContext;
+import com.ai.paas.ipaas.vo.ses.SesDataSourceInfo;
+import com.ai.paas.ipaas.vo.ses.SesIndexFiledSql;
 
 /**
  * PairTask调度
@@ -56,9 +56,6 @@ private static final Logger log = LoggerFactory.getLogger(ExtractAndImportTask.c
 	private int count=0;
 
 	
-	private ExtractAndImportTask(){
-		
-	}
 	
 	public ExtractAndImportTask(final TableRuleConfig.LogicDb logicDb,
 			final ExportFormatConfig ec,final TableRuleConfig.TablePair tablePair,
@@ -96,7 +93,7 @@ private static final Logger log = LoggerFactory.getLogger(ExtractAndImportTask.c
 		ResultSet rs = null;
 		int totalNum = 0;
 		try {
-			DataBaseAttr attr = ec.getDb().get(ec.getDataSql().getPrimarySql().getDrAlias());
+			SesDataSourceInfo attr = ec.getDb().get(ec.getDataSql().getPrimarySql().getDrAlias());
 			conn = JdbcUtil.getConnection(attr);
 			if (conn == null ) {
 		        throw new Exception("Connection is null.");
@@ -305,6 +302,7 @@ private static final Logger log = LoggerFactory.getLogger(ExtractAndImportTask.c
 		private String sql;
 		private String oSql;
 		private CountDownLatch taskLatch;
+		@SuppressWarnings("unused")
 		private ExtractImTask(){}
 		public ExtractImTask(int totalNum,int threadNum,int pageSize,int num,
 				String sql,String oSql,CountDownLatch taskLatch){
@@ -336,7 +334,7 @@ private static final Logger log = LoggerFactory.getLogger(ExtractAndImportTask.c
 			ResultSet rs = null;
 			try {
 		    	if(ec.getType()==SesDataImportConstants.COMMON_DB_TYPE){
-		    		DataBaseAttr attr = ec.getDb().get(ec.getDataSql().getPrimarySql().getDrAlias());
+		    		SesDataSourceInfo attr = ec.getDb().get(ec.getDataSql().getPrimarySql().getDrAlias());
 					conn = JdbcUtil.getConnection(attr);
 		    	}else{
 		    		conn = ConnectionFactory.getConn(logicDb.masterUrl);
@@ -374,8 +372,8 @@ private static final Logger log = LoggerFactory.getLogger(ExtractAndImportTask.c
 							String af = ec.getDataSql().getPrimarySql().getAlias()+"."+cn;
 											
 				    		if(ec.getAfFiledSqls().containsKey(af)){
-				    			List<FiledSql> fss = ec.getAfFiledSqls().get(af);
-				    			for(FiledSql fs:fss){
+				    			List<SesIndexFiledSql> fss = ec.getAfFiledSqls().get(af);
+				    			for(SesIndexFiledSql fs:fss){
 				    				log.debug("---------pri-------cv--{}-------",cv);
 				    				if(fs.isMapObj()){
 				    					getFiledValue(datas,fs,cn,cv,af,getlineBean(af,fs.getAlias(),true,false));
@@ -393,13 +391,13 @@ private static final Logger log = LoggerFactory.getLogger(ExtractAndImportTask.c
 
 						values.add(GsonUtil.objToGson(datas));
 						if(values.size()>=1024){
-							is.bulkInsertData(values);
+							is.bulkInsert(values);
 							result.addSucTotal(values.size());
 							values.clear();
 						}
 					}
 					if(!values.isEmpty()){
-						is.bulkInsertData(values);
+						is.bulkInsert(values);
 						result.addSucTotal(values.size());
 						values.clear();
 					}
@@ -439,6 +437,7 @@ private static final Logger log = LoggerFactory.getLogger(ExtractAndImportTask.c
 
 		}
 		
+		@SuppressWarnings({ "unchecked", "rawtypes" })
 		private void packDatas(Map<String, Object> datas,
 				List<LineMapParam> lineMapParams) {
 			if (lineMapParams != null && lineMapParams.size() > 0) {
@@ -584,11 +583,11 @@ private static final Logger log = LoggerFactory.getLogger(ExtractAndImportTask.c
 		}
 		
 		@SuppressWarnings({ "unchecked", "rawtypes" })
-		private void getFiledValue(Map datas, FiledSql fs, String cn, String cv,
+		private void getFiledValue(Map datas, SesIndexFiledSql fs, String cn, String cv,
 				String af,LineMapParam line) throws Exception {
 			log.debug("-----getFiledValue-------------count-{}---af {}---",count++,af);
 
-			DataBaseAttr attr = ec.getDb().get(fs.getDrAlias());
+			SesDataSourceInfo attr = ec.getDb().get(fs.getDrAlias());
 			Connection conn = null;
 			PreparedStatement preparedStatement = null;
 			ResultSet resultSet = null;
@@ -607,7 +606,6 @@ private static final Logger log = LoggerFactory.getLogger(ExtractAndImportTask.c
 				if (SesDataImportConstants.DBS_DB_TYPE==attr.getType()&&attr.isHaveTXS())
 					TransactionContext.initVisualContext();
 				conn = JdbcUtil.getConnection(attr);
-				//TODO
 				String temp = fs.getSql()
 						.toLowerCase().replace(af, "?");
             	log.debug("-------getFiledValue sql----{}---cv-{}--",temp,cv);
@@ -655,8 +653,8 @@ private static final Logger log = LoggerFactory.getLogger(ExtractAndImportTask.c
 						
 						if(fs.isMapObj()&&line!=null){
 							if(ec.getAfFiledSqls().containsKey(saf)){
-				    			List<FiledSql> fss = ec.getAfFiledSqls().get(saf);
-				    			for(FiledSql ffs:fss){
+				    			List<SesIndexFiledSql> fss = ec.getAfFiledSqls().get(saf);
+				    			for(SesIndexFiledSql ffs:fss){
 									tempCount++;
 				    				log.debug("---------file-------rcv--{}-----saf--{}----af--{}"
 				    						+ "--nextNewLine-{}--",rcv,saf,af,nextNewLine);
@@ -713,9 +711,10 @@ private static final Logger log = LoggerFactory.getLogger(ExtractAndImportTask.c
 		private String getLocalFiled(String alias) {
 			return alias.contains(".")?alias.substring(alias.lastIndexOf(".")+1):alias;
 		}
-		private void getFiledValueUseIndex(Map datas, FiledSql fs, String cn,
+		@SuppressWarnings({ "unused", "rawtypes" })
+		private void getFiledValueUseIndex(Map datas, SesIndexFiledSql fs, String cn,
 				String cv, String af) throws Exception {
-			DataBaseAttr attr = ec.getDb().get(fs.getDrAlias());
+			SesDataSourceInfo attr = ec.getDb().get(fs.getDrAlias());
 			Connection conn = null;
 			PreparedStatement preparedStatement = null;
 			ResultSet resultSet = null;

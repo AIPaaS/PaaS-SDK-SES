@@ -21,26 +21,26 @@ import org.slf4j.LoggerFactory;
 import com.ai.paas.ipaas.search.service.ISearchClient;
 import com.ai.paas.ipaas.ses.dataimport.constant.SesDataImportConstants;
 import com.ai.paas.ipaas.ses.dataimport.impt.model.Result;
-import com.ai.paas.ipaas.ses.dataimport.model.DataBaseAttr;
-import com.ai.paas.ipaas.ses.dataimport.model.DataSql;
 import com.ai.paas.ipaas.ses.dataimport.util.ConfUtil;
 import com.ai.paas.ipaas.ses.dataimport.util.GsonUtil;
 import com.ai.paas.ipaas.ses.dataimport.util.ImportUtil;
 import com.ai.paas.ipaas.ses.dataimport.util.JdbcUtil;
 import com.ai.paas.ipaas.ses.dataimport.util.SesUtil;
 import com.ai.paas.ipaas.ses.dataimport.util.SqlUtil;
+import com.ai.paas.ipaas.vo.ses.SesDataSourceInfo;
+import com.ai.paas.ipaas.vo.ses.SesIndexSqlInfo;
 
 public class OneDbImport {
 	private static final Logger log = LoggerFactory.getLogger(OneDbImport.class);
 	private String sesUserInfo;
-	private DataBaseAttr db;
-	private DataSql dataSql;
+	private SesDataSourceInfo db;
+	private SesIndexSqlInfo dataSql;
 	private Result result;
 	private ISearchClient is;
 	private SimpleDateFormat dateFormat_hms = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 	
-	public OneDbImport(String sesUserInfo,DataBaseAttr db,DataSql dataSql){
+	public OneDbImport(String sesUserInfo,SesDataSourceInfo db,SesIndexSqlInfo dataSql){
 		this.dataSql = dataSql;
 		this.db = db;
 		this.sesUserInfo = sesUserInfo;
@@ -152,6 +152,7 @@ public class OneDbImport {
 		private int totalNum;
 		private String sql;
 		private CountDownLatch taskLatch;
+		@SuppressWarnings("unused")
 		private ExtractImTask(){}
 		public ExtractImTask(int totalNum,int threadNum,int pageSize,int num,
 				String sql,CountDownLatch taskLatch){
@@ -207,13 +208,13 @@ public class OneDbImport {
 			            }
 						values.add(GsonUtil.objToGson(datas));
 						if(values.size()>=1024){
-							is.bulkInsertData(values);
+							is.bulkInsert(values);
 							result.addSucTotal(values.size());
 							values.clear();
 						}
 					}
 					if(!values.isEmpty()){
-						is.bulkInsertData(values);
+						is.bulkInsert(values);
 						result.addSucTotal(values.size());
 						values.clear();
 					}

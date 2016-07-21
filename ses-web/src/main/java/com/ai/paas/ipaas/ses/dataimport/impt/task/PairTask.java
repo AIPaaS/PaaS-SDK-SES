@@ -33,9 +33,6 @@ public class PairTask implements Runnable {
 	private ISearchClient is;
 
 	
-	private PairTask(){
-		
-	}
 	
 	public PairTask(final TableRuleConfig.LogicDb logicDb,
 			final ExportFormatConfig ec,final TableRuleConfig.TablePair tablePair,

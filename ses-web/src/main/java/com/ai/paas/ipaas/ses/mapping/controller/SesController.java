@@ -1,6 +1,5 @@
 package com.ai.paas.ipaas.ses.mapping.controller;
 
-
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,29 +16,31 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.ai.paas.ipaas.PaasException;
 import com.ai.paas.ipaas.ses.common.constants.SesConstants;
-import com.ai.paas.ipaas.ses.dao.mapper.bo.SesUserMapping;
 import com.ai.paas.ipaas.ses.dataimport.util.ConfUtil;
-import com.ai.paas.ipaas.ses.dataimport.util.HttpClientUtil;
 import com.ai.paas.ipaas.ses.dataimport.util.ParamUtil;
+import com.ai.paas.ipaas.ses.manage.rest.interfaces.IIndexMapping;
 import com.ai.paas.ipaas.ses.mapping.model.SesMappingApply;
-import com.ai.paas.ipaas.ses.mapping.service.IMappingService;
+import com.ai.paas.ipaas.util.HttpUtil;
+import com.ai.paas.ipaas.vo.ses.SesUserMapping;
 import com.google.gson.Gson;
 
 @Controller
 @RequestMapping(value = "/ses")
 public class SesController {
-	private static final transient Logger LOGGER = LoggerFactory.getLogger(SesController.class);
+	private static final transient Logger LOGGER = LoggerFactory
+			.getLogger(SesController.class);
 	@Autowired
-	IMappingService iMappingService;
-	
+	IIndexMapping indexMappingSRV;
+
 	@RequestMapping(value = "/mapping")
-	public String mapping(ModelMap model,HttpServletRequest request) {
-		String userId =  ParamUtil.getUser(request).get("userId");
-		String serviceId =  ParamUtil.getUser(request).get("sid");
+	public String mapping(ModelMap model, HttpServletRequest request) {
+		String userId = ParamUtil.getUser(request).get("userId");
+		String serviceId = ParamUtil.getUser(request).get("sid");
 		model.addAttribute("serviceId", serviceId);
 		String mappingKey = "mapping";
 		try {
-			SesUserMapping mapping = iMappingService.loadMapping(userId, serviceId);
+			SesUserMapping mapping = indexMappingSRV.loadMapping(userId,
+					serviceId);
 			model.addAttribute("indexDisplay", mapping.getIndexDisplay());
 			model.addAttribute("updateTime", mapping.getUpdateTime());
 		} catch (PaasException e) {
@@ -48,15 +49,17 @@ public class SesController {
 		}
 		return "/mapping/mapping";
 	}
+
 	@RequestMapping(value = "/assembleMapping")
-	public String assembleMapping(ModelMap model,HttpServletRequest request) {
-		String userId =  ParamUtil.getUser(request).get("userId");
-		String serviceId =  ParamUtil.getUser(request).get("sid");
+	public String assembleMapping(ModelMap model, HttpServletRequest request) {
+		String userId = ParamUtil.getUser(request).get("userId");
+		String serviceId = ParamUtil.getUser(request).get("sid");
 		model.addAttribute("serviceId", serviceId);
 		String mappingKey = "mapping";
 		try {
-			
-			SesUserMapping mapping = iMappingService.loadMapping(userId, serviceId);
+
+			SesUserMapping mapping = indexMappingSRV.loadMapping(userId,
+					serviceId);
 			model.addAttribute(mappingKey, mapping.getMapping());
 			model.addAttribute("indexDisplay", mapping.getIndexDisplay());
 			model.addAttribute("pk", mapping.getPk());
@@ -67,46 +70,47 @@ public class SesController {
 		}
 		return "/mapping/assembleMapping";
 	}
+
 	@RequestMapping(value = "/mappingSuccess")
 	public String mappingSuccess() {
 		return "/mapping/mappingSuccess";
 	}
+
 	@SuppressWarnings("unchecked")
 	@ResponseBody
 	@RequestMapping(value = "/saveMapping")
 	public String saveMapping(HttpServletRequest request) {
-		
-		String mapping =  request.getParameter("mapping");
+
+		String mapping = request.getParameter("mapping");
 		String userId = ParamUtil.getUser(request).get("userId");
-		String serviceId =  ParamUtil.getUser(request).get("sid");
-		String pk =  request.getParameter("pk");
+		String serviceId = ParamUtil.getUser(request).get("sid");
+		String pk = request.getParameter("pk");
 		String copyto = request.getParameter("copyto");
 		String assembledJson = replaceJsonForNeed(request);
-		
-		int indexName =Math.abs((userId + serviceId).hashCode());
+
+		int indexName = Math.abs((userId + serviceId).hashCode());
 		Map<String, Object> properties = new HashMap<String, Object>();
-		properties =new  Gson().fromJson(assembledJson, properties.getClass());
+		properties = new Gson().fromJson(assembledJson, properties.getClass());
 		Map<String, Object> mappingMap = new HashMap<String, Object>();
 		mappingMap.put("dynamic", "strict");
-		
+
 		Map<String, Object> idProperties = new HashMap<String, Object>();
 		idProperties.put("path", pk);
 		mappingMap.put("_id", idProperties);
-		mappingMap.put("properties",properties);
+		mappingMap.put("properties", properties);
 		Map<Integer, Object> indexmappingMap = new HashMap<Integer, Object>();
 		indexmappingMap.put(indexName, mappingMap);
-		
-		
+
 		SesMappingApply apply = new SesMappingApply();
 		apply.setUserId(userId);
 		apply.setServiceId(serviceId);
 		apply.setIndexType(String.valueOf(indexName));
 		apply.setIndexName(String.valueOf(indexName));
-		apply.setMapping(new  Gson().toJson(indexmappingMap));
+		apply.setMapping(new Gson().toJson(indexmappingMap));
 		apply.setCopyto(copyto);
-		
-		String json = new  Gson().toJson(apply);
-		LOGGER.debug("创建mapping json+++++++"+json,json);
+		Gson gson = new Gson();
+		String json = gson.toJson(apply);
+		LOGGER.debug("创建mapping json+++++++" + json, json);
 		SesUserMapping userMapping = new SesUserMapping();
 		userMapping.setMapping(mapping);
 		userMapping.setUserId(userId);
@@ -116,35 +120,43 @@ public class SesController {
 		userMapping.setUpdateTime(new Timestamp(System.currentTimeMillis()));
 		userMapping.setCopyTo(copyto);
 		String result = "";
-		
+
 		try {
-			
-			iMappingService.insertMapping(userMapping);
-			result = HttpClientUtil.sendPostRequest(ConfUtil.getProperty("SES_MAPPING_URL"),json);
-			
+
+			indexMappingSRV.insertMapping(userMapping);
+			result = HttpUtil.doPost(ConfUtil.getProperty("SES_MAPPING_URL"),
+					gson.fromJson(json, Map.class));
+
 		} catch (Exception e) {
 			LOGGER.error(SesConstants.ExecResult.FAIL, e);
-			return "{\"resultCode\":\"99999\",\"MSG\":\""+e+"\"}";
+			return "{\"resultCode\":\"99999\",\"MSG\":\"" + e + "\"}";
 		}
 		return result;
 	}
+
 	private String replaceJsonForNeed(HttpServletRequest request) {
 		String userId = ParamUtil.getUser(request).get("userId");
-		String serviceId =  ParamUtil.getUser(request).get("sid");
+		String serviceId = ParamUtil.getUser(request).get("sid");
 		String assembledJson = request.getParameter("assembledJson");
-		assembledJson = assembledJson.replaceAll("\"analyze\":true", "\"indexAnalyzer\":\"ik_tt_"+userId+"_"+serviceId+"\",\"searchAnalyzer\":\"ik_tt_"+userId+"_"+serviceId+"\"");
+		assembledJson = assembledJson.replaceAll("\"analyze\":true",
+				"\"indexAnalyzer\":\"ik_tt_" + userId + "_" + serviceId
+						+ "\",\"searchAnalyzer\":\"ik_tt_" + userId + "_"
+						+ serviceId + "\"");
 		assembledJson = assembledJson.replaceAll("\"analyze\":false,", "");
 		assembledJson = assembledJson.replaceAll("\"index\":true,", "");
-		assembledJson = assembledJson.replaceAll("\"index\":false", "\"index\":no");
+		assembledJson = assembledJson.replaceAll("\"index\":false",
+				"\"index\":no");
 		return assembledJson;
 	}
+
 	public static void main(String[] args) {
 		String json = "{\"newKey\":{\"type\":\"string\",\"index\":true,\"analyze\":false,\"store\":true},\"newKey1\":{\"field-name\":{\"type\":\"integer\",\"index\":true,\"analyze\":true,\"store\":true},\"copy_to\":[\"ee\"]},\"ee\":{\"type\":\"string\"}}";
-		json = json.replaceAll("\"analyze\":true", "\"indexAnalyzer\":\"ik\",\"searchAnalyzer\":\"ik\"");
+		json = json.replaceAll("\"analyze\":true",
+				"\"indexAnalyzer\":\"ik\",\"searchAnalyzer\":\"ik\"");
 		json = json.replaceAll("\"analyze\":false,", "");
 		json = json.replaceAll("\"index\":true,", "");
 		json = json.replaceAll("\"index\":false", "\"index\":no");
 		System.out.println(json);
 	}
-	
+
 }

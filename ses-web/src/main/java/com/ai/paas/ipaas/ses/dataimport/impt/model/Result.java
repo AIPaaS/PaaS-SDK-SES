@@ -4,7 +4,6 @@ import java.util.Iterator;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.TransferQueue;
 
-import com.ai.paas.ipaas.ses.dataimport.util.DateUtil;
 
 public class Result {
 	//异常记录

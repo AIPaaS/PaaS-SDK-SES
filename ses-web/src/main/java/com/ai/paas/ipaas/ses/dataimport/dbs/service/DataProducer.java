@@ -3,11 +3,6 @@ package com.ai.paas.ipaas.ses.dataimport.dbs.service;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TransferQueue;
 
@@ -20,9 +15,8 @@ import com.ai.paas.ipaas.ses.dataimport.dbs.config.ExportFormatConfig;
 import com.ai.paas.ipaas.ses.dataimport.dbs.config.TableRuleConfig;
 import com.ai.paas.ipaas.ses.dataimport.dbs.config.TableRuleConfig.LogicDb;
 import com.ai.paas.ipaas.ses.dataimport.impt.model.Result;
-import com.ai.paas.ipaas.ses.dataimport.model.DataSql;
-import com.ai.paas.ipaas.ses.dataimport.util.GsonUtil;
 import com.ai.paas.ipaas.ses.dataimport.util.ParamUtil;
+import com.ai.paas.ipaas.vo.ses.SesIndexSqlInfo;
 import com.mysql.jdbc.Statement;
 
 public class DataProducer implements Runnable{
@@ -175,7 +169,8 @@ public class DataProducer implements Runnable{
 				}
 			}
 			statement = (Statement) conn.createStatement();
-			DataSql dataSql = ec.getDataSql();
+			SesIndexSqlInfo dataSql = ec.getDataSql();
+			@SuppressWarnings("unused")
 			String priKey = dataSql.getPrimarySql().getPrimaryKey();
 			rs = statement.executeQuery(getSql(rowNum, threadNum,totalNum,i,sql));
 			StringBuffer data = new StringBuffer();
