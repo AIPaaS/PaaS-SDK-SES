@@ -97,7 +97,7 @@ public class SearchClientFactory {
 				authResult.getConfigPasswd()).get(
 						SEARCH_CONFIG_PATH + srvId + "/indexPK", watch);
 		String id = null;
-		if (StringUtil.isBlank(idConf)) {
+		if (!StringUtil.isBlank(idConf)) {
 			JsonObject idObj = gson.fromJson(idConf, JsonObject.class);
 			id = null != idObj.get("indexPK") ? idObj.get("indexPK")
 					.getAsString() : null;
