@@ -1039,4 +1039,10 @@ public class SearchClientImpl implements ISearchClient {
 				clazz);
 	}
 
+	@Override
+	public void close() {
+		if (null != client)
+			client.close();
+	}
+
 }

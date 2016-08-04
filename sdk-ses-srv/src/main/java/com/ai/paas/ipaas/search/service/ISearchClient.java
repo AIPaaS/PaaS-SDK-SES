@@ -509,4 +509,9 @@ public interface ISearchClient {
 	 */
 	public boolean refresh();
 
+	
+	/**
+	 * 关闭
+	 */
+	public void close();
 }
