@@ -18,6 +18,7 @@ import com.ai.paas.ipaas.uac.service.UserClientFactory;
 import com.ai.paas.ipaas.uac.vo.AuthDescriptor;
 import com.ai.paas.ipaas.uac.vo.AuthResult;
 import com.ai.paas.ipaas.util.Assert;
+import com.ai.paas.ipaas.util.StringUtil;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
@@ -90,13 +91,18 @@ public class SearchClientFactory {
 				.fromJson((String) map.get("mapping"), JsonObject.class)
 				.get(indexName).getAsJsonObject().get("properties")
 				.getAsJsonObject();
-
-		JsonObject idObj = gson
-				.fromJson((String) map.get("mapping"), JsonObject.class)
-				.get(indexName).getAsJsonObject().get("_id").getAsJsonObject();
-
-		iSearchClient = new SearchClientImpl(hosts, indexName, properties,
-				idObj.get("path").toString().replaceAll("\"", ""));
+		// 这里得改变了
+		String idConf = CCSComponentFactory.getConfigClient(
+				authResult.getConfigAddr(), authResult.getConfigUser(),
+				authResult.getConfigPasswd()).get(
+						SEARCH_CONFIG_PATH + srvId + "/indexPK", watch);
+		String id = null;
+		if (StringUtil.isBlank(idConf)) {
+			JsonObject idObj = gson.fromJson(idConf, JsonObject.class);
+			id = null != idObj.get("indexPK") ? idObj.get("indexPK")
+					.getAsString() : null;
+		}
+		iSearchClient = new SearchClientImpl(hosts, indexName, properties, id);
 		searchClients.put(userPid + "_" + srvId, iSearchClient);
 		return iSearchClient;
 	}
