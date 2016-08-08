@@ -48,6 +48,8 @@ public class SearchClientFactory {
 		String userPid = ad.getPid();
 		if (searchClients.containsKey(userPid + "_" + srvId)) {
 			iSearchClient = searchClients.get(userPid + "_" + srvId);
+			// 这里要做个重新初始化
+			((SearchClientImpl) iSearchClient).initClient();
 			return iSearchClient;
 		}
 		AuthResult authResult = UserClientFactory.getUserClient().auth(ad);
@@ -95,7 +97,7 @@ public class SearchClientFactory {
 		String idConf = CCSComponentFactory.getConfigClient(
 				authResult.getConfigAddr(), authResult.getConfigUser(),
 				authResult.getConfigPasswd()).get(
-						SEARCH_CONFIG_PATH + srvId + "/indexPK", watch);
+				SEARCH_CONFIG_PATH + srvId + "/indexPK", watch);
 		String id = null;
 		if (!StringUtil.isBlank(idConf)) {
 			JsonObject idObj = gson.fromJson(idConf, JsonObject.class);
@@ -158,13 +160,18 @@ public class SearchClientFactory {
 									JsonObject.class).get(indexName)
 							.getAsJsonObject().get("properties")
 							.getAsJsonObject();
-					JsonObject idObj = gson
-							.fromJson((String) map.get("mapping"),
-									JsonObject.class).get(indexName)
-							.getAsJsonObject().get("_id").getAsJsonObject();
+					// 这里得改变了
+					String idConf = client.get(SEARCH_CONFIG_PATH + serviceId
+							+ "/indexPK", this);
+					String id = null;
+					if (!StringUtil.isBlank(idConf)) {
+						JsonObject idObj = gson.fromJson(idConf,
+								JsonObject.class);
+						id = null != idObj.get("indexPK") ? idObj
+								.get("indexPK").getAsString() : null;
+					}
 					iSearchClient = new SearchClientImpl(hosts, indexName,
-							properties, idObj.get("path").toString()
-									.replaceAll("\"", ""));
+							properties, id);
 					searchClients.put(userPid + "_" + serviceId, iSearchClient);
 
 				} catch (PaasException e) {

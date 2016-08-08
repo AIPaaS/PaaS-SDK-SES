@@ -19,6 +19,8 @@ import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsRequest;
 import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsResponse;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
+import org.elasticsearch.action.admin.indices.settings.get.GetSettingsRequest;
+import org.elasticsearch.action.admin.indices.settings.get.GetSettingsResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -76,7 +78,7 @@ public class SearchClientImpl implements ISearchClient {
 			.put("client.transport.ping_timeout", "60s")
 			.put("client.transport.sniff", "true")
 			.put("client.transport.ignore_cluster_name", "true").build();
-
+	private String hosts = null;
 	// 创建私有对象
 	private TransportClient client;
 
@@ -85,6 +87,11 @@ public class SearchClientImpl implements ISearchClient {
 		this.indexName = indexName;
 		this.mapping = mapping;
 		_id = id;
+		this.hosts = hosts;
+		initClient();
+	}
+
+	public void initClient() {
 		List<String> clusterList = new ArrayList<String>();
 		try {
 			client = TransportClient.builder().settings(settings).build();
@@ -276,7 +283,11 @@ public class SearchClientImpl implements ISearchClient {
 		// 全部删除，只能清除index，然后创建？
 		// 先取出type定义
 		GetMappingsResponse mappings;
+		GetSettingsResponse settings;
 		try {
+			settings = client.admin().indices()
+					.getSettings(new GetSettingsRequest().indices(indexName))
+					.get();
 			mappings = client.admin().indices()
 					.getMappings(new GetMappingsRequest().indices(indexName))
 					.get();
@@ -293,13 +304,26 @@ public class SearchClientImpl implements ISearchClient {
 							.admin()
 							.indices()
 							.prepareCreate(indexName)
-							.setSource(
-									mappings.getMappings().get(indexName)
-											.get(indexName).source().string())
-							.get();
-					if (indexResponse.isAcknowledged())
-						return true;
-					else
+							.setSettings(
+									settings.getIndexToSettings()
+											.get(indexName)).get();
+
+					if (indexResponse.isAcknowledged()) {
+						PutMappingResponse putMappingResponse = client
+								.admin()
+								.indices()
+								.preparePutMapping()
+								.setIndices(indexName)
+								.setType(indexName)
+								.setSource(
+										mappings.getMappings().get(indexName)
+												.get(indexName).source()
+												.string()).get();
+						if (putMappingResponse.isAcknowledged())
+							return true;
+						else
+							return false;
+					} else
 						return false;
 				} else
 					return false;
@@ -1041,8 +1065,10 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public void close() {
-		if (null != client)
+		if (null != client) {
 			client.close();
+			client = null;
+		}
 	}
 
 }
