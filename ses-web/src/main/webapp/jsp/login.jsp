@@ -55,7 +55,7 @@
 					<div class="form-group w-icon">
 						<input type="text" id="userName" name="userName"
 							class="form-control input-md ng-pristine ng-untouched ng-valid"
-							placeholder="NT账号" value=""> <span
+							placeholder="注册账号" value=""> <span
 							class="fa fa-user signin-form-icon"></span>
 					</div>
 
@@ -94,7 +94,7 @@
 		<div class="container">
 			<footer>
 				<ul class="list-inline pull-left">
-					<li><a href="#">京ICP备140434342号-1</a></li>
+					<li>版权所有</li>
 				</ul>
 				<span class="pull-right-xs text-muted">© SES</span>
 				<div class="clearfix"></div>

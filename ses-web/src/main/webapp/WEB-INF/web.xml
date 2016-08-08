@@ -22,7 +22,7 @@
 		<filter-class>com.ai.paas.ipaas.ses.dataimport.filter.LoginFilter</filter-class>
 		<init-param>
 			<param-name>ignore_suffix</param-name>
-			<param-value>.map,.ico,.swf,.flv,.png,.jpg,.jpeg,.gif,.css,.js,.html,.htm</param-value>
+			<param-value>.dict,.map,.ico,.swf,.flv,.png,.jpg,.jpeg,.gif,.css,.js,.html,.htm</param-value>
 		</init-param>
 		<init-param>
 			<param-name>ignore_pages</param-name>

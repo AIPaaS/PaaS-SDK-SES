@@ -6,6 +6,8 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,11 +16,10 @@ import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.ai.paas.ipaas.PaasException;
 import com.ai.paas.ipaas.ses.common.constants.SesConstants;
 import com.ai.paas.ipaas.ses.dataimport.util.ConfUtil;
 import com.ai.paas.ipaas.ses.dataimport.util.ParamUtil;
-import com.ai.paas.ipaas.ses.manage.rest.interfaces.IIndexMapping;
+import com.ai.paas.ipaas.ses.manage.rest.interfaces.IRPCIndexMapping;
 import com.ai.paas.ipaas.ses.mapping.model.SesMappingApply;
 import com.ai.paas.ipaas.util.HttpUtil;
 import com.ai.paas.ipaas.vo.ses.SesUserMapping;
@@ -30,7 +31,7 @@ public class SesController {
 	private static final transient Logger LOGGER = LoggerFactory
 			.getLogger(SesController.class);
 	@Autowired
-	IIndexMapping indexMappingSRV;
+	IRPCIndexMapping indexMappingSRV;
 
 	@RequestMapping(value = "/mapping")
 	public String mapping(ModelMap model, HttpServletRequest request) {
@@ -43,7 +44,7 @@ public class SesController {
 					serviceId);
 			model.addAttribute("indexDisplay", mapping.getIndexDisplay());
 			model.addAttribute("updateTime", mapping.getUpdateTime());
-		} catch (PaasException e) {
+		} catch (Throwable e) {
 			model.addAttribute(mappingKey, "{}");
 			LOGGER.info(SesConstants.EXPECT_ONE_RECORD_FAIL, e);
 		}
@@ -64,7 +65,7 @@ public class SesController {
 			model.addAttribute("indexDisplay", mapping.getIndexDisplay());
 			model.addAttribute("pk", mapping.getPk());
 			model.addAttribute("copyto", mapping.getCopyTo());
-		} catch (PaasException e) {
+		} catch (Throwable e) {
 			model.addAttribute(mappingKey, "{}");
 			LOGGER.info(SesConstants.EXPECT_ONE_RECORD_FAIL, e);
 		}
@@ -84,19 +85,23 @@ public class SesController {
 		String mapping = request.getParameter("mapping");
 		String userId = ParamUtil.getUser(request).get("userId");
 		String serviceId = ParamUtil.getUser(request).get("sid");
-		String pk = request.getParameter("pk");
 		String copyto = request.getParameter("copyto");
 		String assembledJson = replaceJsonForNeed(request);
-
+		//
 		int indexName = Math.abs((userId + serviceId).hashCode());
 		Map<String, Object> properties = new HashMap<String, Object>();
 		properties = new Gson().fromJson(assembledJson, properties.getClass());
 		Map<String, Object> mappingMap = new HashMap<String, Object>();
+		if (assembledJson.indexOf("nGram_analyzer") >= 0) {
+			Map<String, Object> allProps = new HashMap<String, Object>();
+			allProps.put("analyzer", "nGram_analyzer");
+			allProps.put("search_analyzer", "ik_max_word");
+			allProps.put("term_vector", "no");
+			allProps.put("store", "false");
+			mappingMap.put("_all", allProps);
+		}
 		mappingMap.put("dynamic", "strict");
 
-		Map<String, Object> idProperties = new HashMap<String, Object>();
-		idProperties.put("path", pk);
-		mappingMap.put("_id", idProperties);
 		mappingMap.put("properties", properties);
 		Map<Integer, Object> indexmappingMap = new HashMap<Integer, Object>();
 		indexmappingMap.put(indexName, mappingMap);
@@ -124,8 +129,10 @@ public class SesController {
 		try {
 
 			indexMappingSRV.insertMapping(userMapping);
+			StringEntity dataEntity = new StringEntity(json,
+					ContentType.APPLICATION_JSON);
 			result = HttpUtil.doPost(ConfUtil.getProperty("SES_MAPPING_URL"),
-					gson.fromJson(json, Map.class));
+					dataEntity);
 
 		} catch (Exception e) {
 			LOGGER.error(SesConstants.ExecResult.FAIL, e);
@@ -135,15 +142,37 @@ public class SesController {
 	}
 
 	private String replaceJsonForNeed(HttpServletRequest request) {
-		String userId = ParamUtil.getUser(request).get("userId");
-		String serviceId = ParamUtil.getUser(request).get("sid");
 		String assembledJson = request.getParameter("assembledJson");
+		// 这里有可能需要聚合，也可能不需要，每个字段都要单独处理
+		// 怎么拆分字段,按字符串处理吧，转换成json对象也很麻烦,因为可能嵌套
+		// 先处理聚合
+		int pos = -1;
+		int start = 0;
+		pos = assembledJson.indexOf("\"agged\":true");
+		while (pos >= 0) {
+			// 先截断
+			String pre = assembledJson.substring(start, pos);
+			String pro = assembledJson.substring(pos
+					+ "\"agged\":true".length());
+			// 从pre里面找到type,然后拼接
+			int typePos = pre.indexOf("\"type\"");
+			// 还有索引也得替换掉了
+			String type = pre.substring(typePos, pre.indexOf(",", typePos));
+			pre = pre.replaceAll("\"analyze\":true",
+					"\"analyzer\":\"nGram_analyzer"
+							+ "\",\"searchAnalyzer\":\"ik_max_word" + "\"");
+			assembledJson = pre + " \"fields\": {" + "     \"raw\": {" + type
+					+ "," + "        \"index\": \"not_analyzed\"" + "     }}"
+					+ pro;
+
+			pos = assembledJson.indexOf("\"agged\":true");
+		}
 		assembledJson = assembledJson.replaceAll("\"analyze\":true",
-				"\"indexAnalyzer\":\"ik_tt_" + userId + "_" + serviceId
-						+ "\",\"searchAnalyzer\":\"ik_tt_" + userId + "_"
-						+ serviceId + "\"");
+				"\"analyzer\":\"ik_max_word"
+						+ "\",\"searchAnalyzer\":\"ik_max_word" + "\"");
 		assembledJson = assembledJson.replaceAll("\"analyze\":false,", "");
 		assembledJson = assembledJson.replaceAll("\"index\":true,", "");
+		assembledJson = assembledJson.replaceAll(",\"agged\":false", "");
 		assembledJson = assembledJson.replaceAll("\"index\":false",
 				"\"index\":no");
 		return assembledJson;

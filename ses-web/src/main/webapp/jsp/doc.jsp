@@ -30,7 +30,7 @@
 	<div class="wrapper body-inverse text-center" style="padding-top:15%;">
 			
 			<a id="wx" href="javascript:void(0);"> 
-				<img style="height: 150px; border-radius: 100%;padding-top:10px;" src="${ctx}/resources/res/images/wx.png">
+				<img style="height: 150px; border-radius: 100%;padding-top:10px;" src="${ctx}/resources/res/images/logo_login.png">
 			</a>
 			<h1>comming soon......</h1>
 	</div>

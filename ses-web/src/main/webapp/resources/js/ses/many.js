@@ -120,7 +120,7 @@ function canDbCommit(){
 }
 
 function checkDb(db){
-	var dbStr = db.split("_");
+	var dbStr = db.split("___");
 	var port = dbStr[1];
 	var sid = dbStr[2];
 	var up = $("#"+db).val().split(",,");
@@ -208,6 +208,7 @@ function checkDb(db){
 
 
 function appendDs(){
+	
 	if($("#type").val()==1){
 		var database = $("#database").val();
 		var ip = $("#ip").val();
@@ -215,12 +216,12 @@ function appendDs(){
 		var sid = $("#sid").val();
 		var username = $("#username").val();
 		var password = $("#pwd").val();
-		var dbAlias = ip+"_"+port+"_"+sid;
-		var dbId = ip.replace(/\./g, "")+"_"+port+"_"+sid;
-		
+		var dbAlias = ip+"___"+port+"___"+sid;
+		var dbId = ip.replace(/\./g, "")+"___"+port+"___"+sid;
 		if($("#tr_"+dbId).length>0){
 			$("#tr_"+dbId).remove();
 		}
+		
 		$("#dsDiv").show();
 		var up = ip+",,"+username+",,"+password+",,"+database+",,1";
 		var dbTr='<tr ng-repeat="item in ctrl.buildflows" class="ng-scope" id="tr_'+dbId+'">'
@@ -235,8 +236,8 @@ function appendDs(){
 		var serviceId = $("#serviceId").val();
 		var servicePwd = $("#servicePwd").val();
 		var vsql = $("#vsql").val();
-		var dbAlias = user.split("@")[0]+"_"+serviceId;
-		var dbId = user.split("@")[0]+"_"+serviceId;
+		var dbAlias = user.split("@")[0]+"___"+serviceId;
+		var dbId = user.split("@")[0]+"___"+serviceId;
 		
 		if($("#tr_"+dbId).length>0){
 			$("#tr_"+dbId).remove();
@@ -254,7 +255,7 @@ function appendDs(){
 	
 }
 function editDb(db){
-	var dbStr = db.split("_");
+	var dbStr = db.split("___");
 	var port = dbStr[1];
 	var up = $("#"+db).val().split(",,");
 	if(up.length==5){
@@ -310,12 +311,12 @@ function saveDs(){
 	var overwrite = false;
 	var resV = true;
 	if($("#type").val()==1){
-		if($("#tr_"+$("#ip").val().replace(/\./g, "")+"_"+$("#port").val()+"_"+$("#sid").val()).length>0){
+		if($("#tr_"+$("#ip").val().replace(/\./g, "")+"___"+$("#port").val()+"___"+$("#sid").val()).length>0){
 			resV = confirm("datasource already exist. overwrite ?");
 			overwrite = true;
 		}
 	}else if($("#type").val()==2){
-		if($("#tr_"+$("#user").val().split("@")[0]+"_"+$("#serviceId").val()).length>0){
+		if($("#tr_"+$("#user").val().split("@")[0]+"___"+$("#serviceId").val()).length>0){
 			resV = confirm("datasource already exist. overwrite ?");
 			overwrite = true;
 		}
@@ -476,7 +477,7 @@ function checkFdralias(){
 	if($("#fdrAlias").val()==''||$("#fdrAlias").val()==-1){
 		$("#fdrAliasDiv").append('<small class="text-danger ng-binding ng-scope" ng-if="available.buildflowName" style="font-size:14px;margin-left:10px;">辅助表数据源不能为空</small>');
 	}else{
-		var fdralias = $("#fdrAlias").val().split("_");
+		var fdralias = $("#fdrAlias").val().split("___");
 		if(fdralias.length==3){
 			$("#indexDiv").hide();
 			$("#index2Div").hide();
@@ -628,7 +629,7 @@ function savePriSql(){
         	uId:$("#uId").val(),
         	alias:$("#alias").val(),
         	drAlias:$("#drAlias").find("option:selected").text(),
-        	primaryKey:$("#primaryKey").val(),
+        	isPrimary:true,
         	sql:$("#sql").val().replace(/"/g, "'"),
         	isPrimary:true
         },
@@ -736,7 +737,7 @@ function saveFSql(){
 function appedFSql(fdrAlias){
 	if(fdrAlias=="")
 		fdrAlias = $("#fdrAlias").val();
-	if(fdrAlias.split("_").length==3){
+	if(fdrAlias.split("___").length==3){
 		var mapObj = $("#mapObj").val();
 		var falias = $("#falias").val();
 		if(mapObj=="true"){
@@ -763,7 +764,7 @@ function appedFSql(fdrAlias){
 	        	+'</tr>';
 		$("#sqlTable").append(dbTr);
 		
-	}else if(fdrAlias.split("_").length==2){
+	}else if(fdrAlias.split("___").length==2){
 		var mapObj = $("#mapObj").val();
 		var falias = $("#falias").val();
 		if(mapObj=="true"){
@@ -813,7 +814,7 @@ function editFsql(falias){
 	$("#relation").val(relation);
 	$("#fsql").val(fsql);
 	$("#mapObj").val(mapObj);
-	if(fdrAlias.split("_").length==2){
+	if(fdrAlias.split("___").length==2){
 		$("#indexAlias").val(up[3]);
 		$("#indexSql").val(up[4]);
 	}
@@ -1068,4 +1069,27 @@ function ableImport(){
 	$("#imp").addClass("btn-success");
 	$("#imp").button('reset');
 
+}
+
+function startClear(){
+	var url = webPath+"/dataimport/clear";
+	$("#info").show();
+	$("#info").html("clear begin...");
+	$(document).scrollTop($(document).height() );
+	//每隔2s 获取一次进度;
+    $.ajax({
+   	 type: 'POST',
+        url: url,
+        success: function (data) {
+	       	 var resJson = eval("(" + data + ")");
+	       	 if(resJson.CODE=="000"){
+	       		 //成功
+	       		 $("#info").append("<p>").append(resJson.MSG).append("</p>");
+	       	 }else{
+	       		 //失败
+	       		 $("#info").append("<p>").append(resJson.MSG).append("</p>");
+	       	 }
+        }
+    });
+	
 }

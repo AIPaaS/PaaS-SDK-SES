@@ -71,7 +71,7 @@
 						style="border: 0; margin: 0; padding-bottom: 0;">
 						<h2>模型构建</h2>
 						<br>
-						<p>数据模型构建非常重要，只有创建了数据模型，才能进行后续的数据导入操作!</p>
+						<p>数据模型构建非常重要，只有创建了数据模型，才可以进行后续的数据导入操作!</p>
 					</div>
 				</div>
 			</div>
@@ -107,8 +107,7 @@
 								<div>
 									<p class="text-muted">
 										构建后的数据模型为json格式,我们称它为mapping,你可以按照<a href="${ctx}/doc/"
-											style="font-weight: 600;">规则</a>自己生成mapping,也可以使用我们提供的构建工具制作mapping，just
-										enjoy！
+											style="font-weight: 600;">规则</a>自己生成mapping,也可以使用我们提供的构建工具制作mapping。<Strong>要删除字段，选中字段，进行删除即可</Strong>,agged表示该字段是否需要聚合，一般用于全文索引时生成查询条件
 									</p>
 								</div>
 								<div class="form-horizontal">
@@ -160,7 +159,7 @@
 						<div id="submitInfo"></div>
 						<button id="mapping_save_btn"
 							class="btn btn-lg btn-block project-creation-btn ng-binding"
-							data-loading-text="正在创建......">开始创建</button>
+							data-loading-text="正在创建......">模型提交</button>
 
 
 					</div>
@@ -450,8 +449,8 @@
 											setTimeout(function () { $("#mapping_save_btn").button('reset'); },1000);
 											if ("000000" == code) {
 												$("#submitInfo").show("slow").removeClass("alert-fail-info").addClass("alert-success-info").html("").append("数据模型创建成功！您可以进行以下操作:   "
-												+ "<a href=\"${ctx}/dataimport/toOne\" class=\"alert-link\"><strong style=\"color: #4a89dc;\">数据导入-单库</strong></a><span style=\"margin:5px;\">/</span>"
-												+ "<a href=\"${ctx}/dataimport/toMany\" class=\"alert-link\"><strong style=\"color: #4a89dc;\">数据导入-多库</strong></a>");
+												+ "<a href=\"${ctx}/dataimport/toOne\" class=\"alert-link\"><strong style=\"color: #4a89dc;\">简单模型数据导入</strong></a><span style=\"margin:5px;\">/</span>"
+												+ "<a href=\"${ctx}/dataimport/toMany\" class=\"alert-link\"><strong style=\"color: #4a89dc;\">复杂模型数据导入</strong></a>");
 											} else {
 												$("#submitInfo").show("slow").removeClass("alert-success-info").addClass("alert-fail-info").html("").append("数据模型创建失败！错误信息：");
 												$("#submitInfo").append("<br>" + data.resultMsg);

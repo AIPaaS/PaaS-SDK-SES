@@ -23,7 +23,7 @@ public class LoginSvImpl implements ILoginService {
 	private static transient final Logger log = LoggerFactory
 			.getLogger(LoginSvImpl.class);
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings({ "rawtypes", "unchecked", "deprecation" })
 	@Override
 	public String login(HttpSession session, Map map) {
 		Map res = new HashMap();
@@ -31,10 +31,11 @@ public class LoginSvImpl implements ILoginService {
 			String userName = map.get("userName").toString();
 			String sid = map.get("sid").toString();
 			String pwd = map.get("pwd").toString();
-			String authAddr = ConfUtil.getProperty("AUTH_ADDR_URL");
+			String authAddr = ConfUtil.getProperty("AUTH_ADDR_URL")+"/check";
 			AuthDescriptor ad = new AuthDescriptor(authAddr, userName, pwd, sid);
-			AuthResult authResult = UserClientFactory.getUserClient().auth(ad);
+			AuthResult authResult = UserClientFactory.getUserClient().authUser(ad);
 			map.put("userId", authResult.getUserId());
+			map.put("pId", authResult.getPid());
 			// 设置用户信息
 			session.removeAttribute(SesDataImportConstants.WEB_USER);
 			session.setAttribute(SesDataImportConstants.WEB_USER, map);

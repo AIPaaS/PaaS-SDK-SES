@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import com.ai.paas.ipaas.PaasException;
 import com.ai.paas.ipaas.ses.common.constants.SesConstants;
 import com.ai.paas.ipaas.ses.dataimport.util.ParamUtil;
-import com.ai.paas.ipaas.ses.manage.rest.interfaces.ISesUserInst;
+import com.ai.paas.ipaas.ses.manage.rest.interfaces.IRPCSesUserInst;
 import com.ai.paas.ipaas.vo.ses.SesUserInstance;
 
 @Controller
@@ -21,7 +21,7 @@ public class OverViewController {
 	private static final transient Logger LOGGER = LoggerFactory
 			.getLogger(OverViewController.class);
 	@Autowired
-	ISesUserInst sesUserInst;
+	IRPCSesUserInst sesUserInst;
 
 	@RequestMapping(value = "/overview")
 	public String mapping(ModelMap model, HttpServletRequest request) {

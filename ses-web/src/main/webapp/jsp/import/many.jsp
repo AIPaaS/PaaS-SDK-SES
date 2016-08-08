@@ -92,7 +92,9 @@
 									onchange="changeType()">
 									<option value=-1>请选择</option>
 									<option value=1>普通数据库</option>
+									<!-- 
 									<option value=2>DBS</option>
+									 -->
 								</select>
 							</div>
 
@@ -399,8 +401,9 @@
 							type="hidden" name="uId" value="${manyds[0].uId }" id="uId" /> <input
 							type="hidden" id="primaryKey" name="primaryKey" value="id" />
 						<button type="button" data-loading-text="正在导入......"
-							class="btn btn-lg btn-block project-creation-btn ng-binding"
-							id="imp" onclick="startImport()">开始导入</button>
+							class="btn btn-default project-creation-btn ng-binding" id="imp"  onclick="startImport()">&nbsp;&nbsp;&nbsp;&nbsp;开始导入数据&nbsp;&nbsp;&nbsp;&nbsp;</button>
+						<button type="button" data-loading-text="正在清除......"
+							class="btn btn-default project-creation-btn ng-binding btn-success" id="imp"  onclick="startClear()">&nbsp;&nbsp;&nbsp;&nbsp;清除引擎数据&nbsp;&nbsp;&nbsp;&nbsp;</button>
 						<div id="info" class="biianx" style="overflow: scroll;"></div>
 					</div>
 				</div>

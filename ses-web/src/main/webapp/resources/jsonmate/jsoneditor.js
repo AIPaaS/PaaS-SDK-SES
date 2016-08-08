@@ -6,8 +6,6 @@ function track(action) {
 }
 //
 var json = JSON.parse($("#json").val());
-//{"newKey1":{"type":"string","index":true,"analyze":true,"store":true},"newKey2":{"type":"integer","index":true,"analyze":true,"store":true},"newKey":{"field-name1":{"type":"integer","index":true,"analyze":true,"store":true}}}
-;
 
 function printJSON() {
     $('#json').val(JSON.stringify(json));
@@ -76,7 +74,7 @@ $(document).ready(function() {
     
     printJSON();
     $('#editor').jsonEditor(json, { change: updateJSON, propertyclick: showPath});
-    $("#editor").find("input[title='store']").each(function(){
+    $("#editor").find("input[title='agged']").each(function(){
     	$(this).parent().next().remove();
     });
     $("#editor").find("input[title='properties']").each(function(){

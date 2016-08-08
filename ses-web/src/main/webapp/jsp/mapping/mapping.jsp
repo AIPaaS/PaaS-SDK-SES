@@ -50,36 +50,24 @@
 			<div class="panel panel-default panel-page-header">
 				<div class="panel-body">
 					<div class="primary-section">
-						<h2>欢迎进入模型构建</h2>
+						<h3>欢迎进入模型构建</h3>
 						<div>
-							什么是 模型构建 ?
+							什么是 模型构建——是对搜索引擎中索引的字段及其数据类型进行定义，类似关系数据库中表建立时定义字段名及其数据类型，为避免脏数据，SES不支持动态索引定义
 						</div>
-						<br>
-						<p>模型构建就是对索引库中索引的字段名及其数据类型进行定义，类似关系数据库中表建立时定义字段名及其数据类型</p>
-						<h4>1.数据类型(type)</h4>
-						<p>string, long, integer, short, byte, double, float, date, boolean, object</p>
-						<h4>2.是否索引(index)</h4>
-						<p>可选值:true/false   false为不对该字段进行索引（无法搜索）,反之亦然</p>
-						<h4>3.是否分词(analyze)</h4>
-						<p>可选值:true/false</p>
-						<h4>4.是否存储(store)</h4>
-						<p>可选值:true/false   是否存储索引的字段，默认为false(不存储),一般我们不用设置{"store":true}，除非，我们需要对某个域（就是字段）进行高亮显示，或者，索引数据非常大，为了提高检索性能，单独对此索引字段进行检索</p>
-						<a id="creatMapping" class="btn btn-lg btn-success" href="${ctx}/ses/assembleMapping">创建新模型</a>
-					</div>
-					<div class="secondary-section">
-						<div class="row">
-							<div class="col-xs-12 col-sm-12">
-								<h4>模型字段包含object?</h4>
-								<p>
-									如果您不清楚如何配置嵌套一层或多层object的复杂数据模型,请参考我们的用户手册: <a href="${ctx}/doc/"
-										style="font-weight: 600;">配置复杂模型</a>
-								</p>
-							</div>
-						</div>
+						<h5>1.数据类型(type)</h5>
+						<p>支持string, long, integer, short, byte, double, float, date, boolean, object(对象，实现嵌套复杂对象)</p>
+						<h5>2.是否索引(indexed)</h5>
+						<p>可选值:true/false   false为不对该字段进行索引（无法搜索，仅用于显示）,反之进行索引</p>
+						<h5>3.是否分词(analyzed)</h5>
+						<p>可选值:true/false	  是否要对该字段进行分词，如：中华人民共和国，将切分成中华、人民、共和国等，在搜索时输入上述词都将匹配</p>
+						<h5>4.是否存储(stored)</h5>
+						<p>可选值:true/false  是否存储，默认为false(不存储),一般不用设置，除非需对某个字段进行高亮显示，或索引数据非常大，单独对此字段进行检索时设置为True</p>
+						<h5>5.是否聚合(agged)</h5>
+						<p>可选值:true/false  是否需要聚合，默认为false(不聚合)。如果需要对全文搜索时，搜索条件根据查询内容进行聚合时设置为True,参照电商的全文索引。</p>
+						<a id="creatMapping" class="btn btn-lg btn-success" href="${ctx}/ses/assembleMapping">管理模型</a>
 					</div>
 				</div>
 			</div>
-
 			<div class="panel panel-default ng-scope">
 				<div class="panel-body">
 					<table class="table">

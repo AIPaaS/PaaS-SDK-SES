@@ -8,17 +8,18 @@
 	content="width=device-width; initial-scale=0.8;  user-scalable=0;" />
 <title>词典导入</title>
 <%@include file="/jsp/common/header.jsp"%>
+<link rel="stylesheet" href="${ctx}/resources/libs/bootstrap/css/bootstrap.min.css">
+<link rel="stylesheet" href="${ctx}/resources/bootstrap/css/bootstrap-theme.min.css">
 <link rel="stylesheet" type="text/css" href="${ctx}/resources/css/ses.css"/>
 <link href="${ctx}/resources/css/bootstrap-modal.css" rel="stylesheet">
-	<script type="text/javascript" src="${ctx}/resources/js/jquery.form.min.js"></script>
-	<script type="text/javascript" src="${ctx}/resources/js/dic.js"></script>
+<script type="text/javascript" src="${ctx}/resources/js/jquery.form.min.js"></script>
+<script type="text/javascript" src="${ctx}/resources/js/dic.js"></script>
 </head>
 <body class="ui-v3 buildflow">
 	<%-- <%
 response.sendRedirect("dataimport/toDs");
 
 %> --%>
-
 
 
 <nav class="navbar dao-navbar ng-scope" >
@@ -51,8 +52,8 @@ response.sendRedirect("dataimport/toDs");
 				<div class="panel-body">
 					<div class="primary-section"
 						style="border: 0; margin: 0; padding-bottom: 0;">
-						<h2>用户词典维护</h2>
 						<p>导入用户词典及停用词词典，提供词典维护，导入成功后，即可在搜索中是用自定义词语</p>
+						<p><strong>上传词库必须为UTF-8编码且无BOM格式</strong></p>
 					</div>
 				</div>
 			</div>
@@ -60,7 +61,7 @@ response.sendRedirect("dataimport/toDs");
 				<div class="panel-body">
 					<div class="primary-section"
 						style="border: 0; margin: 0; padding-bottom: 0;">
-						<h2>当前热词词库</h2>
+						<h4>当前热词词库</h4>
 						<c:forEach items="${allIndexWordList }" var="indexWord" begin="0" end="2">
 						<p style="margin-bottom: 0px;">${ indexWord.word}</p>
 						</c:forEach>
@@ -68,16 +69,27 @@ response.sendRedirect("dataimport/toDs");
 					</div>
 				</div>
 			</div>
-			<div id="indexWordArea"  class="modal" aria-hidden="false" style="display:none;z-index: 1041;height: 350px;">
+			<div id="indexWordArea"  class="modal" aria-hidden="false" style="display:none;z-index: 1041;height: 460px;">
+				
 				<div class="modal-dialog modal-lg">
 			    <div class="modal-content">
 			      <div class="modal-header">
 			        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
 			        <h3 class="modal-title">热词词库预览</h3>
 			      </div>
+			      
 			      <div class="modal-body">
-			        <textarea class="form-control" style="font-family:Monaco,Consolas,monospace; height: 253.5px;" readonly=""><c:forEach items="${allIndexWordList }" var="indexWord" >${ indexWord.word} </c:forEach>
+			        <textarea id="allIndexWords" class="form-control"  disabled="disabled" style="font-family:Monaco,Consolas,monospace; height: 253.5px;" data-role="tagsinput"><c:forEach items="${allIndexWordList }" var="indexWord" >${ indexWord.word} </c:forEach>
 			        </textarea>
+					
+			        <nav aria-label="Page navigation">
+					<nav aria-label="...">
+					  <ul class="pager">
+					    <li><a id="indexPrePage" href="javascript:void(0);" onclick="javascript:preIndexWord();">上一页</a></li>
+					    <li><a id="indexNextPage"href="javascript:void(0);" onclick="javascript:nextIndexWord();">下一页</a></li>
+					  </ul>
+					 </nav>
+					 </nav>
 			      </div>
 			    </div>
 				</div>
@@ -86,7 +98,7 @@ response.sendRedirect("dataimport/toDs");
 				<div class="panel-body">
 					<div class="primary-section"
 						style="border: 0; margin: 0; padding-bottom: 0;">
-						<h2>当前停用词词库</h2>
+						<h5>当前停用词词库</h5>
 						<c:forEach items="${allStopWordList }" var="stopWord"  begin="0" end="2">
 						<p style="margin-bottom: 0px;">${ stopWord.word}</p>
 						</c:forEach>
@@ -102,8 +114,16 @@ response.sendRedirect("dataimport/toDs");
 			        <h3 class="modal-title">停用词词库预览</h3>
 			      </div>
 			      <div class="modal-body">
-			        <textarea class="form-control" style="font-family:Monaco,Consolas,monospace; height: 253.5px;" readonly=""><c:forEach items="${allStopWordList }" var="stopWord">${ stopWord.word} </c:forEach>
+			        <textarea id="allStopWords" class="form-control" disabled="disabled" style="font-family:Monaco,Consolas,monospace; height: 253.5px;" readonly=""><c:forEach items="${allStopWordList }" var="stopWord">${ stopWord.word} </c:forEach>
 			        </textarea>
+			        			        <nav aria-label="Page navigation">
+					<nav aria-label="...">
+					  <ul class="pager">
+					    <li><a id="stopPrePage" href="javascript:void(0);" onclick="javascript:preStopWord();">上一页</a></li>
+					    <li><a id="stopNextPage"href="javascript:void(0);" onclick="javascript:nextStopWord();">下一页</a></li>
+					  </ul>
+					 </nav>
+					 </nav>
 			      </div>
 			    </div>
 				</div>
@@ -136,11 +156,21 @@ response.sendRedirect("dataimport/toDs");
 						<p class="info-block open">
 							<i class="fa fa-info-circle"></i>词典导入文件只能是TXT格式文件，单词之间要采用换行来区分
 						</p>
+						</br>
+						<p align="center">
 						<button id="dicSaveBtn"
-							class="btn btn-lg btn-block project-creation-btn ng-binding">保存</button>
-						<div id="submitInfo" class="alert alert-success" role="alert" style="display:block;height: 100px;"></div>
+							class="btn btn-sm project-creation-btn ng-binding">保存</button>
+						<button id="indexClearBtn"
+							class="btn btn-sm project-creation-btn ng-binding">清空热词词库</button>
+						<button id="stopClearBtn"
+							class="btn btn-sm project-creation-btn ng-binding">清空停用词词库</button>	
+						<button id="engineUpdateBtn"
+							class="btn btn-sm project-creation-btn ng-binding">更新搜索词库</button>	
+						</p>		
 					</div>
-
+					<div class="setting-section">
+						<div id="submitInfo" class="alert alert-success" role="alert" style="display:block;height: 100px;"></div>
+					</div
 				</div>
 			</div>
 		</div>
@@ -198,6 +228,14 @@ response.sendRedirect("dataimport/toDs");
 <script type="text/javascript">
 $(function(){
 	
+	$("#indexClearBtn").css("background","#00ADEF");
+	$("#indexClearBtn").attr("onclick","clearIndexWords()");
+	$("#stopClearBtn").css("background","#00ADEF");
+	$("#stopClearBtn").attr("onclick","clearStopWords()");
+	$("#engineUpdateBtn").css("background","#00ADEF");
+	$("#engineUpdateBtn").attr("onclick","updateEngine()");
+	
+	
 	$("#indexWord").change(function(){
 		var indexWord = $("#indexWord").val();
 		var stopWord = $("#stopWord").val();
@@ -236,7 +274,172 @@ function moreStopWord(){
 function moreIndexWord(){
 	$('#indexWordArea').modal('show');
 }
+function saveAllIndexWords(){
+var param = $("#allIndexWords").val();
 
+	var url = "${ctx}/dic/saveAllIndex";
+		$("#indexSaveBtn").css("background","#DDD");
+		$("#indexSaveBtn").removeAttr("onclick").html("正在保存中……");
+		
+		$.ajax({
+	    	   type:"POST",
+	    	   url:"${ctx}/dic/saveAllIndexWords",	
+			   dataType : "json",
+			   data : {words:param},
+			   success:function(msg){
+				   $("#big").hide();
+				   $("#indexSaveBtn").html("保存");
+				   $("#indexSaveBtn").css("background","#00ADEF");
+				   $("#indexSaveBtn").attr("onclick","saveAllIndexWords()");
+				   if (msg == '1') {
+					   $("#submitInfo").removeClass("alert-fail-info").addClass("alert-success-info").html("保存成功").fadeIn();
+				   }else{
+					   $("#submitInfo").removeClass("alert-success-info").addClass("alert-fail-info").html("保存失败").fadeIn();
+				   }
+			   }
+	       }); 
+		
+}
+var indexStart=1;
+var stopStart=1;
+function preIndexWord(){
+	var url = "${ctx}/dic/getIndexWords";
+	indexStart = indexStart - 1;
+	if(indexStart <= 0)
+		indexStart = 1;
+	
+	$.ajax({
+    	   type:"POST",
+    	   url:url,	
+		   dataType : "text",
+		   data : {start:indexStart,rows:500},
+		   success:function(msg){
+			   $("#allIndexWords").val(msg);
+		   }
+       }); 
+}
+
+function nextIndexWord(){
+	var url = "${ctx}/dic/getIndexWords";
+	indexStart = indexStart +1;
+	$.ajax({
+    	   type: "POST",
+    	   url: url,	
+		   dataType : "text",
+		   data : {start:indexStart,rows:500},
+		   success:function(msg){
+			   if(msg ==null || msg =="" || msg == "null"){
+				   indexStart = indexStart -1;
+			   }
+			   else
+			   	 $("#allIndexWords").val(msg);
+		   }
+       }); 
+}
+
+function preStopWord(){
+	var url = "${ctx}/dic/getStopWords";
+	stopStart = stopStart - 1;
+	if(stopStart <= 0)
+		stopStart = 1;
+	
+	$.ajax({
+    	   type:"POST",
+    	   url:url,	
+		   dataType : "text",
+		   data : {start:stopStart,rows:500},
+		   success:function(msg){
+			   $("#allStopWords").val(msg);
+		   }
+       }); 
+}
+
+function nextStopWord(){
+	var url = "${ctx}/dic/getStopWords";
+	stopStart = stopStart +1;
+	$.ajax({
+    	   type: "POST",
+    	   url: url,	
+		   dataType : "text",
+		   data : {start:stopStart,rows:500},
+		   success:function(msg){
+			   if(msg ==null || msg =="" || msg == "null"){
+				   stopStart = stopStart -1;
+			   }
+			   else
+			   	 $("#allStopWords").val(msg);
+		   }
+       }); 
+}
+
+function clearIndexWords(){
+	var url = "${ctx}/dic/clearIndexWords";
+	$("#indexClearBtn").css("background","#DDD");
+	$("#indexClearBtn").removeAttr("onclick").html("正在清除中……");
+	$.ajax({
+    	   type: "POST",
+    	   url: url,	
+		   dataType : "json",
+		   data : {},
+		   success:function(msg){
+			   $("#big").hide();
+			   $("#indexClearBtn").html("清除热词词库");
+			   $("#indexClearBtn").css("background","#00ADEF");
+			   $("#indexClearBtn").attr("onclick","clearIndexWords()");
+			   if (msg == '1') {
+				   $("#submitInfo").removeClass("alert-fail-info").addClass("alert-success-info").html("清除热词词库成功").fadeIn();
+			   }else{
+				   $("#submitInfo").removeClass("alert-success-info").addClass("alert-fail-info").html("清除热词词库成功失败").fadeIn();
+			   }			   
+		   }
+       }); 
+}
+
+function clearStopWords(){
+	var url = "${ctx}/dic/clearStopWords";
+	$("#stopClearBtn").css("background","#DDD");
+	$("#stopClearBtn").removeAttr("onclick").html("正在清除中……");
+	$.ajax({
+    	   type: "POST",
+    	   url: url,	
+		   dataType : "json",
+		   data : {},
+		   success:function(msg){
+			   $("#big").hide();
+			   $("#stopClearBtn").html("清除停用词词库");
+			   $("#stopClearBtn").css("background","#00ADEF");
+			   $("#stopClearBtn").attr("onclick","clearIndexWords()");
+			   if (msg == '1') {
+				   $("#submitInfo").removeClass("alert-fail-info").addClass("alert-success-info").html("清除停用词词库成功").fadeIn();
+			   }else{
+				   $("#submitInfo").removeClass("alert-success-info").addClass("alert-fail-info").html("清除停用词词库失败").fadeIn();
+			   }		
+		   }
+       }); 
+}
+
+function updateEngine(){
+	var url = "${ctx}/dic/updateEngineWords";
+	$("#engineUpdateBtn").css("background","#DDD");
+	$("#engineUpdateBtn").removeAttr("onclick").html("正在清除中……");
+	$.ajax({
+    	   type: "POST",
+    	   url: url,	
+		   dataType : "json",
+		   data : {},
+		   success:function(msg){
+			   $("#big").hide();
+			   $("#engineUpdateBtn").html("更新搜索引擎词库");
+			   $("#engineUpdateBtn").css("background","#00ADEF");
+			   $("#engineUpdateBtn").attr("onclick","clearIndexWords()");
+			   if (msg == '1') {
+				   $("#submitInfo").removeClass("alert-fail-info").addClass("alert-success-info").html("更新搜索引擎词库成功").fadeIn();
+			   }else{
+				   $("#submitInfo").removeClass("alert-success-info").addClass("alert-fail-info").html("更新搜索引擎词库失败").fadeIn();
+			   }		
+		   }
+       }); 
+}
 function saveDic(){
 	var param = $("#indexDicForm").serialize();
 	

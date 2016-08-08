@@ -31,9 +31,9 @@
                     address="${paas.dubbo.registry.address}"/>
     <dubbo:consumer retries="2" filter="ExceptionConverter"/>
     
-	<dubbo:reference interface="com.ai.paas.ipaas.ses.manage.rest.interfaces.ISesUserInst" id="sesUserInst"/>
-	<dubbo:reference interface="com.ai.paas.ipaas.ses.manage.rest.interfaces.IIndexMapping" id="indexMappingSRV"/>
-	<dubbo:reference interface="com.ai.paas.ipaas.ses.manage.rest.interfaces.IIKDictionary" id="dictSRV"/>
-	<dubbo:reference interface="com.ai.paas.ipaas.ses.manage.rest.interfaces.IDataSource" id="dataService"/>
+	<dubbo:reference interface="com.ai.paas.ipaas.ses.manage.rest.interfaces.IRPCSesUserInst" id="sesUserInst"/>
+	<dubbo:reference interface="com.ai.paas.ipaas.ses.manage.rest.interfaces.IRPCIndexMapping" id="indexMappingSRV"/>
+	<dubbo:reference interface="com.ai.paas.ipaas.ses.manage.rest.interfaces.IRPCIKDictionary" id="dictSRV"/>
+	<dubbo:reference interface="com.ai.paas.ipaas.ses.manage.rest.interfaces.IRPCDataSource" id="dataService"/>
 	
 </beans>

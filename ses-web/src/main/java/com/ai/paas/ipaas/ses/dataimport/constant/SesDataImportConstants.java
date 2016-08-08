@@ -44,7 +44,7 @@ public class SesDataImportConstants {
 	
 	public static final String USER_ID_STR="userId";
 	public static final String SID_STR="sid";
-	public static final String SPLIT_STR="_";
+	public static final String SPLIT_STR="___";
 	public static final String SPLIT_STR_2=",,";
 
 	

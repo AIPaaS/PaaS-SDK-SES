@@ -49,7 +49,7 @@ public class ExtractAndImport {
 		ISearchClient is = null;
 		try {
 			is = SesUtil.getSESInstance(userInfos[0], userInfos[1]
-					,userInfos[2],ConfUtil.getProperty("AUTH_ADDR_URL"));
+					,userInfos[2],ConfUtil.getProperty("AUTH_ADDR_URL")+"/auth");
 //			is.cleanData();
 		} catch (Exception e) {
 			log.error("SES service error...",e);
@@ -104,7 +104,7 @@ public class ExtractAndImport {
 		ISearchClient is = null;
 		try {
 			is = SesUtil.getSESInstance(userInfos[0], userInfos[1]
-					,userInfos[2],ConfUtil.getProperty("AUTH_ADDR_URL"));
+					,userInfos[2],ConfUtil.getProperty("AUTH_ADDR_URL")+"/auth");
 //			is.cleanData();
 		} catch (Exception e) {
 			log.error("SES service error...",e);

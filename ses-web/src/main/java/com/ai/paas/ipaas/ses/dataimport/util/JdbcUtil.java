@@ -144,12 +144,19 @@ public class JdbcUtil {
 				// 建立数据库连接
 				String userName = attr.getUsername();
 				String pwd = attr.getPwd();
-				if (attr.getDatabase() == SesDataImportConstants.MYSQL_DB)
+				if (attr.getDatabase() == SesDataImportConstants.MYSQL_DB) {
 					url = "jdbc:mysql://" + attr.getIp() + ":" + attr.getPort()
-							+ "/" + attr.getSid();
-				if (attr.getDatabase() == SesDataImportConstants.ORACLE_DB)
+							+ "/" + attr.getSid()
+							+ "?useUnicode=true&characterEncoding=UTF-8";
+					// The newInstance() call is a work around for some
+					// broken Java implementations
+					Class.forName("com.mysql.jdbc.Driver");
+				}
+				if (attr.getDatabase() == SesDataImportConstants.ORACLE_DB) {
 					url = "jdbc:oracle:thin:@" + attr.getIp() + ":"
 							+ attr.getPort() + ":" + attr.getSid();
+					Class.forName("oracle.jdbc.driver.OracleDriver");
+				}
 				log.info("----------初始化数据源:" + url);
 
 				connnection = DriverManager.getConnection(url, userName, pwd);
@@ -259,7 +266,26 @@ public class JdbcUtil {
 					tempSql = tempSql.substring(0, sql.indexOf(" order by "));
 				if (sql.contains(" limit "))
 					tempSql = tempSql.substring(0, sql.indexOf(" limit "));
-				tempSql += " limit 0,1 ";
+				if (attr.getDatabase() == SesDataImportConstants.MYSQL_DB) {
+					tempSql += " limit 0,1 ";
+				}
+				if (attr.getDatabase() == SesDataImportConstants.ORACLE_DB) {
+					// oracle 不一样
+					tempSql = tempSql.toLowerCase();
+					tempSql = tempSql.replace("select ", "select rownum, ");
+					// 加上where
+					if (tempSql.indexOf(" where ") >= 0) {
+						tempSql = tempSql.replace(" where ",
+								" where rownum<=1 and ");
+					} else {
+						// 如果有order by 呢
+						if (tempSql.contains(" order by "))
+							tempSql = tempSql.replace(" order by ",
+									" where rownum<=1  order by ");
+						else
+							tempSql += " where rownum<=1";
+					}
+				}
 				sql = tempSql;
 			} else {
 				if (SesDataImportConstants.MYSQL_DB == attr.getDatabase())

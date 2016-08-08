@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.ai.paas.ipaas.PaasRuntimeException;
+import com.ai.paas.ipaas.search.service.ISearchClient;
 import com.ai.paas.ipaas.ses.dataimport.constant.SesDataImportConstants;
 import com.ai.paas.ipaas.ses.dataimport.impt.ImportData;
 import com.ai.paas.ipaas.ses.dataimport.impt.OneDbImport;
@@ -24,7 +25,9 @@ import com.ai.paas.ipaas.ses.dataimport.util.GsonUtil;
 import com.ai.paas.ipaas.ses.dataimport.util.ImportUtil;
 import com.ai.paas.ipaas.ses.dataimport.util.JdbcUtil;
 import com.ai.paas.ipaas.ses.dataimport.util.ParamUtil;
-import com.ai.paas.ipaas.ses.manage.rest.interfaces.IDataSource;
+import com.ai.paas.ipaas.ses.dataimport.util.SesUtil;
+import com.ai.paas.ipaas.ses.manage.rest.interfaces.IRPCDataSource;
+import com.ai.paas.ipaas.vo.ses.RPCDataSource;
 import com.ai.paas.ipaas.vo.ses.SesDataSourceInfo;
 import com.ai.paas.ipaas.vo.ses.SesIndexSqlInfo;
 
@@ -35,7 +38,7 @@ public class DataImportController {
 			.getLogger(DataImportController.class);
 
 	@Autowired
-	private IDataSource dataService;
+	private IRPCDataSource dataService;
 
 	@RequestMapping(value = "/toOne")
 	public String toOne(HttpServletRequest request) {
@@ -102,9 +105,10 @@ public class DataImportController {
 			if (dataSources == null || dataSources.isEmpty()) {
 				return "{\"CODE\":\"999\",\"MSG\":\"datasource is null.\"}";
 			}
-
-			dataService.saveDataSource(ParamUtil.getUser(request),
-					ParamUtil.getDs(request, null));
+			RPCDataSource rpcDataSource = new RPCDataSource();
+			rpcDataSource.setUserInfo(ParamUtil.getUser(request));
+			rpcDataSource.setDataSources(ParamUtil.getDs(request, null));
+			dataService.saveDataSource(rpcDataSource);
 			res.put("CODE", "000");
 			res.put("MSG", "save datasource success.");
 			return GsonUtil.objToGson(res);
@@ -125,8 +129,10 @@ public class DataImportController {
 			if (dataSources == null || dataSources.isEmpty()) {
 				return "{\"CODE\":\"999\",\"MSG\":\"datasource is null.\"}";
 			}
-			dataService.deleteDataSource(dataSources,
-					ParamUtil.getUser(request));
+			RPCDataSource rpcDataSource = new RPCDataSource();
+			rpcDataSource.setDataSources(dataSources);
+			rpcDataSource.setUserInfo(ParamUtil.getUser(request));
+			dataService.deleteDataSource(rpcDataSource);
 			res.put("CODE", "000");
 			res.put("MSG", "delete datasource success.");
 			return GsonUtil.objToGson(res);
@@ -144,9 +150,13 @@ public class DataImportController {
 			// 这里需做准备
 			Map<String, String> userInfo = ParamUtil.getUser(request);
 			int uId = getUserId(request, userInfo);
-			List<SesDataSourceInfo> oraDataSources = dataService.getDataSource(
-					uId, request.getParameter("drAlias"),
-					SesDataImportConstants.GROUP_ID_2);
+			String groupId = request.getParameter("groupId");
+			List<SesDataSourceInfo> oraDataSources = null;
+			if (("" + SesDataImportConstants.GROUP_ID_2).equals(groupId)) {
+				oraDataSources = dataService.getDataSource(uId,
+						request.getParameter("drAlias"),
+						SesDataImportConstants.GROUP_ID_2);
+			}
 			return JdbcUtil.validateSql(null, oraDataSources,
 					ParamUtil.getUser(request), request);
 		} catch (Exception e) {
@@ -165,10 +175,28 @@ public class DataImportController {
 			dbInfo.put("uId",
 					"" + getUserId(request, ParamUtil.getUser(request)));
 			dbInfo.put("isPrimary", request.getParameter("isPrimary"));
+			dbInfo.put("alias", request.getParameter("alias"));
 			dbInfo.put("falias", request.getParameter("falias"));
 			dbInfo.put("overwrite", request.getParameter("overwrite"));
-			dataService.saveIndexDataSql(dbInfo, ParamUtil.getDs(request, null)
-					.get(0), ParamUtil.getUser(request));
+			dbInfo.put("sql", request.getParameter("sql"));
+			dbInfo.put("drAlias", request.getParameter("drAlias"));
+			dbInfo.put("fdrAlias", request.getParameter("fdrAlias"));
+			dbInfo.put("fsql", request.getParameter("fsql"));
+			dbInfo.put("relation", request.getParameter("relation"));
+			dbInfo.put("mapObj", request.getParameter("mapObj"));
+			
+			RPCDataSource rpcDataSource = new RPCDataSource();
+			rpcDataSource.setDbInfo(dbInfo);
+			// 多库时不用设置数据源了
+			if (("" + SesDataImportConstants.GROUP_ID_2).equals(request
+					.getParameter("groupId"))) {
+				rpcDataSource.setDbAttr(null);
+			} else {
+				rpcDataSource.setDbAttr(ParamUtil.getDs(request, null).get(0));
+			}
+			rpcDataSource.setUserInfo(ParamUtil.getUser(request));
+			dataService.saveIndexDataSql(rpcDataSource);
+
 			res.put("CODE", "000");
 			res.put("MSG", "save datasource success.");
 			return GsonUtil.objToGson(res);
@@ -183,13 +211,15 @@ public class DataImportController {
 	public String deleteSql(HttpServletRequest request) {
 		try {
 			Map<String, String> res = new HashMap<String, String>();
-			List<SesDataSourceInfo> dataSources = ParamUtil.getDs(request,
-					"delete");
-			if (dataSources == null || dataSources.isEmpty()) {
-				return "{\"CODE\":\"999\",\"MSG\":\"datasource is null.\"}";
+			Map<String, String> sqlInfo = new HashMap<String, String>();
+			sqlInfo = ParamUtil.getSqlInfo(request, "delete");
+			if (sqlInfo == null || sqlInfo.isEmpty()) {
+				return "{\"CODE\":\"999\",\"MSG\":\"sql is null.\"}";
 			}
-			dataService.deleteDataSource(dataSources,
-					ParamUtil.getUser(request));
+			RPCDataSource rpcDataSource = new RPCDataSource();
+			rpcDataSource.setSqlInfo(sqlInfo);
+			rpcDataSource.setUserInfo(ParamUtil.getUser(request));
+			dataService.deleteIndexDataSql(rpcDataSource);
 			res.put("CODE", "000");
 			res.put("MSG", "delete datasource success.");
 			return GsonUtil.objToGson(res);
@@ -200,7 +230,18 @@ public class DataImportController {
 	}
 
 	@ResponseBody
-	@RequestMapping(value = "/import")
+	@RequestMapping(value = "/clear", produces = "application/text;charset=utf-8")
+	public String clearData(HttpServletRequest request) {
+		try {
+			return startClearData(request);
+		} catch (Exception e) {
+			log.error("", e);
+			return ParamUtil.getERRORMSG(e.getMessage());
+		}
+	}
+
+	@ResponseBody
+	@RequestMapping(value = "/import", produces = "application/text;charset=utf-8")
 	public String importData(HttpServletRequest request) {
 		try {
 			return startImportData(request);
@@ -305,7 +346,8 @@ public class DataImportController {
 			String userName = null;
 			String password = null;
 			String serviceId = userInfo.get("sid");
-			String authAddress = ConfUtil.getProperty("AUTH_ADDR_URL");
+			String authAddress = ConfUtil.getProperty("AUTH_ADDR_URL")
+					+ "/auth";
 			int groupId = Integer.valueOf(request.getParameter("groupId"));
 
 			List<SesDataSourceInfo> dbAttr = dataService.getIndexDataSources(
@@ -317,7 +359,7 @@ public class DataImportController {
 			if (dataSql == null || dataSql.getPrimarySql() == null)
 				throw new Exception("sql is null.");
 			long begin = System.currentTimeMillis();
-			String sesUserInfo = userInfo.get("userName") + ","
+			String sesUserInfo = userInfo.get("pId") + ","
 					+ userInfo.get("sid") + ","
 					+ userInfo.get("pwd").toString();
 
@@ -333,7 +375,7 @@ public class DataImportController {
 						if (db.getAuthAddr() == null
 								|| db.getAuthAddr().length() == 0) {
 							db.setAuthAddr(ConfUtil
-									.getProperty("AUTH_ADDR_URL"));
+									.getProperty("AUTH_ADDR_URL") + "/auth");
 						}
 					}
 					if (db.getAlias().equals(dsAlias)) {
@@ -373,6 +415,32 @@ public class DataImportController {
 			} else {
 				res.put("MSG", e.getMessage());
 			}
+			log.error("--importData exception--", e);
+		}
+
+		return GsonUtil.objToGson(res);
+	}
+
+	private String startClearData(HttpServletRequest request) {
+		Map<String, String> res = new HashMap<String, String>();
+		long times = 0l;
+		try {
+			Map<String, String> userInfo = ParamUtil.getUser(request);
+			long begin = System.currentTimeMillis();
+			ISearchClient is = SesUtil.getSESInstance(userInfo.get("pId"),
+					userInfo.get("sid"), userInfo.get("pwd"),
+					ConfUtil.getProperty("AUTH_ADDR_URL") + "/auth");
+			is.clean();
+			is.close();
+			times = System.currentTimeMillis() - begin;
+			log.info("-------all------" + times);
+			res.put("CODE", "000");
+			res.put("MSG", " The SES data are cleaned successfully! </br> used time:"
+					+ times + "ms.");
+
+		} catch (Exception e) {
+			res.put("CODE", "999");
+			res.put("MSG", " The SES data clean failed!");
 			log.error("--importData exception--", e);
 		}
 

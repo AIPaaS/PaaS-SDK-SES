@@ -132,4 +132,18 @@ public class ParamUtil {
 		return "{\"CODE\":\"999\",\"MSG\":\"" + message + "\"}";
 	}
 
+	
+	public static Map<String, String> getSqlInfo(HttpServletRequest request,String flag){
+		Map<String, String> sqlInfo = new HashMap<String, String>();
+		if ("delete".equals(flag)) {
+			sqlInfo.put("groupId", request.getParameter("groupId"));
+			sqlInfo.put("sql.id", request.getParameter("uId"));
+			sqlInfo.put("uId", request.getParameter("uId"));
+			sqlInfo.put("isPrimary", request.getParameter("isPrimary"));
+			sqlInfo.put("falias", request.getParameter("falias"));
+			
+			return sqlInfo;
+		}
+		return sqlInfo;
+	}
 }

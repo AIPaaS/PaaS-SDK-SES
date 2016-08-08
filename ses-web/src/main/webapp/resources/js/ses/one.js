@@ -316,6 +316,29 @@ function startImport(){
 	
 }
 
+function startClear(){
+		var url = webPath+"/dataimport/clear";
+		$("#info").show();
+		$("#info").html("clear begin...");
+		$(document).scrollTop($(document).height() );
+		//每隔2s 获取一次进度;
+	    $.ajax({
+	   	 type: 'POST',
+	        url: url,
+	        success: function (data) {
+		       	 var resJson = eval("(" + data + ")");
+		       	 if(resJson.CODE=="000"){
+		       		 //成功
+		       		 $("#info").append("<p>").append(resJson.MSG).append("</p>");
+		       	 }else{
+		       		 //失败
+		       		 $("#info").append("<p>").append(resJson.MSG).append("</p>");
+		       	 }
+	        }
+	    });
+		
+}
+
 
 
 function loadRunning(){

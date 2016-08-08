@@ -167,9 +167,7 @@
         path = path || '';
         
         root.children('.item').remove();
-        
         for (var key in json) {
-        	
             if (!json.hasOwnProperty(key)) continue;
 
             var item     =   $('<div>',   { 'class': 'item', 'data-path': path }),
@@ -180,13 +178,12 @@
             if (isObject(json[key]) || isArray(json[key])) {
                 addExpander(item);
             }
-            
             item.append(property);
             root.append(item);
             property.val(key).attr('title', key);
             var val = stringify(json[key]);
             var prop = property.val();
-            if(prop == "type"|| prop == "index" || prop == "analyze" || prop == "store" || prop == "properties"){
+            if(prop == "type"|| prop == "index" || prop == "analyze" || prop == "store" || prop == "agged" || prop == "properties"){
             	property.attr('disabled', 'disabled').css("color", "#555").css("border", "0px");
             }
 
@@ -211,13 +208,12 @@
                 var option3 = $("<option>").val("yyyy-MM-dd HH:mm:ss").text("yyyy-MM-dd HH:mm:ss");
                 value.append(option1).append(option2).append(option3).val(val);
                 item.append(value);
-            }else if (key == "index" || key == "analyze" || key == "store" ) {
+            }else if (key == "index" || key == "analyze" || key == "store" || key == "agged") {
                 var option1 = $("<option>").val(true).text(true);
                 var option2 = $("<option>").val(false).text(false);
                 value.append(option1).append(option2).val(val);
                 item.append(value);
             }else {
-              
                 if (val && val != "null") {
                     value    =   $(opt.valueElement || '<input>', { 'class': 'value' }); 
                     item.append(value);
@@ -247,7 +243,6 @@
                 opt.onchange(parse(stringify(opt.original)));
             })
         }
-
 
     }
 
@@ -319,6 +314,29 @@
                 val = parse($(this).val() || 'null'),
                 item = $(this).parent(),
                 path = item.data('path');
+            //此处如果字段为type，且选择为非String时，需要不用索引好分析
+            if(key == "type"){
+            	var typeValue = $.trim($(this).val()).replace(/["]/g,"");
+            	if(typeValue === "string"){
+            		$(item.parent().find("input[class=property]")).each(function(){
+            			var option=$(this).val();
+            			if(option == "index" || option == "analyze" || option == "agged"){
+            				//找到自己的兄弟
+            				$(this).next().removeAttr("disabled")
+            			}
+            		});
+            	}else{
+            		//找到
+            		$(item.parent().find("input[class=property]")).each(function(){
+            			var option=$(this).val();
+            			if(option == "index" || option == "analyze" || option == "agged"){
+            				//找到自己的兄弟
+            				$(this).next().find("option[value='false']").attr("selected",true);
+            				$(this).next().attr("disabled",true);
+            			}
+            		});
+            	}
+            }
             if(key == "format"){
             	var formatSelect = item.find("select");
             	val = formatSelect.val();
@@ -329,10 +347,13 @@
                 if((val == "integer" || val == "string"  || val == "long" || val == "date" || 
                 	val == "short" || val == "byte" || val == "double" || val == "boolean" || val == "float")){
                     var type = val;
-                    val={"type":"integer","index":true, "analyze": true ,"store":false};
+                    if(val == "string")
+                    	val={"type":"integer","index":true, "analyze": true ,"store":false,"agged":false};
+                    else
+                    	val={"type":"integer","index":false, "analyze": false ,"store":false,"agged":false};
                     val.type = type;
                 }else if(val=="object"){
-                    val={"properties": {"field-name":{"type":"integer","index":true, "analyze": true ,"store":false}}};
+                    val={"properties": {"field-name":{"type":"integer","index":true, "analyze": true ,"store":false,"agged":false}}};
                 }
 
                 item.find('select').remove();

@@ -6,7 +6,7 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<title>单数据库导入</title>
+<title>简单模型数据导入</title>
 <%@include file="/jsp/common/header.jsp"%>
 <link href="${ctx}/resources/res/css/import.css" rel="stylesheet"
 	type="text/css">
@@ -23,7 +23,7 @@
 			<div class="navbar-header">
 				<div class="back-link ng-scope">
 					<div class="ng-binding ng-scope">
-						<div class="daima">单库导入</div>
+						<div class="daima">简单数据模型数据导入</div>
 
 
 						<ul class="nav navbar-nav navbar-right">
@@ -142,10 +142,6 @@
 							  <div  id="dbinfo" style="float:right;display:none;height:32px;line-height:32px;"></div>
 							</div>
 						</div> -->
-						<!-- <div style="display: inline-block; width: 100%">
-							<div role="alert" id="dbinfo"
-								style="text-align: center; display: none;">success</div>
-						</div> -->
 <!--  						<div id="dbinfo" style="display: inline-block;text-align: center;width:96%;margin:0px 20px 0px 20px; "></div>
  --> 				<div class="setting-section">
 						<div class="col-md-9 col-lg-9">
@@ -170,39 +166,20 @@
 							
 							<div id="sqlinfo" style="display: inline-block;text-align: center;width:100%;margin:5px 0px 0px 0px; "></div>
 							
-						</div><!-- 
-						<div class="setting-section">
-							<div class="btn-group" role="group" aria-label="...">
-								<button type="button" class="btn btn-default" id="checkSqlCon"
-									onclick="sqlCon()">测试</button>
-								<button type="button" class="btn btn-default" id="saveSql"
-									onclick="saveSqlFun()">保存</button>
-								<button type="button" class="btn btn-default" id="dSql"
-									onclick="deleteSql()">删除</button>
-								<div id="sqlinfo"
-									style="float: right; display: none; height: 32px; line-height: 32px;"></div>
-							</div>
-						</div> -->
-						<!-- <div style="display: inline-block; width: 100%">
-							<div role="alert" id="sqlinfo"
-								style="text-align: center; display: none;">success</div>
-						</div> -->
-<!-- 						<div id="sqlinfo" class="alert alert-success" style="text-align: center; display: none;"></div>
- -->						
- 
- 
-<!--  				<div id="sqlinfo" style="display: inline-block;text-align: center;width:96%;margin:0px 20px 0px 20px; "></div>
- -->						
 						<div class="setting-section">
 						<p class="info-block open">
 							<i class="fa fa-info-circle"></i>依据配置，一次提取所有文档字段，逐条封装文档，批量提交到搜索服务器；搜索服务器中如果已有文档，会被更新。
+							
 						</p>
+						
 						<input type="hidden"  name="groupId" value="1"/>
 						<input type="hidden"  name="uId" value="${oneds.uId }"/>
 						<input type="hidden"  name="id" value="${oneds.id }"/>
 						<input type="hidden"  name="sql.id" value="${onesql.id }"/>
 						<button type="button" data-loading-text="正在导入......"
-							class="btn btn-lg btn-block project-creation-btn ng-binding" id="imp"  onclick="startImport()">开始导入</button>
+							class="btn btn-default project-creation-btn ng-binding" id="imp"  onclick="startImport()">&nbsp;&nbsp;&nbsp;&nbsp;开始导入数据&nbsp;&nbsp;&nbsp;&nbsp;</button>
+						<button type="button" data-loading-text="正在清除......"
+							class="btn btn-default project-creation-btn ng-binding btn-success" id="imp"  onclick="startClear()">&nbsp;&nbsp;&nbsp;&nbsp;清除引擎数据&nbsp;&nbsp;&nbsp;&nbsp;</button>	
 			            <div id="info" class="biianx" style="overflow:scroll; ">
                         </div>
 					</div>

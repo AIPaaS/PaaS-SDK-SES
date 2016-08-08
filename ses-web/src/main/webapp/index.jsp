@@ -130,7 +130,7 @@
 					<a href="${ctx}/dataimport/toOne">
 						<ul>
 							<li class="cr_t"><i class="icon-home"></i></li>
-							<li class="cr_b">数据导入-单库</li>
+							<li class="cr_b">简单模型数据导入</li>
 						</ul>
 					</a>
 				</div>
@@ -138,7 +138,7 @@
 					<a href="${ctx}/dataimport/toMany">
 						<ul>
 							<li class="cr_t"><i class="icon-sitemap"></i></li>
-							<li class="cr_b">数据导入-多库</li>
+							<li class="cr_b">复杂模型数据导入</li>
 						</ul>
 					</a>
 				</div>
