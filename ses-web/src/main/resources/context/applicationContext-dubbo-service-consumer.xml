@@ -30,7 +30,7 @@
     <dubbo:registry protocol="${paas.dubbo.registry.protocol}"
                     address="${paas.dubbo.registry.address}"/>
     <dubbo:consumer retries="2" filter="ExceptionConverter"/>
-    
+    <dubbo:reference interface="com.ai.paas.ipaas.ses.manage.rest.interfaces.ISearchEngineServiceManager" id="sesManager"/> 
 	<dubbo:reference interface="com.ai.paas.ipaas.ses.manage.rest.interfaces.IRPCSesUserInst" id="sesUserInst"/>
 	<dubbo:reference interface="com.ai.paas.ipaas.ses.manage.rest.interfaces.IRPCIndexMapping" id="indexMappingSRV"/>
 	<dubbo:reference interface="com.ai.paas.ipaas.ses.manage.rest.interfaces.IRPCIKDictionary" id="dictSRV"/>

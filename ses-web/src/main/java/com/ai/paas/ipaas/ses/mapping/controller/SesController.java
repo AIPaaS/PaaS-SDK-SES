@@ -6,8 +6,6 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,11 +15,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.ai.paas.ipaas.ses.common.constants.SesConstants;
-import com.ai.paas.ipaas.ses.dataimport.util.ConfUtil;
 import com.ai.paas.ipaas.ses.dataimport.util.ParamUtil;
 import com.ai.paas.ipaas.ses.manage.rest.interfaces.IRPCIndexMapping;
+import com.ai.paas.ipaas.ses.manage.rest.interfaces.ISearchEngineServiceManager;
 import com.ai.paas.ipaas.ses.mapping.model.SesMappingApply;
-import com.ai.paas.ipaas.util.HttpUtil;
 import com.ai.paas.ipaas.vo.ses.SesUserMapping;
 import com.google.gson.Gson;
 
@@ -32,6 +29,8 @@ public class SesController {
 			.getLogger(SesController.class);
 	@Autowired
 	IRPCIndexMapping indexMappingSRV;
+	@Autowired
+	ISearchEngineServiceManager sesManager;
 
 	@RequestMapping(value = "/mapping")
 	public String mapping(ModelMap model, HttpServletRequest request) {
@@ -129,10 +128,7 @@ public class SesController {
 		try {
 
 			indexMappingSRV.insertMapping(userMapping);
-			StringEntity dataEntity = new StringEntity(json,
-					ContentType.APPLICATION_JSON);
-			result = HttpUtil.doPost(ConfUtil.getProperty("SES_MAPPING_URL"),
-					dataEntity);
+			result = sesManager.mapping(json);
 
 		} catch (Exception e) {
 			LOGGER.error(SesConstants.ExecResult.FAIL, e);
