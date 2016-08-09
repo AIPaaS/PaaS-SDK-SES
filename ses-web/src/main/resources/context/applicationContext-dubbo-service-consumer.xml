@@ -22,6 +22,7 @@
     <bean id="dubboConfig"
           class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
         <property name="order" value="1"/>
+        <property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_OVERRIDE" />
         <property name="ignoreUnresolvablePlaceholders" value="true"/>
         <property name="locations" value="classpath:context/dubbo.properties"/>
     </bean>
