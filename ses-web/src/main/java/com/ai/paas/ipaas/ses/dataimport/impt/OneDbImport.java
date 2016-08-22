@@ -70,7 +70,7 @@ public class OneDbImport {
 		int totalNum = 0;
 		try {
 			conn = JdbcUtil.getConnection(db);
-			sql = dataSql.getPrimarySql().getSql().toLowerCase();
+			sql = dataSql.getPrimarySql().getSql();
 			String totalSql = SqlUtil.getTotalSql(sql);
 			statement = conn.prepareStatement(totalSql);
 			log.debug("-------totalSql----{}------", totalSql);
@@ -301,9 +301,10 @@ public class OneDbImport {
 			if (i == threadNum - 1) {
 				rowNum2 = totalNum - i * rowNum;
 			}
-			String sqlTem = sql.toLowerCase();
+			String sqlTem = sql;
+			String lowerSQL=sql.toLowerCase();
 			if (sql.contains(" limit ")) {
-				sqlTem = sql.substring(0, sql.indexOf(" limit "));
+				sqlTem = sql.substring(0, lowerSQL.indexOf(" limit "));
 			}
 			if (db.getDatabase() == SesDataImportConstants.MYSQL_DB) {
 				sqlTem += " limit " + start + "," + rowNum2;

@@ -26,9 +26,14 @@ public class SqlUtil {
 	}
 
 	public static String getTotalSql(String sql) {
-		int start = sql.indexOf("select ") + "select ".length();
-		int end = sql.indexOf(" from");
-		String filed = sql.substring(start, end).trim();
-		return sql.replace(filed, " count(*) as totalNum ");
+		// 先找到where 关键字
+		String lowerSQL = sql.toLowerCase();
+		int wherePos = lowerSQL.indexOf(" where");
+		String where = sql.substring(wherePos);
+		lowerSQL = lowerSQL.substring(0, wherePos);
+		int start = lowerSQL.indexOf("select ") + "select ".length();
+		int end = lowerSQL.indexOf(" from");
+		String filed = lowerSQL.substring(start, end).trim();
+		return lowerSQL.replace(filed, " count(*) as totalNum ") + where;
 	}
 }

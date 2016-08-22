@@ -159,7 +159,7 @@ response.sendRedirect("dataimport/toDs");
 						</br>
 						<p align="center">
 						<button id="dicSaveBtn"
-							class="btn btn-sm project-creation-btn ng-binding">保存</button>
+							class="btn btn-sm project-creation-btn ng-binding">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;保存&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</button>
 						<button id="indexClearBtn"
 							class="btn btn-sm project-creation-btn ng-binding">清空热词词库</button>
 						<button id="stopClearBtn"
@@ -440,6 +440,30 @@ function updateEngine(){
 		   }
        }); 
 }
+
+var clearFileInput = function (input) {
+	  if (!input) {
+	    return;
+	  }
+
+	  // standard way - works for IE 11+, Chrome, Firefox, webkit Opera
+	  input.value = null;
+
+	  if (input.files && input.files.length && input.parentNode) {
+	    // workaround for IE 10 and lower, pre-webkit Opera
+
+	    var form = document.createElement('form');
+	    input.parentNode.insertBefore(form, input);
+
+	    form.appendChild(input);
+	    form.reset();
+
+	    form.parentNode.insertBefore(input, form);
+	    input.parentNode.removeChild(form);
+	  }
+
+	}
+
 function saveDic(){
 	var param = $("#indexDicForm").serialize();
 	
@@ -454,11 +478,12 @@ function saveDic(){
 			   dataType : "json",
 			   success:function(msg){
 				   $("#big").hide();
-				   $("#dicSaveBtn").html("保存");
+				   $("#dicSaveBtn").html("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;保存&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;");
 				   $("#dicSaveBtn").css("background","#00ADEF");
 					$("#dicSaveBtn").attr("onclick","saveDic()");
 				   if (msg == '1') {
 					   $("#submitInfo").removeClass("alert-fail-info").addClass("alert-success-info").html("保存成功").fadeIn();
+					   $("#indexDicForm")[0].reset();
 				   }else{
 					   $("#submitInfo").removeClass("alert-success-info").addClass("alert-fail-info").html("保存失败").fadeIn();
 				   }
