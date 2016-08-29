@@ -1,4 +1,4 @@
-package com.ai.paas.ipaas.search.service;
+package com.ai.paas.ipaas.search;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,7 +13,7 @@ import com.ai.paas.ipaas.ccs.inner.ICCSComponent;
 import com.ai.paas.ipaas.ccs.zookeeper.ConfigWatcher;
 import com.ai.paas.ipaas.ccs.zookeeper.ConfigWatcher.Event.EventType;
 import com.ai.paas.ipaas.ccs.zookeeper.ConfigWatcherEvent;
-import com.ai.paas.ipaas.search.service.impl.SearchClientImpl;
+import com.ai.paas.ipaas.search.impl.SearchClientImpl;
 import com.ai.paas.ipaas.uac.service.UserClientFactory;
 import com.ai.paas.ipaas.uac.vo.AuthDescriptor;
 import com.ai.paas.ipaas.uac.vo.AuthResult;
@@ -23,7 +23,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
 public class SearchClientFactory {
-	// private static ISearchClient iSearchClient;
 	private static transient final Logger log = LoggerFactory
 			.getLogger(SearchClientFactory.class);
 	private static Map<String, ISearchClient> searchClients = new ConcurrentHashMap<String, ISearchClient>();
@@ -37,20 +36,20 @@ public class SearchClientFactory {
 
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings({ "unchecked" })
 	public static ISearchClient getSearchClient(AuthDescriptor ad)
 			throws Exception {
-		ISearchClient iSearchClient = null;
+		ISearchClient searchClient = null;
 		log.info("Check Formal Parameter AuthDescriptor ...");
 		Assert.notNull(ad, "AuthDescriptor对象为空");
 		Assert.notNull(ad.getServiceId(), "service_id为空");
 		String srvId = ad.getServiceId();
 		String userPid = ad.getPid();
 		if (searchClients.containsKey(userPid + "_" + srvId)) {
-			iSearchClient = searchClients.get(userPid + "_" + srvId);
+			searchClient = searchClients.get(userPid + "_" + srvId);
 			// 这里要做个重新初始化
-			((SearchClientImpl) iSearchClient).initClient();
-			return iSearchClient;
+			((SearchClientImpl) searchClient).initClient();
+			return searchClient;
 		}
 		AuthResult authResult = UserClientFactory.getUserClient().auth(ad);
 		Assert.notNull(authResult.getUserId(), "UserId为空");
@@ -88,11 +87,6 @@ public class SearchClientFactory {
 				.valueOf(Math.abs((authResult.getUserId() + srvId).hashCode()));
 		String hosts = String.valueOf(personalConfMap.get(ELASTIC_HOST));
 
-		Map map = gson.fromJson(mappingConf, Map.class);
-		JsonObject properties = gson
-				.fromJson((String) map.get("mapping"), JsonObject.class)
-				.get(indexName).getAsJsonObject().get("properties")
-				.getAsJsonObject();
 		// 这里得改变了
 		String idConf = CCSComponentFactory.getConfigClient(
 				authResult.getConfigAddr(), authResult.getConfigUser(),
@@ -104,9 +98,9 @@ public class SearchClientFactory {
 			id = null != idObj.get("indexPK") ? idObj.get("indexPK")
 					.getAsString() : null;
 		}
-		iSearchClient = new SearchClientImpl(hosts, indexName, properties, id);
-		searchClients.put(userPid + "_" + srvId, iSearchClient);
-		return iSearchClient;
+		searchClient = new SearchClientImpl(hosts, indexName, id);
+		searchClients.put(userPid + "_" + srvId, searchClient);
+		return searchClient;
 	}
 
 	private static class SesWatch extends ConfigWatcher {
@@ -123,7 +117,7 @@ public class SearchClientFactory {
 			this.userId = userId;
 		}
 
-		@SuppressWarnings({ "unchecked", "rawtypes" })
+		@SuppressWarnings({ "unchecked" })
 		@Override
 		public void processEvent(ConfigWatcherEvent event) {
 			if (event == null)
@@ -154,12 +148,6 @@ public class SearchClientFactory {
 					String hosts = String.valueOf(personalConfMap
 							.get(ELASTIC_HOST));
 
-					Map map = gson.fromJson(mappingConf, Map.class);
-					JsonObject properties = gson
-							.fromJson((String) map.get("mapping"),
-									JsonObject.class).get(indexName)
-							.getAsJsonObject().get("properties")
-							.getAsJsonObject();
 					// 这里得改变了
 					String idConf = client.get(SEARCH_CONFIG_PATH + serviceId
 							+ "/indexPK", this);
@@ -170,8 +158,7 @@ public class SearchClientFactory {
 						id = null != idObj.get("indexPK") ? idObj
 								.get("indexPK").getAsString() : null;
 					}
-					iSearchClient = new SearchClientImpl(hosts, indexName,
-							properties, id);
+					iSearchClient = new SearchClientImpl(hosts, indexName, id);
 					searchClients.put(userPid + "_" + serviceId, iSearchClient);
 
 				} catch (PaasException e) {

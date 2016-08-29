@@ -1,4 +1,4 @@
-package com.ai.paas.ipaas.search.service;
+package com.ai.paas.ipaas.search;
 
 //接口定义
 
@@ -22,7 +22,7 @@ public interface ISearchClient {
 	 * 
 	 * @param data
 	 *            文档字段列表
-	 * @return
+	 * @return 插入数据是否成功
 	 */
 	public boolean insert(Map<String, Object> data);
 
@@ -30,7 +30,7 @@ public interface ISearchClient {
 	 * 插入单条json数据
 	 *
 	 * @param json
-	 * @return
+	 * @return 插入数据是否成功
 	 */
 	public boolean insert(String json);
 
@@ -38,15 +38,15 @@ public interface ISearchClient {
 	 * 通过泛型类插入单条数据，必须序列化泛型类
 	 * 
 	 * @param data
-	 * @return
-	 */
+	 * @return 插入数据是否成功
+	 */ 
 	public <T> boolean insert(T data);
 
 	/**
 	 * 通过builder插入单条数据
 	 * 
 	 * @param jsonBuilder
-	 * @return
+	 * @return 插入数据是否成功
 	 */
 	public boolean insert(JsonBuilder jsonBuilder);
 
@@ -54,7 +54,7 @@ public interface ISearchClient {
 	 * 根据索引标识删除
 	 * 
 	 * @param id
-	 * @return
+	 * @return 删除文档，返回是否成功
 	 */
 	public boolean delete(String id);
 
@@ -62,7 +62,7 @@ public interface ISearchClient {
 	 * 删除多条数据
 	 * 
 	 * @param ids
-	 * @return
+	 * @return 是否删除成功，所有删除成功则成功，否则失败
 	 */
 	public boolean bulkDelete(List<String> ids);
 
@@ -71,14 +71,14 @@ public interface ISearchClient {
 	 * 
 	 * @param searchCriteria
 	 *            查询条件
-	 * @return
+	 * @return 是否删除成功，所有删除成功则成功，否则失败
 	 */
 	public boolean delete(List<SearchCriteria> searchCriteria);
 
 	/**
 	 * 全部清空，危险操作
 	 * 
-	 * @return
+	 * @return 清除所有数据
 	 */
 	public boolean clean();
 
@@ -87,7 +87,7 @@ public interface ISearchClient {
 	 * 
 	 * @param id
 	 * @param data
-	 * @return
+	 * @return 更新文档是否成功
 	 */
 	public boolean update(String id, Map<String, Object> data);
 
@@ -96,7 +96,7 @@ public interface ISearchClient {
 	 * 
 	 * @param id
 	 * @param json
-	 * @return
+	 * @return 更新文档是否成功
 	 */
 	public boolean update(String id, String json);
 
@@ -105,7 +105,7 @@ public interface ISearchClient {
 	 * 
 	 * @param id
 	 * @param data
-	 * @return
+	 * @return 更新文档是否成功
 	 */
 	public <T> boolean update(String id, T data);
 
@@ -114,7 +114,7 @@ public interface ISearchClient {
 	 * 
 	 * @param id
 	 * @param jsonBuilder
-	 * @return
+	 * @return 更新文档是否成功
 	 */
 	public boolean update(String id, JsonBuilder jsonBuilder);
 
@@ -123,7 +123,7 @@ public interface ISearchClient {
 	 * 
 	 * @param id
 	 * @param data
-	 * @return
+	 * @return 更新文档是否成功
 	 */
 	public boolean upsert(String id, Map<String, Object> data);
 
@@ -132,7 +132,7 @@ public interface ISearchClient {
 	 * 
 	 * @param id
 	 * @param json
-	 * @return
+	 * @return 更新插入文档是否成功
 	 */
 	public boolean upsert(String id, String json);
 
@@ -141,7 +141,7 @@ public interface ISearchClient {
 	 * 
 	 * @param id
 	 * @param data
-	 * @return
+	 * @return 更新插入文档是否成功
 	 */
 	public <T> boolean upsert(String id, T data);
 
@@ -150,7 +150,7 @@ public interface ISearchClient {
 	 * 
 	 * @param id
 	 * @param jsonBuilder
-	 * @return
+	 * @return 更新插入文档是否成功
 	 */
 	public boolean upsert(String id, JsonBuilder jsonBuilder);
 
@@ -158,40 +158,40 @@ public interface ISearchClient {
 	 * 插入多条数据，数据为Map格式
 	 * 
 	 * @param datas
-	 * @return
+	 * @return 插入是否成功,如果有一条插入错误，则返回否
 	 */
 	public boolean bulkMapInsert(List<Map<String, Object>> datas);
 
 	/**
 	 * 插入多条数据，数据为json格式
 	 *
-	 * @param json
-	 * @return
+	 * @param jsons
+	 * @return 插入是否成功,如果有一条插入错误，则返回否
 	 */
 	public boolean bulkJsonInsert(List<String> jsons);
 
 	/**
 	 * 通过泛型类插入多条数据，必须序列化泛型类，数据类型所有字段都会插入
 	 * 
-	 * @param data
-	 * @return
+	 * @param datas
+	 * @return 插入是否成功,如果有一条插入错误，则返回否
 	 */
 	public <T> boolean bulkInsert(List<T> datas);
 
 	/**
 	 * 通过builder插入多条数据
 	 * 
-	 * @param jsonBuilder
-	 * @return
+	 * @param jsonBuilders
+	 * @return 插入是否成功,如果有一条插入错误，则返回否
 	 */
 	public boolean bulkInsert(Set<JsonBuilder> jsonBuilders);
 
 	/**
 	 * 更新多个文档，合并模式
 	 * 
-	 * @param id
-	 * @param data
-	 * @return
+	 * @param ids
+	 * @param datas
+	 * @return 更新是否成功,如果有一条更新失败，则返回失败
 	 */
 	public boolean bulkMapUpdate(List<String> ids,
 			List<Map<String, Object>> datas);
@@ -199,36 +199,36 @@ public interface ISearchClient {
 	/**
 	 * 更新多个文档，合并模式
 	 * 
-	 * @param id
-	 * @param json
-	 * @return
+	 * @param ids
+	 * @param jsons
+	 * @return 更新是否成功,如果有一条更新失败，则返回失败
 	 */
 	public boolean bulkJsonUpdate(List<String> ids, List<String> jsons);
 
 	/**
 	 * 更新多个文档，合并模式
 	 * 
-	 * @param id
-	 * @param data
-	 * @return
+	 * @param ids
+	 * @param datas
+	 * @return 更新是否成功,如果有一条更新失败，则返回失败
 	 */
 	public <T> boolean bulkUpdate(List<String> ids, List<T> datas);
 
 	/**
 	 * 更新多个文档，合并模式
 	 * 
-	 * @param id
-	 * @param jsonBuilder
-	 * @return
+	 * @param ids
+	 * @param jsonBuilders
+	 * @return 更新是否成功,如果有一条更新失败，则返回失败
 	 */
 	public boolean bulkUpdate(List<String> ids, Set<JsonBuilder> jsonBuilders);
 
 	/**
 	 * 更新多个文档，不存在就插入
 	 * 
-	 * @param id
-	 * @param data
-	 * @return
+	 * @param ids
+	 * @param datas
+	 * @return 更新是否成功,如果有一条更新失败，则返回失败
 	 */
 	public boolean bulkMapUpsert(List<String> ids,
 			List<Map<String, Object>> datas);
@@ -236,42 +236,43 @@ public interface ISearchClient {
 	/**
 	 * 更新多个文档，不存在就插入
 	 * 
-	 * @param id
-	 * @param json
-	 * @return
+	 * @param ids
+	 * @param jsons
+	 * @return 更新是否成功,如果有一条更新失败，则返回失败
 	 */
 	public boolean bulkJsonUpsert(List<String> ids, List<String> jsons);
 
 	/**
 	 * 更新多个文档，不存在就插入
 	 * 
-	 * @param id
-	 * @param data
-	 * @return
+	 * @param ids
+	 * @param datas
+	 * @return 批量更新插入是否成功，有一个错误则失败
 	 */
 	public <T> boolean bulkUpsert(List<String> ids, List<T> datas);
 
 	/**
 	 * 更新多个文档，不存在就插入
 	 * 
-	 * @param id
-	 * @param jsonBuilder
-	 * @return
+	 * @param ids
+	 * @param jsonBuilders
+	 * @return 批量更新插入是否成功，有一个错误则失败
 	 */
 	public boolean bulkUpsert(List<String> ids, Set<JsonBuilder> jsonBuilders);
 
 	/**
 	 * 按照条件查询，age:(>=10 AND <50) | age:(>=10 AND <50) AND name:1234
+	 * 查询结果受模型定义及分词定义影响
 	 * 具体语法请参见：https
 	 * ://www.elastic.co/guide/en/elasticsearch/reference/current/query
 	 * -dsl-query-string-query.html
 	 * 
-	 * @param query
+	 * @param querySQL
 	 * @param from
 	 * @param offset
 	 * @param sorts
 	 * @param clazz
-	 * @return
+	 * @return 查询结果对象
 	 */
 	public <T> Result<T> searchBySQL(String querySQL, int from, int offset,
 			@Nullable List<Sort> sorts, Class<T> clazz);
@@ -282,11 +283,10 @@ public interface ISearchClient {
 	 * ://www.elastic.co/guide/en/elasticsearch/reference/current/query
 	 * -dsl-query-string-query.html
 	 * 
-	 * @param query
+	 * @param querySQL
 	 * @param from
 	 * @param offset
 	 * @param sorts
-	 * @param clazz
 	 * @return json格式的结果
 	 */
 	public String searchBySQL(String querySQL, int from, int offset,
@@ -297,10 +297,9 @@ public interface ISearchClient {
 	 * @param searchCriterias
 	 * @param from
 	 * @param offset
-	 * @param logic
 	 * @param sorts
 	 * @param clazz
-	 * @return
+	 * @return 查询结果对象
 	 */
 	public <T> Result<T> search(List<SearchCriteria> searchCriterias, int from,
 			int offset, @Nullable List<Sort> sorts, Class<T> clazz);
@@ -310,7 +309,7 @@ public interface ISearchClient {
 	 * @param from
 	 * @param offset
 	 * @param sorts
-	 * @return
+	 * @return 返回json
 	 */
 	public String search(List<SearchCriteria> searchCriterias, int from,
 			int offset, @Nullable List<Sort> sorts);
@@ -327,7 +326,7 @@ public interface ISearchClient {
 	 * @param offset
 	 * @param sorts
 	 * @param clazz
-	 * @return
+	 * @return 查询结果对象
 	 */
 	public <T> Result<T> searchByDSL(String dslJson, int from, int offset,
 			@Nullable List<Sort> sorts, Class<T> clazz);
@@ -343,8 +342,7 @@ public interface ISearchClient {
 	 * @param from
 	 * @param offset
 	 * @param sorts
-	 * @param clazz
-	 * @return
+	 * @return 返回json
 	 */
 	public String searchByDSL(String dslJson, int from, int offset,
 			@Nullable List<Sort> sorts);
@@ -357,42 +355,42 @@ public interface ISearchClient {
 	 * @param offset
 	 * @param sorts
 	 * @param clazz
-	 * @return
+	 * @return 查询结果对象
 	 */
 	public <T> Result<T> fullTextSearch(String text, int from, int offset,
 			@Nullable List<Sort> sorts, Class<T> clazz);
 
-
 	/**
-	 * 全文检索
-	 * 指定对哪些字段进行全文索引，各字段是或者关系
+	 * 全文检索 指定对哪些字段进行全文索引，各字段是或者关系
+	 * 
 	 * @param text
-	 * @param qryFields 全文索引字段
-	 * @param aggFields 聚合字段，如品牌、价格、类型等
+	 * @param qryFields
+	 *            全文索引字段
+	 * @param aggFields
+	 *            聚合字段，如品牌、价格、类型等
 	 * @param from
 	 * @param offset
 	 * @param sorts
 	 * @param clazz
-	 * @return
+	 * @return 查询结果对象
 	 */
 	public <T> Result<T> fullTextSearch(String text, List<String> qryFields,
 			List<AggField> aggFields, int from, int offset,
 			@Nullable List<Sort> sorts, Class<T> clazz);
-	
+
 	/**
 	 * 全文检索 对所有字段进行
+	 * 
 	 * @param text
 	 * @param aggFields
 	 * @param from
 	 * @param offset
 	 * @param sorts
 	 * @param clazz
-	 * @return
+	 * @return 查询结果对象
 	 */
-	public <T> Result<T> fullTextSearch(String text,
-			List<AggField> aggFields, int from, int offset,
-			@Nullable List<Sort> sorts, Class<T> clazz);
-
+	public <T> Result<T> fullTextSearch(String text, List<AggField> aggFields,
+			int from, int offset, @Nullable List<Sort> sorts, Class<T> clazz);
 
 	/**
 	 * 根据id获取文档，
@@ -401,7 +399,7 @@ public interface ISearchClient {
 	 *            文档标识
 	 * @param clazz
 	 *            返回的类型
-	 * @return
+	 * @return 返回自定义类型文档
 	 */
 	public <T> T getById(String id, Class<T> clazz);
 
@@ -414,14 +412,12 @@ public interface ISearchClient {
 	public String getById(String id);
 
 	/**
-	 * 获得搜索提示 服务器端安装elasticsearch-plugin-suggest
-	 * 客户端加入elasticsearch-plugin-suggest的jar包
-	 * https://github.com/spinscale/elasticsearch-suggest-plugin
+	 * 获得搜索提示
 	 * 
-	 * @param fieldName
+	 * @param field
 	 * @param value
 	 * @param count
-	 * @return
+	 * @return  返回提示列表
 	 * 
 	 */
 	public List<String> getSuggest(String field, String value, int count);
@@ -431,7 +427,7 @@ public interface ISearchClient {
 	 * 
 	 * @param value
 	 * @param count
-	 * @return
+	 * @return 返回提示列表
 	 */
 	public List<String> getSuggest(String value, int count);
 
@@ -440,8 +436,7 @@ public interface ISearchClient {
 	 * 
 	 * @param searchCriterias
 	 * @param field
-	 * @param clazz
-	 * @return
+	 * @return 返回结果对象，包含汇聚和结果
 	 */
 	public Result<Map<String, Long>> aggregate(
 			List<SearchCriteria> searchCriterias, String field);
@@ -451,7 +446,7 @@ public interface ISearchClient {
 	 * 
 	 * @param searchCriterias
 	 * @param fields
-	 * @return
+	 * @return 返回结果对象，包含汇聚和结果
 	 */
 	public Result<List<AggResult>> aggregate(
 			List<SearchCriteria> searchCriterias, List<AggField> fields);
@@ -460,15 +455,38 @@ public interface ISearchClient {
 	 * 创建索引
 	 * 
 	 * @param indexName
-	 * @return
+	 * @return 是否创建索引成功
 	 */
 	public boolean createIndex(String indexName, int shards, int replicas);
+
+	/**
+	 * 创建索引，可以指定索引的设置
+	 * @param indexName
+	 * @param settings json格式的" {" + "\"number_of_shards\":\""5\","
+				+ "\"number_of_replicas\":\"2\","
+				+ "\"client.transport.ping_timeout\":\"60s\","
+				+ " \"analysis\": {" + "         \"filter\": {"
+				+ "            \"nGram_filter\": {"
+				+ "               \"type\": \"nGram\","
+				+ "               \"min_gram\": 1,"
+				+ "               \"max_gram\": 10" + "            }"
+				+ "         }," + "         \"analyzer\": {"
+				+ "            \"nGram_analyzer\": {"
+				+ "               \"type\": \"custom\","
+				+ "               \"tokenizer\": \"ik_max_word\","
+				+ "               \"filter\": ["
+				+ "                  \"lowercase\","
+				+ "                  \"nGram_filter\"" + "               ]"
+				+ "            }" + "         }" + "      }" + "   " + "}"
+	 * @return 是否创建索引成功
+	 */
+	public boolean createIndex(String indexName, String settings);
 
 	/**
 	 * 删除索引
 	 * 
 	 * @param indexName
-	 * @return
+	 * @return 是否删除索引成功
 	 */
 	public boolean deleteIndex(String indexName);
 
@@ -476,7 +494,7 @@ public interface ISearchClient {
 	 * 索引是否存在
 	 * 
 	 * @param indexName
-	 * @return
+	 * @return 索引是否存在
 	 */
 	public boolean existIndex(String indexName);
 
@@ -498,18 +516,33 @@ public interface ISearchClient {
 	 *   }
 	 * }
 	 * </pre>
-	 * @return
+	 * @return 增加模型是否成功
 	 */
 	public boolean addMapping(String indexName, String type, String json);
 
 	/**
+	 * 按照指定的主键和设置创建索引
+	 * 
+	 * @param indexName
+	 *            索引名称
+	 * @param type
+	 *            模型名称
+	 * @param json
+	 *            模型定义
+	 * @param id
+	 *            主键字段
+	 * @return 增加模型是否成功
+	 */
+	public boolean addMapping(String indexName, String type, String json,
+			String id);
+
+	/**
 	 * 刷新插入或者更新
 	 * 
-	 * @return
+	 * @return 刷新是否成功，文档提交等操作生效
 	 */
 	public boolean refresh();
 
-	
 	/**
 	 * 关闭
 	 */

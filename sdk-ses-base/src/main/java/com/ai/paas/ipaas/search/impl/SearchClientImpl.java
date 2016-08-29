@@ -1,4 +1,4 @@
-package com.ai.paas.ipaas.search.service.impl;
+package com.ai.paas.ipaas.search.impl;
 
 //搜索实现定义
 
@@ -53,9 +53,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.ai.paas.ipaas.PaaSConstant;
+import com.ai.paas.ipaas.search.ISearchClient;
 import com.ai.paas.ipaas.search.SearchRuntimeException;
 import com.ai.paas.ipaas.search.common.JsonBuilder;
-import com.ai.paas.ipaas.search.service.ISearchClient;
 import com.ai.paas.ipaas.search.vo.AggField;
 import com.ai.paas.ipaas.search.vo.AggResult;
 import com.ai.paas.ipaas.search.vo.Result;
@@ -71,8 +71,6 @@ public class SearchClientImpl implements ISearchClient {
 	private Logger logger = LoggerFactory.getLogger(SearchClientImpl.class);
 	private String highlightCSS = "span,span";
 	private String indexName;
-	@SuppressWarnings("unused")
-	private JsonObject mapping;
 	private String _id = null;
 	private static Settings settings = Settings.settingsBuilder()
 			.put("client.transport.ping_timeout", "60s")
@@ -82,10 +80,8 @@ public class SearchClientImpl implements ISearchClient {
 	// 创建私有对象
 	private TransportClient client;
 
-	public SearchClientImpl(String hosts, String indexName, JsonObject mapping,
-			String id) {
+	public SearchClientImpl(String hosts, String indexName, String id) {
 		this.indexName = indexName;
-		this.mapping = mapping;
 		_id = id;
 		this.hosts = hosts;
 		initClient();
@@ -1069,6 +1065,24 @@ public class SearchClientImpl implements ISearchClient {
 			client.close();
 			client = null;
 		}
+	}
+
+	@Override
+	public boolean addMapping(String indexName, String type, String json,
+			String id) {
+		if (!StringUtil.isBlank(id))
+			this._id = id;
+		return addMapping(indexName, type, json);
+	}
+
+	@Override
+	public boolean createIndex(String indexName, String settings) {
+		CreateIndexResponse createResponse = client.admin().indices()
+				.prepareCreate(indexName).setSettings(settings).get();
+		if (createResponse.isAcknowledged()) {
+			return true;
+		}
+		return false;
 	}
 
 }

@@ -1,14 +1,11 @@
 package com.ai.paas.ipaas.search;
 
-import com.ai.paas.ipaas.PaasRuntimeException;
-
-
 /**
- *  认证层运行异常定义
+ * 认证层运行异常定义
  *
  */
 
-public class SearchRuntimeException extends PaasRuntimeException {
+public class SearchRuntimeException extends RuntimeException {
 	private static final long serialVersionUID = -8886495803406807620L;
 	private String errCode;
 	private String errDetail;
@@ -52,4 +49,3 @@ public class SearchRuntimeException extends PaasRuntimeException {
 	}
 
 }
-

@@ -1,0 +1,79 @@
+
+
+dependencies{
+	compile 'com.ai:ipaas-common:0.3'
+	testCompile(
+		"org.springframework:spring-test:3.2.13.RELEASE",
+		"junit:junit:4.11"
+	)
+	compile 'org.elasticsearch:elasticsearch:2.3.3'
+	
+
+	
+}
+
+
+
+
+
+publishing {
+    publications {
+    	mavenJar(MavenPublication) {
+        	groupId group
+        	artifactId "${moduleName}"
+            artifact sourcesJar
+            version moduleVersion
+            pom.withXml {
+	            asNode().children().last() + {
+	                delegate.dependencies {
+	                    delegate.dependency {
+	                        delegate.groupId("org.elasticsearch")
+	                        delegate.artifactId("elasticsearch")
+	                        delegate.version("2.3.3")
+	                    }
+	                     delegate.dependency {
+	                        delegate.groupId("com.ai")
+	                        delegate.artifactId("ipaas-common")
+	                        delegate.version("0.3")
+	                    }
+	                }
+	            }
+	        }
+	   }
+       publishing.publications.create("${moduleName}", MavenPublication) {
+            groupId group
+            artifactId moduleName
+            version moduleVersion
+            artifact  jar
+            pom.withXml {
+	            asNode().children().last() + {
+	                delegate.dependencies {
+	                    delegate.dependency {
+	                        delegate.groupId("org.elasticsearch")
+	                        delegate.artifactId("elasticsearch")
+	                        delegate.version("2.3.3")
+	                    }
+	                   	delegate.dependency {
+	                        delegate.groupId("com.ai")
+	                        delegate.artifactId("ipaas-common")
+	                        delegate.version("0.3")
+	                    }
+	                }
+	            }
+	        }
+        }
+    }
+    repositories {
+         maven {
+            credentials {
+                username = publishUserName
+                password = publishUserPassword
+            }
+            if(moduleVersion.endsWith('-SNAPSHOT')) {
+                url publishSnapShotsURL
+            } else {
+                url publishReleaseURL
+            }
+        }
+    }
+}

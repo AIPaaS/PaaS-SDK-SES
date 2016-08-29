@@ -18,7 +18,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.ai.paas.ipaas.search.ISearchClient;
-import com.ai.paas.ipaas.search.SearchClientFactory;
+import com.ai.paas.ipaas.search.SearchCmpClientFactory;
 import com.ai.paas.ipaas.search.common.JsonBuilder;
 import com.ai.paas.ipaas.search.vo.AggResult;
 import com.ai.paas.ipaas.search.vo.AggField;
@@ -29,7 +29,6 @@ import com.ai.paas.ipaas.search.vo.SearchOption.SearchLogic;
 import com.ai.paas.ipaas.search.vo.SearchOption.SearchType;
 import com.ai.paas.ipaas.search.vo.Sort;
 import com.ai.paas.ipaas.search.vo.Sort.SortOrder;
-import com.ai.paas.ipaas.uac.vo.AuthDescriptor;
 import com.ai.paas.ipaas.util.DateTimeUtil;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -37,17 +36,22 @@ import com.google.gson.JsonObject;
 public class SearchTest {
 
 	static ISearchClient client = null;
-	static String indexName = "1330207074";
+	static String indexName = "user";
+	static String mapping = null;
 
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
-		String srvId = "SES004";
-		String authAddr = "http://10.1.245.225:19811/service-portal-uac-web/service/auth";
-		String authPid = "EBEA6B3E34F346AE8DF369347C7BC712";
-		String authPasswd = "123456";
-		AuthDescriptor ad = new AuthDescriptor(authAddr, authPid, authPasswd,
-				srvId);
-		client = SearchClientFactory.getSearchClient(ad);
+		String hosts = "127.0.0.1:9300,127.0.0.1:9300,127.0.0.1:9300";
+		mapping = "{"
+				+ "   \"userInfo\" : {"
+				+ "     \"properties\" : {"
+				+ "     	\"userId\" :  {\"type\" : \"string\", \"store\" : \"yes\",\"index\": \"not_analyzed\"},"
+				+ "       	\"name\" : {\"type\" : \"string\", \"store\" : \"yes\",\"analyzer\":\"ik_smart\"},"
+				+ "       	\"age\" : {\"type\" : \"integer\"},"
+				+ "       	\"created\" : {\"type\" : \"date\", \"format\" : \"strict_date_optional_time||epoch_millis\"}"
+				+ "     }" + "   }" + " }";
+		String id = "userId";
+		client = SearchCmpClientFactory.getSearchClient(hosts, indexName, id);
 	}
 
 	@AfterClass
@@ -60,18 +64,6 @@ public class SearchTest {
 		if (client.existIndex(indexName))
 			client.deleteIndex(indexName);
 		client.createIndex(indexName, 3, 1);
-		String mapping = "{"
-				+ "   \""
-				+ indexName
-				+ "\" : {"
-				+ "     \"properties\" : {"
-				+ "     	\"userId\" :  {\"type\" : \"string\", \"store\" : \"yes\",\"index\": \"not_analyzed\"},"
-				+ "       	\"name\" : {\"type\" : \"string\", \"store\" : \"yes\",\"analyzer\":\"ik_max_word\"},"
-				+ "       	\"age\" : {\"type\" : \"integer\"},"
-				+ "       	\"created\" : {\"type\" : \"date\", \"format\" : \"strict_date_optional_time||epoch_millis\"}"
-				+ "     }" + "   }" + " }";
-
-		client.addMapping(indexName, indexName, mapping, "userId");
 	}
 
 	@After
@@ -112,8 +104,7 @@ public class SearchTest {
 
 	@Test
 	public void testDeleteString() {
-		User user = new User("105", "当萨菲罗斯开发送发了多少分旬", 31, new Date());
-		client.insert(user);
+		testInsertT();
 		assertTrue(client.delete("105"));
 	}
 
@@ -464,9 +455,7 @@ public class SearchTest {
 	@Test
 	public void getSuggestStringString() {
 		String mapping = "{"
-				+ "   \""
-				+ indexName
-				+ "\" : {"
+				+ "   \"user\" : {"
 				+ "  \"_all\": {"
 				+ "\"analyzer\": \"nGram_analyzer\","
 				+ "\"search_analyzer\": \"ik_max_word\","
@@ -479,13 +468,8 @@ public class SearchTest {
 				+ "       	\"age\" : {\"type\" : \"integer\"},"
 				+ "       	\"created\" : {\"type\" : \"date\", \"format\" : \"strict_date_optional_time||epoch_millis\"}"
 				+ "     }" + "   }" + " }";
-		if (client.existIndex(indexName)) {
-			client.deleteIndex(indexName);
-			client.createIndex(indexName, 3, 1);
-			client.refresh();
-		}
-		client.addMapping(indexName, indexName, mapping);
-		client.refresh();
+
+		client.addMapping("user", "user", mapping);
 		testBulkInsertListOfT();
 		client.refresh();
 		List<String> suggests = client.getSuggest("开", 10);
@@ -498,9 +482,7 @@ public class SearchTest {
 	@Test
 	public void getSuggestStringStringString() {
 		String mapping = "{"
-				+ "   \""
-				+ indexName
-				+ "\" : {"
+				+ "   \"user\" : {"
 				+ "  \"_all\": {"
 				+ "\"analyzer\": \"nGram_analyzer\","
 				+ "\"search_analyzer\": \"ik_max_word\","
@@ -513,11 +495,8 @@ public class SearchTest {
 				+ "       	\"age\" : {\"type\" : \"integer\"},"
 				+ "       	\"created\" : {\"type\" : \"date\", \"format\" : \"strict_date_optional_time||epoch_millis\"}"
 				+ "     }" + "   }" + " }";
-		if (client.existIndex(indexName)) {
-			client.deleteIndex(indexName);
-			client.createIndex(indexName, 3, 1);
-		}
-		client.addMapping(indexName, indexName, mapping);
+
+		client.addMapping("user", "user", mapping);
 		testBulkInsertListOfT();
 		client.refresh();
 		List<String> suggests = client.getSuggest("name", "开", 10);
@@ -529,9 +508,8 @@ public class SearchTest {
 
 	@Test
 	public void testAggregateListOfSearchCriteriaString() {
-		String mapping = "{" + "   \""
-				+ indexName
-				+ "\" : {"
+		String mapping = "{"
+				+ "   \"user\" : {"
 				+ "  \"_all\": {"
 				+ "\"analyzer\": \"nGram_analyzer\","
 				+ "\"search_analyzer\": \"ik_max_word\","
@@ -550,11 +528,8 @@ public class SearchTest {
 				+ "       	\"age\" : {\"type\" : \"integer\"},"
 				+ "       	\"created\" : {\"type\" : \"date\", \"format\" : \"strict_date_optional_time||epoch_millis\"}"
 				+ "     }" + "   }" + " }";
-		if (client.existIndex(indexName)) {
-			client.deleteIndex(indexName);
-			client.createIndex(indexName, 3, 1);
-		}
-		client.addMapping(indexName, indexName, mapping);
+
+		client.addMapping("user", "user", mapping);
 		testBulkInsertListOfT();
 		client.refresh();
 		List<SearchCriteria> searchCriterias = new ArrayList<>();
@@ -571,9 +546,8 @@ public class SearchTest {
 
 	@Test
 	public void testAggregateListOfSearchCriteriaListOfString() {
-		String mapping = "{" + "   \""
-				+ indexName
-				+ "\" : {"
+		String mapping = "{"
+				+ "   \"user\" : {"
 				+ "  \"_all\": {"
 				+ "\"analyzer\": \"nGram_analyzer\","
 				+ "\"search_analyzer\": \"ik_max_word\","
@@ -598,11 +572,8 @@ public class SearchTest {
 				+ "},"
 				+ "       	\"created\" : {\"type\" : \"date\", \"format\" : \"strict_date_optional_time||epoch_millis\"}"
 				+ "     }" + "   }" + " }";
-		if (client.existIndex(indexName)) {
-			client.deleteIndex(indexName);
-			client.createIndex(indexName, 3, 1);
-		}
-		client.addMapping(indexName, indexName, mapping);
+
+		client.addMapping("user", "user", mapping);
 		testBulkInsertListOfT();
 		testBulkJsonInsert();
 		client.refresh();
@@ -633,9 +604,8 @@ public class SearchTest {
 
 	@Test
 	public void testFullTextSearchWithFieldWithAgg() {
-		String mapping = "{" + "   \""
-				+ indexName
-				+ "\" : {"
+		String mapping = "{"
+				+ "   \"user\" : {"
 				+ "  \"_all\": {"
 				+ "\"analyzer\": \"nGram_analyzer\","
 				+ "\"search_analyzer\": \"ik_max_word\","
@@ -660,11 +630,8 @@ public class SearchTest {
 				+ "},"
 				+ "       	\"created\" : {\"type\" : \"date\", \"format\" : \"strict_date_optional_time||epoch_millis\"}"
 				+ "     }" + "   }" + " }";
-		if (client.existIndex(indexName)) {
-			client.deleteIndex(indexName);
-			client.createIndex(indexName, 3, 1);
-		}
-		client.addMapping(indexName, indexName, mapping);
+
+		client.addMapping("user", "user", mapping);
 		testBulkInsertListOfT();
 		testBulkJsonInsert();
 		client.refresh();
@@ -684,9 +651,8 @@ public class SearchTest {
 
 	@Test
 	public void testFullTextSearchWithAgg() {
-		String mapping = "{" + "   \""
-				+ indexName
-				+ "\" : {"
+		String mapping = "{"
+				+ "   \"user\" : {"
 				+ "  \"_all\": {"
 				+ "\"analyzer\": \"nGram_analyzer\","
 				+ "\"search_analyzer\": \"ik_max_word\","
@@ -711,11 +677,8 @@ public class SearchTest {
 				+ "},"
 				+ "       	\"created\" : {\"type\" : \"date\", \"format\" : \"strict_date_optional_time||epoch_millis\"}"
 				+ "     }" + "   }" + " }";
-		if (client.existIndex(indexName)) {
-			client.deleteIndex(indexName);
-			client.createIndex(indexName, 3, 1);
-		}
-		client.addMapping(indexName, indexName, mapping);
+
+		client.addMapping("user", "user", mapping);
 		testBulkInsertListOfT();
 		testBulkJsonInsert();
 		client.refresh();
@@ -777,10 +740,7 @@ public class SearchTest {
 
 	@Test
 	public void testAddMapping() {
-		if (client.existIndex(indexName)) {
-			client.deleteIndex(indexName);
-			client.createIndex(indexName, 3, 1);
-		}
+
 		String mapping = "{"
 				+ "   \"userInfo\" : {"
 				+ "     \"properties\" : {"
@@ -790,7 +750,7 @@ public class SearchTest {
 				+ "       	\"created\" : {\"type\" : \"date\", \"format\" : \"strict_date_optional_time||epoch_millis\"}"
 				+ "     }" + "   }" + " }";
 
-		assertTrue(client.addMapping(indexName, indexName, mapping));
+		assertTrue(client.addMapping("user", "user", mapping));
 
 		String mapping1 = "{"
 				+ "     \"properties\" : {"
@@ -800,7 +760,7 @@ public class SearchTest {
 				+ "       	\"created\" : {\"type\" : \"date\", \"format\" : \"strict_date_optional_time||epoch_millis\"}"
 				+ "     }" + " }";
 
-		assertTrue(client.addMapping(indexName, "userInfo1", mapping1));
+		assertTrue(client.addMapping("user", "userInfo1", mapping1));
 		String mapping2 = "{"
 				+ "     	\"userId\" :  {\"type\" : \"string\", \"store\" : \"yes\",\"index\": \"not_analyzed\"},"
 				+ "       	\"name\" : {\"type\" : \"string\", \"store\" : \"yes\",\"analyzer\":\"ik_smart\"},"
@@ -808,7 +768,7 @@ public class SearchTest {
 				+ "       	\"created\" : {\"type\" : \"date\", \"format\" : \"strict_date_optional_time||epoch_millis\"}"
 				+ " }";
 
-		assertTrue(client.addMapping(indexName, "userInfo2", mapping2));
+		assertTrue(client.addMapping("user", "userInfo2", mapping2));
 	}
 
 }

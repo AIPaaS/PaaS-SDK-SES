@@ -1,4 +1,4 @@
-package com.ai.paas.ipaas.search.service.impl;
+package com.ai.paas.ipaas.search.impl;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -93,7 +93,7 @@ public class SearchHelper {
 	 * 搜索条件，支持嵌套逻辑
 	 * 
 	 * @param searchCriterias
-	 * @return
+	 * @return 索引对象
 	 */
 	public static QueryBuilder createQueryBuilder(
 			List<SearchCriteria> searchCriterias) {
