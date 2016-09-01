@@ -9,3 +9,7 @@
 /ses-web/.settings
 /ses-web/.classpath
 /ses-web/.project
+/sdk-ses-base/.gradle
+/sdk-ses-base/.settings
+/sdk-ses-base/.classpath
+/sdk-ses-base/.project
