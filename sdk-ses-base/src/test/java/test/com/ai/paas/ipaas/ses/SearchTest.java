@@ -403,8 +403,8 @@ public class SearchTest {
 		assertTrue(result.getCount() == 1);
 		// 复杂查询，name含有“开发”或者含有“1234”且年龄在31-45之间的
 		searchCriteria = new SearchCriteria();
-		SearchCriteria subCriteria = new SearchCriteria("name", "开发",
-				new SearchOption(SearchLogic.should, SearchType.querystring));
+		SearchCriteria subCriteria = new SearchCriteria("age", "41",
+				new SearchOption(SearchLogic.must_not, SearchType.querystring));
 		searchCriteria.addSubCriteria(subCriteria);
 		SearchCriteria subCriteria1 = new SearchCriteria("name", "1234",
 				new SearchOption(SearchLogic.should, SearchType.querystring));
@@ -419,7 +419,7 @@ public class SearchTest {
 		searchCriteria1.addFieldValue("45");
 		searchCriterias.add(searchCriteria1);
 		result = client.search(searchCriterias, 0, 10, null, User.class);
-		assertTrue(result.getCount() == 2);
+		assertTrue(result.getCount() == 1);
 	}
 
 	@Test

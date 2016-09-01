@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
@@ -13,6 +14,7 @@ import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
+import org.elasticsearch.index.query.QueryStringQueryBuilder.Operator;
 import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
@@ -25,7 +27,6 @@ import com.ai.paas.ipaas.search.vo.AggField;
 import com.ai.paas.ipaas.search.vo.AggResult;
 import com.ai.paas.ipaas.search.vo.SearchCriteria;
 import com.ai.paas.ipaas.search.vo.SearchOption;
-import com.ai.paas.ipaas.search.vo.SearchOption.SearchLogic;
 import com.ai.paas.ipaas.util.StringUtil;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -37,8 +38,8 @@ public class SearchHelper {
 	}
 
 	public static String getId(String json, String id) {
-		Gson gson = new GsonBuilder().setDateFormat(
-				"yyyy-MM-dd'T'HH:mm:ss").create();
+		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss")
+				.create();
 		JsonObject obj = gson.fromJson(json, JsonObject.class);
 		if (null != obj.get(id))
 			return obj.get(id).getAsString();
@@ -67,8 +68,8 @@ public class SearchHelper {
 	}
 
 	public static boolean hasId(String json, String id) {
-		Gson gson = new GsonBuilder().setDateFormat(
-				"yyyy-MM-dd'T'HH:mm:ss").create();
+		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss")
+				.create();
 		JsonObject obj = gson.fromJson(json, JsonObject.class);
 		if (null != obj.get(id))
 			return true;
@@ -148,18 +149,17 @@ public class SearchHelper {
 				/* 区间搜索 */
 				return createRangeQueryBuilder(field, values);
 			}
-			BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
+			QueryBuilder queryBuilder = null;
 			if (values != null) {
-
+				String formatValue = null;
+				List<String> terms = new ArrayList<>();
 				Iterator<String> iterator = values.iterator();
 				while (iterator.hasNext()) {
-					QueryBuilder queryBuilder = null;
-					String formatValue = iterator.next().toString().trim()
+					queryBuilder = null;
+					formatValue = iterator.next().toString().trim()
 							.replace("*", "").toLowerCase();// 格式化搜索数据
-					if (mySearchOption.getSearchType() == SearchOption.SearchType.term) {
-						queryBuilder = QueryBuilders.termQuery(field,
-								formatValue).boost(mySearchOption.getBoost());
-					} else if (mySearchOption.getSearchType() == SearchOption.SearchType.querystring) {
+
+					if (mySearchOption.getSearchType() == SearchOption.SearchType.querystring) {
 						if (formatValue.length() == 1) {
 							/*
 							 * 如果搜索长度为1的非数字的字符串，格式化为通配符搜索，暂时这样，以后有时间改成multifield搜索
@@ -169,23 +169,27 @@ public class SearchHelper {
 								formatValue = "*" + formatValue + "*";
 							}
 						}
-						QueryStringQueryBuilder queryStringQueryBuilder = QueryBuilders
-								.queryStringQuery(formatValue)
-								.minimumShouldMatch(
-										mySearchOption
-												.getQueryStringPrecision());
-						queryBuilder = queryStringQueryBuilder.field(field)
-								.boost(mySearchOption.getBoost());
 					}
-					if (mySearchOption.getSearchLogic() == SearchLogic.should) {
-						boolQueryBuilder = boolQueryBuilder
-								.should(queryBuilder);
-					} else {
-						boolQueryBuilder = boolQueryBuilder.must(queryBuilder);
-					}
+					terms.add(formatValue);
+				}
+				if (mySearchOption.getSearchType() == SearchOption.SearchType.term) {
+					queryBuilder = QueryBuilders.termsQuery(field, terms)
+							.boost(mySearchOption.getBoost());
+				} else if (mySearchOption.getSearchType() == SearchOption.SearchType.querystring) {
+					QueryStringQueryBuilder queryStringQueryBuilder = QueryBuilders
+							.queryStringQuery(StringUtils.join(terms, " "))
+							.defaultOperator(Operator.AND)
+							.minimumShouldMatch(
+									mySearchOption.getQueryStringPrecision());
+					queryBuilder = queryStringQueryBuilder.field(field).boost(
+							mySearchOption.getBoost());
+				} else if (mySearchOption.getSearchType() == SearchOption.SearchType.match) {
+					queryBuilder = QueryBuilders.matchQuery(field,
+							StringUtils.join(terms, " "));
+
 				}
 			}
-			return boolQueryBuilder;
+			return queryBuilder;
 		} catch (Exception e) {
 			throw new SearchRuntimeException("ES create builder error", e);
 		}
@@ -232,8 +236,8 @@ public class SearchHelper {
 			if (hits.getTotalHits() == 0) {
 				return results;
 			}
-			Gson gson = new GsonBuilder().setDateFormat(
-					"yyyy-MM-dd'T'HH:mm:ss").create();
+			Gson gson = new GsonBuilder()
+					.setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create();
 			for (SearchHit searchHit : hits.getHits()) {
 				String source = searchHit.getSourceAsString();
 				if (null != clazz
@@ -254,8 +258,8 @@ public class SearchHelper {
 			if (hits.getTotalHits() == 0) {
 				return null;
 			}
-			Gson gson = new GsonBuilder().setDateFormat(
-					"yyyy-MM-dd'T'HH:mm:ss").create();
+			Gson gson = new GsonBuilder()
+					.setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create();
 			String source = null;
 			List<String> results = new ArrayList<>();
 			for (SearchHit searchHit : hits.getHits()) {

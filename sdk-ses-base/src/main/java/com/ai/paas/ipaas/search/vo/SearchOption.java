@@ -28,13 +28,13 @@ public class SearchOption implements Serializable {
 		/* 按照quert_string搜索，搜索非词组时候使用 */
 		querystring
 		/* 按照区间搜索 */, range
-		/* 按照词组搜索，搜索一个词时候使用 */, term
+		/* 按照词组搜索，搜索一个词时候使用 */, term, match;
 	}
 
 	public enum SearchLogic {
 		/* 逻辑must关系 */
 		must
-		/* 逻辑should关系 */, should;
+		/* 逻辑should关系 */, should, must_not;
 
 		public void convertQueryBuilder(BoolQueryBuilder rootQueryBuilder,
 				QueryBuilder childQueryBuilder) {
@@ -47,6 +47,10 @@ public class SearchOption implements Serializable {
 				rootQueryBuilder.must(childQueryBuilder);
 				break;
 			}
+			case must_not: {
+				rootQueryBuilder.mustNot(childQueryBuilder);
+				break;
+			}
 			default: {
 				throw new RuntimeException("");
 			}
@@ -55,8 +59,7 @@ public class SearchOption implements Serializable {
 	}
 
 	/**
-	 * @author DOUXF
-	 * return enum
+	 * @author DOUXF return enum
 	 */
 	public enum DataFilter {
 		/* 只显示有值的 *//* 显示没有值的 *//* 显示全部 */
