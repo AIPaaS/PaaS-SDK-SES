@@ -10,9 +10,11 @@
 <%@include file="/jsp/common/header.jsp"%>
 <link href="${ctx}/resources/res/css/css.css" rel="stylesheet" type="text/css">
 <%
-		response.setHeader("Access-Control-Allow-Origin", "*");	
-		response.setHeader("Access-Control-Allow-Methods", "POST");
-		response.setHeader("Access-Control-Allow-Headers", "x-requested-with,content-type");
+		response.setHeader("Access-Control-Allow-Origin", "*");		
+		response.setHeader("Access-Control-Allow-Credentials", "true");	
+		response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+		response.setHeader("Access-Control-Allow-Headers", "Origin, No-Cache, X-Requested-With, If-Modified-Since, Pragma, Last-Modified, Cache-Control, Expires, Content-Type, X-E4M-With");
+		response.setHeader("Content-Type", "text/html; charset=utf-8");
 		
 %>
 <script type="text/javascript"
@@ -101,7 +103,7 @@
 				<ul class="list-inline pull-left">
 					<li>版权所有</li>
 				</ul>
-				<span class="pull-right-xs text-muted">© SES.</span>
+				<span class="pull-right-xs text-muted">© SES..</span>
 				<div class="clearfix"></div>
 			</footer>
 		</div>
