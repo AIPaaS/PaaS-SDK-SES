@@ -9,7 +9,9 @@
 <title>SES</title>
 <%@include file="/jsp/common/header.jsp"%>
 <link href="${ctx}/resources/res/css/css.css" rel="stylesheet" type="text/css">
-
+<%
+		response.setHeader("Access-Control-Allow-Origin", "*");
+%>
 <script type="text/javascript"
 	src="${ctx}/resources/res/js/index.js"></script>
 </head>
