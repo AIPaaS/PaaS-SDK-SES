@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.slf4j.Logger;
@@ -97,6 +98,38 @@ public class LoginController {
 			log.error(e.getMessage(), e);
 		}
 		return returnMap;
+	}
+	
+	@RequestMapping(value = "/portalLogin")
+	public String portalLogin(HttpServletRequest request,HttpServletResponse response) {
+		
+		String urlInfo = request.getParameter(ConstantsForSession.LoginSession.URL_INFO);
+		request.setAttribute("urlInfo", urlInfo);
+		session.setAttribute(ConstantsForSession.LoginSession.USER_INFO, null);
+		session.invalidate();
+		
+		Map<String, Object> modelMap = new HashMap<String, Object>();
+		String userName = request.getParameter("userName");
+		String serviceId = request.getParameter("serviceId");
+		String servicePwd = request.getParameter("servicePwd");
+		modelMap.put("userName", userName);
+		modelMap.put("sid", serviceId);
+		modelMap.put("pwd", servicePwd);
+		//解决跨域问题=======start
+		response.setHeader("Access-Control-Allow-Origin", "*");		
+		response.setHeader("Access-Control-Allow-Credentials", "true");	
+		response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+		response.setHeader("Access-Control-Allow-Headers", "Origin, No-Cache, X-Requested-With, If-Modified-Since, Pragma, Last-Modified, Cache-Control, Expires, Content-Type, X-E4M-With");
+		response.setHeader("Content-Type", "text/html; charset=utf-8");
+		//解决跨域问题=======end
+		try {
+			String res = iLoginService.login(request.getSession(),modelMap);
+			//return returnMap;
+		} catch (Exception e) {
+			log.error(e.getMessage(), e);
+		}
+		//跳转到首页
+		return "../index";
 	}
 	
 	

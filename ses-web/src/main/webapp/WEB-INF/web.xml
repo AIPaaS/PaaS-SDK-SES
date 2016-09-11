@@ -26,7 +26,7 @@
 		</init-param>
 		<init-param>
 			<param-name>ignore_pages</param-name>
-			<param-value>/login/noLogin,/login/doLogin,/login/login,/head/plugin,/resources/head/dist/base/reset.css,/resources/head/dist/app.js,
+			<param-value>/login/noLogin,/login/doLogin,/login/login,/login/portalLogin,/head/plugin,/resources/head/dist/base/reset.css,/resources/head/dist/app.js,
 			/resources/head/dist/vendor.js,/resources/head/dist/i18n.js,/resources/head/dist/app.css,/resources/head/dist/vendor.css
 			</param-value>
 		</init-param>

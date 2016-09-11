@@ -44,7 +44,7 @@
     right: -10px;
     bottom: -10px;
     left: -10px;
-    background-image: url(resources/res/images/wallpaper.jpg);
+    background-image: url(/iPaaS-Search/resources/res/images/wallpaper.jpg);
     background-repeat: no-repeat;
     background-size: cover;
     -webkit-filter: blur(4px) grayscale(70%);
