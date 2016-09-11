@@ -68,8 +68,8 @@ public class SearchTest {
 
 	@After
 	public void tearDown() throws Exception {
-		if (client.existIndex(indexName))
-			client.deleteIndex(indexName);
+//		if (client.existIndex(indexName))
+//			client.deleteIndex(indexName);
 	}
 
 	@Test

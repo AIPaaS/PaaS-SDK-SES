@@ -1085,4 +1085,14 @@ public class SearchClientImpl implements ISearchClient {
 		return false;
 	}
 
+	@Override
+	public boolean existMapping(String indexName, String mapping) {
+		GetMappingsResponse response = client.admin().indices()
+				.prepareGetMappings(indexName).get();
+		if (null != response) {
+			return response.getMappings().containsKey(mapping);
+		}
+		return false;
+	}
+
 }

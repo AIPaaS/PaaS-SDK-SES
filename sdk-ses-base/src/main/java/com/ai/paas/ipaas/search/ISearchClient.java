@@ -497,6 +497,14 @@ public interface ISearchClient {
 	 * @return 索引是否存在
 	 */
 	public boolean existIndex(String indexName);
+	
+	/**
+	 * 判断索引模型是否存在
+	 * @param indexName
+	 * @param mapping
+	 * @return
+	 */
+	public boolean existMapping(String indexName,String mapping);
 
 	/**
 	 * 增加索引对象定义，自从2.0以后，不支持在设置ID为文档的某个字段，需要在 插入或获取时自己指定
