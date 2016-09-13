@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.ai.paas.ipaas.PaasRuntimeException;
-import com.ai.paas.ipaas.search.service.ISearchClient;
+import com.ai.paas.ipaas.search.ISearchClient;
 import com.ai.paas.ipaas.ses.dataimport.constant.SesDataImportConstants;
 import com.ai.paas.ipaas.ses.dataimport.impt.ImportData;
 import com.ai.paas.ipaas.ses.dataimport.impt.OneDbImport;

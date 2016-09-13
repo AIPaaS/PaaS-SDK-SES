@@ -6,8 +6,8 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.ai.paas.ipaas.search.service.ISearchClient;
-import com.ai.paas.ipaas.search.service.SearchClientFactory;
+import com.ai.paas.ipaas.search.ISearchClient;
+import com.ai.paas.ipaas.search.SearchClientFactory;
 import com.ai.paas.ipaas.uac.vo.AuthDescriptor;
 
 public class SesUtil {

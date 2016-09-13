@@ -7,7 +7,7 @@ import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.ai.paas.ipaas.search.service.ISearchClient;
+import com.ai.paas.ipaas.search.ISearchClient;
 import com.ai.paas.ipaas.ses.dataimport.dbs.config.ExportFormatConfig;
 import com.ai.paas.ipaas.ses.dataimport.dbs.config.TableRuleConfig;
 import com.ai.paas.ipaas.ses.dataimport.impt.model.Result;

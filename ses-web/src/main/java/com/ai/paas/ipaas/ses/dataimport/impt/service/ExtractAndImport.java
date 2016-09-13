@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.ai.paas.ipaas.search.service.ISearchClient;
+import com.ai.paas.ipaas.search.ISearchClient;
 import com.ai.paas.ipaas.ses.dataimport.constant.SesDataImportConstants;
 import com.ai.paas.ipaas.ses.dataimport.dbs.config.ExportFormatConfig;
 import com.ai.paas.ipaas.ses.dataimport.dbs.config.TableRuleConfig;
