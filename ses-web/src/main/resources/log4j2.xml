@@ -4,10 +4,21 @@
 		<Console name="Console" target="SYSTEM_OUT">
 			<PatternLayout pattern="%d [%t] %-5p %c(%L) - %m%n" />
 		</Console>
+		<RollingFile name="RollingFile"
+            fileName="logs/ses-web.log" filePattern="logs/ses-web-%d{yyyy-MM-dd}-%i.log">
+           <PatternLayout>
+              <Pattern>%d %p %c{1.} [%t] %m%n</Pattern>
+           </PatternLayout>
+           <Policies>
+             <TimeBasedTriggeringPolicy/>         
+             <SizeBasedTriggeringPolicy size="50 MB"/>
+           </Policies>
+          <DefaultRolloverStrategy max="20"/>
+        </RollingFile>
 	</Appenders>
 	<Loggers>
-		<Root level="debug">
-			<AppenderRef ref="Console" />
+		<Root level="info">
+			<AppenderRef ref="RollingFile" />
 		</Root>
 	</Loggers>
 </Configuration>
