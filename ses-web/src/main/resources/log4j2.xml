@@ -7,7 +7,7 @@
 		<RollingFile name="RollingFile"
             fileName="logs/ses-web.log" filePattern="logs/ses-web-%d{yyyy-MM-dd}-%i.log">
            <PatternLayout>
-              <Pattern>%d %p %c{1.} [%t] %m%n</Pattern>
+              <Pattern>%d [%t] %-5p %c(%L) - %m%n</Pattern>
            </PatternLayout>
            <Policies>
              <TimeBasedTriggeringPolicy/>         
