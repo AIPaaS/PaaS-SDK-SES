@@ -9,12 +9,17 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,10 +31,17 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import com.ai.paas.ipaas.PaaSConstant;
+import com.ai.paas.ipaas.PaasException;
+import com.ai.paas.ipaas.ses.common.constants.SesConstants;
 import com.ai.paas.ipaas.ses.dataimport.util.ParamUtil;
 import com.ai.paas.ipaas.ses.manage.rest.interfaces.IRPCIKDictionary;
+import com.ai.paas.ipaas.ses.manage.rest.interfaces.IRPCIndexMapping;
+import com.ai.paas.ipaas.ses.manage.rest.interfaces.IRPCSesUserInst;
+import com.ai.paas.ipaas.ses.dataimport.util.HttpClientUtil;
 import com.ai.paas.ipaas.util.StringUtil;
 import com.ai.paas.ipaas.vo.ses.RPCDictionay;
+import com.ai.paas.ipaas.vo.ses.SesUserInstance;
+import com.ai.paas.ipaas.vo.ses.SesUserMapping;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
@@ -40,6 +52,10 @@ public class DictionaryController {
 			.getLogger(DictionaryController.class);
 
 	@Autowired
+	IRPCIndexMapping indexMappingSRV;
+	@Autowired
+	IRPCSesUserInst sesUserInst;
+	@Autowired
 	IRPCIKDictionary dictSRV;
 
 	@SuppressWarnings({ "unused", "rawtypes" })
@@ -49,14 +65,74 @@ public class DictionaryController {
 		Map<String, String> userMap = ParamUtil.getUser(request);
 		String userId = ParamUtil.getUser(request).get("userId");
 		String serviceId = ParamUtil.getUser(request).get("sid");
-		Map<String, List> allIndexWordMap = dictSRV.getUserDictionary(userId,
-				serviceId, 1, 500);
-		model.addAttribute("allIndexWordList",
-				allIndexWordMap.get("allIndexWordList"));
-		model.addAttribute("allStopWordList",
-				allIndexWordMap.get("allStopWordList"));
-
+		List<SesUserMapping> fildList = new ArrayList<SesUserMapping>();
+		String indexName= null;   
+		try {
+			Map<String, List> allIndexWordMap = dictSRV.getUserDictionary(userId,
+					serviceId, 1, 500);
+			model.addAttribute("allIndexWordList",
+					allIndexWordMap.get("allIndexWordList"));
+			model.addAttribute("allStopWordList",
+					allIndexWordMap.get("allStopWordList"));
+			SesUserMapping mapping = indexMappingSRV.loadMapping(userId,serviceId);
+			SesUserInstance ins = sesUserInst.queryInst(userId, serviceId);
+			String addr = "http://" + ins.getHostIp() + ":" + ins.getSesPort();
+			model.addAttribute("addr", addr);
+			//获得索引值
+			indexName= mapping.getIndexName();   
+			String mappings = mapping.getMapping();
+			//循环截取出json串中 分词字段 的 analyze的值为true的
+			String filds = "";
+			JSONObject obj=new JSONObject(mappings);
+	        Iterator it = obj.keys();  
+	        filds = (String) it.next();  
+			model.addAttribute("filds",filds);
+			model.addAttribute("indexName",indexName);
+		} catch (Throwable e) {
+			model.addAttribute("filds","");
+			model.addAttribute("indexName","");
+			model.addAttribute("addr", "");
+			LOGGER.info(SesConstants.EXPECT_ONE_RECORD_FAIL, e);
+		}
 		return "/dictionary/index";
+	}
+	
+	@ResponseBody
+	@RequestMapping(value = "/getFildWords", produces = "application/text;charset=utf-8")
+	public String getFildWords(HttpServletRequest request,
+			HttpServletResponse response) {
+		String filds = request.getParameter("filds");
+		String inputText = request.getParameter("inputText");
+		String addr = request.getParameter("addr");
+		String indexName = request.getParameter("indexName");
+		addr = addr +"/"+ indexName +"/_analyze?field="  + filds;
+		String result=null;
+		StringBuffer keyVals = new StringBuffer();
+		try {
+		    result = HttpClientUtil.sendPostRequest(addr, new Gson().toJson(inputText));
+			JSONObject obj=new JSONObject(result);
+	        Iterator it = obj.keys();  
+	        while (it.hasNext()) {  
+	            String key = (String) it.next();  
+	            String value = obj.get(key).toString();  
+	            JSONArray obj_cs= new JSONArray(value); 
+	            for(int i=0;i<obj_cs.length();i++){
+	            	JSONObject obj_c = (JSONObject)obj_cs.get(i);
+	            	 Iterator it_c = obj_c.keys();  
+	 	            while (it_c.hasNext()) {  
+	 	            	   String key_c = (String) it_c.next();  
+	 	                   String value_c = obj_c.get(key_c).toString();
+	 	                   System.out.println("key: "+key_c + " value: "+ value_c);
+	 	                   if( "token".equals(key_c) ){
+	 	                	    keyVals.append(value_c).append(",");
+	 	                   }
+	 	            }
+	            }
+	        }
+		} catch (Exception e) {
+			e.printStackTrace();
+		} 
+		return keyVals.toString();
 	}
 
 	@ResponseBody

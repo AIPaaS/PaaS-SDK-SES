@@ -123,6 +123,7 @@ public class SesController {
 		userMapping.setPk(request.getParameter("pk"));
 		userMapping.setUpdateTime(new Timestamp(System.currentTimeMillis()));
 		userMapping.setCopyTo(copyto);
+		userMapping.setIndexName(indexName+"");   //设置名字
 		String result = "";
 
 		try {

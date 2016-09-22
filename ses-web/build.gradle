@@ -130,7 +130,7 @@ dependencies{
 	compile "org.apache.commons:commons-dbcp2:2.1"
 	compile 'org.apache.zookeeper:zookeeper:3.4.6'
 	compile 'commons-httpclient:commons-httpclient:3.0'
-	
+	compile 'org.json:json:20140107'
 	compile "javax.servlet:javax.servlet-api:3.1.0"
 	compile "javax.servlet.jsp:javax.servlet.jsp-api:2.3.1"
 	

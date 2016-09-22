@@ -29,3 +29,29 @@ function validateDic(){
 	return v;
 }
 
+function  elasticsearchFilds(){
+	var filds=$("#filds").val();
+	var inputText = $("#inputText").val();
+	var addr = $("#addr").val();
+	var indexName = $("#indexName").val();
+	if(filds=="" || filds==undefined){
+		alert("请选择分词字段");
+		return false;
+	}
+	if(inputText==""){
+		alert("请请输入分词内容");
+		return false;
+	}
+	//执行分词
+	var url = "${ctx}../../../dic/getFildWords";
+	$.ajax({
+    	   type: "POST",
+    	   url: url,	
+    	   dataType : "text",
+		   data : {filds:filds,inputText:inputText,addr:addr,indexName:indexName},
+		   success:function(data){
+			   $("#showText").text(data);
+		   }
+       }); 
+}
+

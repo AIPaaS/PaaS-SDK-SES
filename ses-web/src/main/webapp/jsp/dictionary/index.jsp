@@ -128,6 +128,26 @@ response.sendRedirect("dataimport/toDs");
 			    </div>
 				</div>
 			</div>
+			<div class="panel panel-default panel-page-header" >
+				<div class="panel-body">
+					<div class="primary-section"
+						style="border: 0; margin: 0; padding-bottom: 0;">
+						<h4>当前分词情况</h4>
+						<br/><br/><b>请请输入分词内容：</b><br/>
+						<textarea rows="2" cols="20" style="width: 365px; border:solid 1px #000000; " id="inputText" class="textarea input-sm"></textarea>
+						
+						<br/><br/><b>分词后的展示内容：</b><br/>
+						<textarea rows="2" cols="20" style="width: 365px; border:solid 1px #000000; "  id="showText"  class="textarea input-sm"></textarea>
+						
+						<div	 style="width:300px;text-align:center;">
+						<input type="hidden"  id="addr"  value="${ addr}"/>
+						<input type="hidden"  id="filds"  value="${ filds}"/>
+						<input type="hidden"  id="indexName"  value="${ indexName}"/>
+						<br/><input type="button" name="fildBut" id="fildBut" value="确认"  onclick="elasticsearchFilds()" class="btn btn-sm project-creation-btn ng-binding"/>
+						</div>
+					</div>
+				</div>
+			</div>
 			<div class="panel panel-default">
 				<div class="panel-body">
 					<form id="indexDicForm" class="project-form ng-pristine ng-valid dic">
@@ -492,8 +512,6 @@ function saveDic(){
 		
 	}
 }
-
-
 
 </script>
 
