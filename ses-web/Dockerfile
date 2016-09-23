@@ -9,6 +9,10 @@ RUN rm -fr /usr/local/tomcat/webapps/*
 
 COPY ./build/libs/iPaaS-Search.war /usr/local/tomcat/webapps/iPaaS-Search.war
 
+#设置时区
+RUN /bin/cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
+    && echo 'Asia/Shanghai' > /etc/timezone
+
 
 # Define default command.  
 CMD ["catalina.sh", "run"]
