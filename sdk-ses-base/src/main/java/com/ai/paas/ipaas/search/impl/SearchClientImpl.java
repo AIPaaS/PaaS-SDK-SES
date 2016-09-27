@@ -142,6 +142,9 @@ public class SearchClientImpl implements ISearchClient {
 	}
 
 	public List<String> getSuggest(String field, String value, int count) {
+		if (StringUtil.isBlank(field) || StringUtil.isBlank(value)
+				|| count <= 0)
+			return null;
 		SearchResponse response = client
 				.prepareSearch(indexName)
 				.setQuery(
@@ -162,6 +165,8 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public boolean insert(Map<String, Object> data) {
+		if (null == data || data.size() <= 0)
+			return false;
 		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ")
 				.create();
 		return insert(gson.toJson(data));
@@ -169,6 +174,8 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public boolean insert(String json) {
+		if (StringUtil.isBlank(json))
+			return false;
 		IndexResponse response = null;
 		// 判断一下是否有id字段
 		String id = SearchHelper.getId(json, _id);
@@ -191,6 +198,8 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public <T> boolean insert(T data) {
+		if (null == data)
+			return false;
 		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ")
 				.create();
 		return insert(gson.toJson(data));
@@ -198,6 +207,8 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public boolean insert(JsonBuilder jsonBuilder) {
+		if (null == jsonBuilder)
+			return false;
 		// 判断是否有id
 		XContentBuilder builder = null;
 		try {
@@ -232,6 +243,8 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public boolean bulkDelete(List<String> ids) {
+		if (null == ids || ids.size() <= 0)
+			return false;
 		BulkRequestBuilder bulkRequest = client.prepareBulk();
 		for (String id : ids) {
 			bulkRequest.add(client.prepareDelete(indexName, indexName, id));
@@ -251,6 +264,8 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public boolean delete(List<SearchCriteria> searchCriteria) {
+		if (null == searchCriteria || searchCriteria.size() <= 0)
+			return false;
 		// 此处要先scan出来，然后再批量删除
 		List<String> ids = new ArrayList<>();
 		QueryBuilder queryBuilder = null;
@@ -331,6 +346,8 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public boolean update(String id, Map<String, Object> data) {
+		if (StringUtil.isBlank(id) || null == data || data.size() <= 0)
+			return false;
 		UpdateResponse response = client
 				.prepareUpdate(indexName, indexName, id).setRefresh(true)
 				.setConsistencyLevel(WriteConsistencyLevel.DEFAULT)
@@ -343,6 +360,8 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public boolean update(String id, String json) {
+		if (StringUtil.isBlank(id) || StringUtil.isBlank(json))
+			return false;
 		UpdateResponse response = client
 				.prepareUpdate(indexName, indexName, id).setRefresh(true)
 				.setConsistencyLevel(WriteConsistencyLevel.DEFAULT)
@@ -355,6 +374,8 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public <T> boolean update(String id, T data) {
+		if (StringUtil.isBlank(id) || null == data)
+			return false;
 		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ")
 				.create();
 		return update(id, gson.toJson(data));
@@ -362,6 +383,8 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public boolean update(String id, JsonBuilder jsonBuilder) {
+		if (StringUtil.isBlank(id) || null == jsonBuilder)
+			return false;
 		UpdateResponse response = client
 				.prepareUpdate(indexName, indexName, id).setRefresh(true)
 				.setConsistencyLevel(WriteConsistencyLevel.DEFAULT)
@@ -374,6 +397,8 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public boolean upsert(String id, Map<String, Object> data) {
+		if (StringUtil.isBlank(id) || null == data || data.size() <= 0)
+			return false;
 		UpdateResponse response = client
 				.prepareUpdate(indexName, indexName, id).setRefresh(true)
 				.setConsistencyLevel(WriteConsistencyLevel.DEFAULT)
@@ -386,6 +411,8 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public boolean upsert(String id, String json) {
+		if (StringUtil.isBlank(id) || StringUtil.isBlank(json))
+			return false;
 		UpdateResponse response = client
 				.prepareUpdate(indexName, indexName, id).setRefresh(true)
 				.setConsistencyLevel(WriteConsistencyLevel.DEFAULT)
@@ -398,6 +425,8 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public <T> boolean upsert(String id, T data) {
+		if (StringUtil.isBlank(id) || null == data)
+			return false;
 		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ")
 				.create();
 		return upsert(id, gson.toJson(data));
@@ -405,6 +434,8 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public boolean upsert(String id, JsonBuilder jsonBuilder) {
+		if (StringUtil.isBlank(id) || null == jsonBuilder)
+			return false;
 		UpdateResponse response = client
 				.prepareUpdate(indexName, indexName, id).setRefresh(true)
 				.setConsistencyLevel(WriteConsistencyLevel.DEFAULT)
@@ -425,6 +456,8 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public boolean bulkMapInsert(List<Map<String, Object>> datas) {
+		if (null == datas || datas.size() <= 0)
+			return false;
 		BulkRequestBuilder bulkRequest = client.prepareBulk();
 		BulkResponse bulkResponse = null;
 		for (Map<String, Object> data : datas) {
@@ -457,6 +490,8 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public boolean bulkJsonInsert(List<String> jsons) {
+		if (null == jsons || jsons.size() <= 0)
+			return false;
 		BulkRequestBuilder bulkRequest = client.prepareBulk();
 		BulkResponse bulkResponse = null;
 		for (String json : jsons) {
@@ -491,6 +526,8 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public <T> boolean bulkInsert(List<T> datas) {
+		if (null == datas || datas.size() <= 0)
+			return false;
 		List<String> jsons = new ArrayList<>();
 		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ")
 				.create();
@@ -502,6 +539,8 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public boolean bulkInsert(Set<JsonBuilder> jsonBuilders) {
+		if (null == jsonBuilders || jsonBuilders.size() <= 0)
+			return false;
 		BulkRequestBuilder bulkRequest = client.prepareBulk();
 		BulkResponse bulkResponse = null;
 		for (JsonBuilder jsonBuilder : jsonBuilders) {

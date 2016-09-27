@@ -476,7 +476,7 @@ public class SearchTest {
 		assertTrue(suggests.size() == 3);
 		suggests = client.getSuggest("4", 10);
 		// 因为搜索所有的字段，只要含有就显示
-		assertTrue(suggests.size() == 3);
+		assertTrue(suggests.size() == 2);
 	}
 
 	@Test
