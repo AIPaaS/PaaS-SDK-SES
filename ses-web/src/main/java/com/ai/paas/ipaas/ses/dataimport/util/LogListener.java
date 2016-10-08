@@ -24,7 +24,7 @@ public class LogListener {
 		logger.info("---【监听器监听到开始删除日志文件】---");
 		
 		// 获取日志文件夹的路径
-		String logPath = "/logs/";
+		String logPath = "logs/";
 		/**
 		 * 定时删除任务
 		 */
