@@ -52,7 +52,7 @@
   
     <task:scheduled-tasks>  
         <!--这里表示的是每天凌晨1点执行一次 -->  
-        <task:scheduled ref="logListen" method="run" cron="* * 1 * * ?" />    
+        <task:scheduled ref="logListen" method="run" cron="* * 6 * * ?" />    
     </task:scheduled-tasks>  
       
     <!-- 自动扫描的包名 -->    
