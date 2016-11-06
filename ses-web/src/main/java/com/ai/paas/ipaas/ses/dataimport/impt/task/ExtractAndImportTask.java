@@ -49,7 +49,7 @@ public class ExtractAndImportTask implements Runnable {
 	private CountDownLatch exImLatch = null;
 	private ISearchClient is;
 	private SimpleDateFormat dateFormat_hms = new SimpleDateFormat(
-			"yyyy-MM-dd HH:mm:ss");
+			"yyyy-MM-dd'T'HH:mm:ssZZZ");
 
 	private int count = 0;
 

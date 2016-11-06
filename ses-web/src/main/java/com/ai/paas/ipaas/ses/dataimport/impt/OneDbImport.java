@@ -39,7 +39,7 @@ public class OneDbImport {
 	private Result result;
 	private ISearchClient is;
 	private SimpleDateFormat dateFormat_hms = new SimpleDateFormat(
-			"yyyy-MM-dd HH:mm:ss");
+			"yyyy-MM-dd'T'HH:mm:ssZZZ");
 
 	public OneDbImport(String sesUserInfo, SesDataSourceInfo db,
 			SesIndexSqlInfo dataSql) {
