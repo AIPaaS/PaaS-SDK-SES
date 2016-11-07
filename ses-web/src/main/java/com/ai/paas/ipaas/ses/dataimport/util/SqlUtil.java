@@ -28,9 +28,12 @@ public class SqlUtil {
 	public static String getTotalSql(String sql) {
 		// 先找到where 关键字
 		String lowerSQL = sql.toLowerCase();
+		String where = "";
 		int wherePos = lowerSQL.indexOf(" where");
-		String where = sql.substring(wherePos);
-		lowerSQL = lowerSQL.substring(0, wherePos);
+		if (wherePos >= 0) {
+			where = sql.substring(wherePos);
+			lowerSQL = lowerSQL.substring(0, wherePos);
+		}
 		int start = lowerSQL.indexOf("select ") + "select ".length();
 		int end = lowerSQL.indexOf(" from");
 		String filed = lowerSQL.substring(start, end).trim();
