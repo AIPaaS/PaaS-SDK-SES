@@ -692,6 +692,7 @@ public class ExtractAndImportTask implements Runnable {
 
 				resultSet = preparedStatement.executeQuery();
 				int tempCount = 0;
+				Object obj=null;
 				while (resultSet.next()) {
 					if (line != null && line.isMany()) {
 						fvalue4line = new HashMap<String, String>();
@@ -704,7 +705,16 @@ public class ExtractAndImportTask implements Runnable {
 							.getColumnCount(); i++) {
 						String rcn = resultSet.getMetaData()
 								.getColumnLabel(i + 1).toLowerCase();
-						String rcv = resultSet.getString(i + 1);
+						obj=null;
+						obj=resultSet.getObject(i + 1);
+						String rcv=null;
+						if (obj instanceof java.util.Date
+								|| obj instanceof java.sql.Date
+								|| obj instanceof java.sql.Timestamp) {
+							rcv = dateFormat_hms.format(obj);
+						} else {
+							rcv = resultSet.getString(i + 1);
+						}
 						if (many) {
 							if (fs.isMapObj() && line != null && line.isMany()) {
 								fvalue4line.put(rcn, rcv);
@@ -826,6 +836,7 @@ public class ExtractAndImportTask implements Runnable {
 						.toLowerCase().replace(af, "?"));
 				preparedStatement.setString(1, cv);
 				resultSet = preparedStatement.executeQuery();
+				Object obj=null;
 				while (resultSet.next()) {
 					for (int i = 0; i < resultSet.getMetaData()
 							.getColumnCount(); i++) {
@@ -834,7 +845,16 @@ public class ExtractAndImportTask implements Runnable {
 						// String rcn = resultSet.getMetaData().getColumnName(i
 						// + 1)
 						// .toLowerCase();
-						String rcv = resultSet.getString(i + 1);
+						obj=null;
+						obj=resultSet.getObject(i + 1);
+						String rcv=null;
+						if (obj instanceof java.util.Date
+								|| obj instanceof java.sql.Date
+								|| obj instanceof java.sql.Timestamp) {
+							rcv = dateFormat_hms.format(obj);
+						} else {
+							rcv = resultSet.getString(i + 1);
+						}
 						String sql = fs.getSql().toLowerCase();
 						if (ec.getTableFileds().containsKey(
 								fs.getIndexAlias() + "." + rcn)) {
