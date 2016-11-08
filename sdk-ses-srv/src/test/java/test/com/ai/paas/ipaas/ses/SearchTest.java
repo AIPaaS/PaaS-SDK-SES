@@ -145,7 +145,7 @@ public class SearchTest {
 		List<SearchCriteria> searchCriterias = new ArrayList<>();
 		SearchCriteria searchCriteria = new SearchCriteria();
 		searchCriteria.setField("name");
-		List<String> values = new ArrayList<String>();
+		List<Object> values = new ArrayList<Object>();
 		values.add("开发");
 		searchCriteria.setFieldValue(values);
 		searchCriterias.add(searchCriteria);
@@ -560,7 +560,7 @@ public class SearchTest {
 		List<SearchCriteria> searchCriterias = new ArrayList<>();
 		SearchCriteria searchCriteria = new SearchCriteria();
 		searchCriteria.setField("age");
-		List<String> values = new ArrayList<String>();
+		List<Object> values = new ArrayList<Object>();
 		values.add("41");
 		searchCriteria.setFieldValue(values);
 		searchCriterias.add(searchCriteria);
@@ -609,7 +609,7 @@ public class SearchTest {
 		List<SearchCriteria> searchCriterias = new ArrayList<>();
 		SearchCriteria searchCriteria = new SearchCriteria();
 		searchCriteria.setField("name");
-		List<String> values = new ArrayList<String>();
+		List<Object> values = new ArrayList<Object>();
 		values.add("开发");
 		searchCriteria.setFieldValue(values);
 		searchCriterias.add(searchCriteria);
