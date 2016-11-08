@@ -143,7 +143,7 @@ public class SearchHelper {
 	 * 创建过滤条件
 	 */
 	public static QueryBuilder createSingleFieldQueryBuilder(String field,
-			List<String> values, SearchOption mySearchOption) {
+			List<Object> values, SearchOption mySearchOption) {
 		try {
 			if (mySearchOption.getSearchType() == SearchOption.SearchType.range) {
 				/* 区间搜索 */
@@ -153,11 +153,16 @@ public class SearchHelper {
 			if (values != null) {
 				String formatValue = null;
 				List<String> terms = new ArrayList<>();
-				Iterator<String> iterator = values.iterator();
+				Iterator<Object> iterator = values.iterator();
+				Object obj = null;
 				while (iterator.hasNext()) {
 					queryBuilder = null;
-					formatValue = iterator.next().toString().trim()
-							.replace("*", "").toLowerCase();// 格式化搜索数据
+					obj = iterator.next();
+					// 这里得判断是否为空
+					if (null == obj)
+						continue;
+					formatValue = obj.toString().trim().replace("*", "")
+							.toLowerCase();// 格式化搜索数据
 
 					if (mySearchOption.getSearchType() == SearchOption.SearchType.querystring) {
 						if (formatValue.length() == 1) {
@@ -196,18 +201,17 @@ public class SearchHelper {
 	}
 
 	private static RangeQueryBuilder createRangeQueryBuilder(String field,
-			List<String> valuesSet) {
-		String[] array = new String[2];
-		String[] values = (String[]) valuesSet.toArray(array);
-		if (values.length == 1 || values[1] == null
-				|| values[1].toString().trim().isEmpty()) {
+			List<Object> valuesSet) {
+		// 这里需要判断下范围，是单值也可以
+		if (null == valuesSet || valuesSet.size() == 0) {
 			return null;
 		}
+		Object[] values = (Object[]) valuesSet.toArray(new Object[valuesSet
+				.size()]);
+
 		boolean timeType = false;
 		if (SearchOption.isDate(values[0])) {
-			if (SearchOption.isDate(values[1])) {
-				timeType = true;
-			}
+			timeType = true;
 		}
 		String begin = "", end = "";
 		if (timeType) {
@@ -221,8 +225,8 @@ public class SearchHelper {
 			begin = SearchOption.formatDate(values[0]);
 			end = SearchOption.formatDate(values[1]);
 		} else {
-			begin = values[0].toString();
-			end = values[1].toString();
+			begin = null == values[0] ? null : values[0].toString();
+			end = null == values[1] ? null : values[1].toString();
 		}
 		return QueryBuilders.rangeQuery(field).from(begin).to(end);
 	}

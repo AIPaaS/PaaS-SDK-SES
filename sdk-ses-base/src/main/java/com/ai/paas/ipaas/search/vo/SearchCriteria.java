@@ -8,13 +8,13 @@ public class SearchCriteria implements Serializable {
 
 	private static final long serialVersionUID = 9152243091714512036L;
 	private String field;
-	private List<String> values;
+	private List<Object> values;
 	private SearchOption option;
 
 	private List<SearchCriteria> subCriterias;
 
 	public SearchCriteria() {
-		values = new ArrayList<String>();
+		values = new ArrayList<Object>();
 		subCriterias = new ArrayList<SearchCriteria>();
 		this.option = new SearchOption();
 	}
@@ -45,11 +45,11 @@ public class SearchCriteria implements Serializable {
 		this.field = Field;
 	}
 
-	public List<String> getFieldValue() {
+	public List<Object> getFieldValue() {
 		return values;
 	}
 
-	public void setFieldValue(List<String> filedValue) {
+	public void setFieldValue(List<Object> filedValue) {
 		this.values.addAll(filedValue);
 	}
 

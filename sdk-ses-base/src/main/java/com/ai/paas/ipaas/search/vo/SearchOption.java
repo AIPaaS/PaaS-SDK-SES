@@ -151,6 +151,8 @@ public class SearchOption implements Serializable {
 	}
 
 	public static String formatDateFromDate(Date date) {
+		if (null == date)
+			return null;
 		SimpleDateFormat dateFormat_hms = new SimpleDateFormat(
 				"yyyy-MM-dd'T'HH:mm:ssZZZ");
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -168,19 +170,26 @@ public class SearchOption implements Serializable {
 	}
 
 	public static String formatDateFromString(String date) {
-		SimpleDateFormat dateFormat_hms = new SimpleDateFormat(
-				"yyyy-MM-dd'T'HH:mm:ssZZZ");
-		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		if (null == date)
+			return null;
+		SimpleDateFormat gmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ");
+		SimpleDateFormat normal = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		SimpleDateFormat simple = new SimpleDateFormat("yyyy-MM-dd");
 		try {
-			Date value = dateFormat_hms.parse(date);
+			Date value = gmt.parse(date);
 			return SearchOption.formatDateFromDate(value);
 		} catch (Exception e) {
 		}
 		try {
-			Date value = dateFormat.parse(date);
+			Date value = normal.parse(date);
 			return SearchOption.formatDateFromDate(value);
 		} catch (Exception e) {
 		}
-		return dateFormat_hms.format(new Date());
+		try {
+			Date value = simple.parse(date);
+			return SearchOption.formatDateFromDate(value);
+		} catch (Exception e) {
+		}
+		return gmt.format(new Date());
 	}
 }
