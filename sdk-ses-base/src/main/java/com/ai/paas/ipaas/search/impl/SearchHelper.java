@@ -11,10 +11,10 @@ import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
-import org.elasticsearch.index.query.QueryStringQueryBuilder.Operator;
 import org.elasticsearch.index.query.RangeQueryBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
@@ -38,8 +38,7 @@ public class SearchHelper {
 	}
 
 	public static String getId(String json, String id) {
-		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss")
-				.create();
+		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create();
 		JsonObject obj = gson.fromJson(json, JsonObject.class);
 		if (null != obj.get(id))
 			return obj.get(id).getAsString();
@@ -68,8 +67,7 @@ public class SearchHelper {
 	}
 
 	public static boolean hasId(String json, String id) {
-		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss")
-				.create();
+		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create();
 		JsonObject obj = gson.fromJson(json, JsonObject.class);
 		if (null != obj.get(id))
 			return true;
@@ -81,8 +79,7 @@ public class SearchHelper {
 			if (StringUtil.isBlank(query)) {
 				return null;
 			}
-			QueryStringQueryBuilder qsqb = QueryBuilders
-					.queryStringQuery(query);
+			QueryStringQueryBuilder qsqb = QueryBuilders.queryStringQuery(query);
 			return qsqb;
 		} catch (Exception e) {
 			throw new SearchRuntimeException("ES create builder error", e);
@@ -96,8 +93,7 @@ public class SearchHelper {
 	 * @param searchCriterias
 	 * @return 索引对象
 	 */
-	public static QueryBuilder createQueryBuilder(
-			List<SearchCriteria> searchCriterias) {
+	public static QueryBuilder createQueryBuilder(List<SearchCriteria> searchCriterias) {
 		try {
 			if (searchCriterias == null || searchCriterias.size() == 0) {
 				return null;
@@ -106,28 +102,20 @@ public class SearchHelper {
 			for (SearchCriteria searchCriteria : searchCriterias) {
 				if (searchCriteria.hasSubCriteria()) {
 					// 循环调用
-					QueryBuilder childQueryBuilder = createQueryBuilder(searchCriteria
-							.getSubCriterias());
+					QueryBuilder childQueryBuilder = createQueryBuilder(searchCriteria.getSubCriterias());
 					if (childQueryBuilder != null) {
-						searchCriteria
-								.getOption()
-								.getSearchLogic()
-								.convertQueryBuilder(rootQueryBuilder,
-										childQueryBuilder);
+						searchCriteria.getOption().getSearchLogic().convertQueryBuilder(rootQueryBuilder,
+								childQueryBuilder);
 					}
 				}
 
 				String field = searchCriteria.getFormatField();
 				if (!StringUtil.isBlank(field)) {
 					SearchOption searchOption = searchCriteria.getOption();
-					QueryBuilder queryBuilder = createSingleFieldQueryBuilder(
-							field, searchCriteria.getFieldValue(), searchOption);
+					QueryBuilder queryBuilder = createSingleFieldQueryBuilder(field, searchCriteria.getFieldValue(),
+							searchOption);
 					if (queryBuilder != null) {
-						searchCriteria
-								.getOption()
-								.getSearchLogic()
-								.convertQueryBuilder(rootQueryBuilder,
-										queryBuilder);
+						searchCriteria.getOption().getSearchLogic().convertQueryBuilder(rootQueryBuilder, queryBuilder);
 					}
 				}
 
@@ -142,8 +130,8 @@ public class SearchHelper {
 	/*
 	 * 创建过滤条件
 	 */
-	public static QueryBuilder createSingleFieldQueryBuilder(String field,
-			List<Object> values, SearchOption mySearchOption) {
+	public static QueryBuilder createSingleFieldQueryBuilder(String field, List<Object> values,
+			SearchOption mySearchOption) {
 		try {
 			if (mySearchOption.getSearchType() == SearchOption.SearchType.range) {
 				/* 区间搜索 */
@@ -161,14 +149,13 @@ public class SearchHelper {
 					// 这里得判断是否为空
 					if (null == obj)
 						continue;
-					formatValue = obj.toString().trim().replace("*", "")
-							.toLowerCase();// 格式化搜索数据
+					formatValue = obj.toString().trim().replace("*", "").toLowerCase();// 格式化搜索数据
 
 					if (mySearchOption.getSearchType() == SearchOption.SearchType.querystring) {
 						if (formatValue.length() == 1) {
 							/*
-							 * 如果搜索长度为1的非数字的字符串，格式化为通配符搜索，暂时这样，以后有时间改成multifield搜索
-							 * ，就不需要通配符了
+							 * 如果搜索长度为1的非数字的字符串，格式化为通配符搜索，暂时这样，
+							 * 以后有时间改成multifield搜索 ，就不需要通配符了
 							 */
 							if (!Pattern.matches("[0-9]", formatValue)) {
 								formatValue = "*" + formatValue + "*";
@@ -178,19 +165,19 @@ public class SearchHelper {
 					terms.add(formatValue);
 				}
 				if (mySearchOption.getSearchType() == SearchOption.SearchType.term) {
-					queryBuilder = QueryBuilders.termsQuery(field, terms)
-							.boost(mySearchOption.getBoost());
+					queryBuilder = QueryBuilders.termsQuery(field, terms).boost(mySearchOption.getBoost());
 				} else if (mySearchOption.getSearchType() == SearchOption.SearchType.querystring) {
 					QueryStringQueryBuilder queryStringQueryBuilder = QueryBuilders
 							.queryStringQuery(StringUtils.join(terms, " "))
-							.defaultOperator(Operator.AND)
-							.minimumShouldMatch(
-									mySearchOption.getQueryStringPrecision());
-					queryBuilder = queryStringQueryBuilder.field(field).boost(
-							mySearchOption.getBoost());
+							.defaultOperator(mySearchOption.getTermOperator() == SearchOption.TermOperator.AND
+									? QueryStringQueryBuilder.Operator.AND : QueryStringQueryBuilder.Operator.OR)
+							.minimumShouldMatch(mySearchOption.getQueryStringPrecision());
+					queryBuilder = queryStringQueryBuilder.field(field).boost(mySearchOption.getBoost());
 				} else if (mySearchOption.getSearchType() == SearchOption.SearchType.match) {
-					queryBuilder = QueryBuilders.matchQuery(field,
-							StringUtils.join(terms, " "));
+					queryBuilder = QueryBuilders.matchQuery(field, StringUtils.join(terms, " "))
+							.operator(mySearchOption.getTermOperator() == SearchOption.TermOperator.AND
+									? MatchQueryBuilder.Operator.AND : MatchQueryBuilder.Operator.OR)
+							.type(MatchQueryBuilder.Type.PHRASE_PREFIX);
 
 				}
 			}
@@ -200,14 +187,12 @@ public class SearchHelper {
 		}
 	}
 
-	private static RangeQueryBuilder createRangeQueryBuilder(String field,
-			List<Object> valuesSet) {
+	private static RangeQueryBuilder createRangeQueryBuilder(String field, List<Object> valuesSet) {
 		// 这里需要判断下范围，是单值也可以
 		if (null == valuesSet || valuesSet.size() == 0) {
 			return null;
 		}
-		Object[] values = (Object[]) valuesSet.toArray(new Object[valuesSet
-				.size()]);
+		Object[] values = (Object[]) valuesSet.toArray(new Object[valuesSet.size()]);
 
 		boolean timeType = false;
 		if (SearchOption.isDate(values[0])) {
@@ -232,20 +217,17 @@ public class SearchHelper {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <T> List<T> getSearchResult(SearchResponse response,
-			Class<T> clazz) {
+	public static <T> List<T> getSearchResult(SearchResponse response, Class<T> clazz) {
 		try {
 			List<T> results = new ArrayList<>();
 			SearchHits hits = response.getHits();
 			if (hits.getTotalHits() == 0) {
 				return results;
 			}
-			Gson gson = new GsonBuilder()
-					.setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create();
+			Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create();
 			for (SearchHit searchHit : hits.getHits()) {
 				String source = searchHit.getSourceAsString();
-				if (null != clazz
-						&& !clazz.getName().equals(String.class.getName()))
+				if (null != clazz && !clazz.getName().equals(String.class.getName()))
 					results.add(gson.fromJson(source, clazz));
 				else
 					results.add((T) source);
@@ -262,8 +244,7 @@ public class SearchHelper {
 			if (hits.getTotalHits() == 0) {
 				return null;
 			}
-			Gson gson = new GsonBuilder()
-					.setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create();
+			Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create();
 			String source = null;
 			List<String> results = new ArrayList<>();
 			for (SearchHit searchHit : hits.getHits()) {
@@ -276,8 +257,7 @@ public class SearchHelper {
 		}
 	}
 
-	public static SearchRequestBuilder createHighlight(
-			SearchRequestBuilder searchRequestBuilder,
+	public static SearchRequestBuilder createHighlight(SearchRequestBuilder searchRequestBuilder,
 			List<SearchCriteria> searchCriterias, String highlightCSS) {
 		for (SearchCriteria searchCriteria : searchCriterias) {
 			String field = searchCriteria.getFormatField();
@@ -289,12 +269,9 @@ public class SearchHelper {
 				 * 
 				 * fragment_size设置成1000，默认值会造成返回的数据被截断
 				 */
-				searchRequestBuilder = searchRequestBuilder
-						.addHighlightedField(field, 1000)
-						.setHighlighterPreTags(
-								"<" + highlightCSS.split(",")[0] + ">")
-						.setHighlighterPostTags(
-								"</" + highlightCSS.split(",")[1] + ">");
+				searchRequestBuilder = searchRequestBuilder.addHighlightedField(field, 1000)
+						.setHighlighterPreTags("<" + highlightCSS.split(",")[0] + ">")
+						.setHighlighterPostTags("</" + highlightCSS.split(",")[1] + ">");
 
 			}
 		}
@@ -302,17 +279,14 @@ public class SearchHelper {
 		return searchRequestBuilder;
 	}
 
-	public static List<AggResult> getAgg(SearchResponse searchResponse,
-			List<AggField> fields) {
+	public static List<AggResult> getAgg(SearchResponse searchResponse, List<AggField> fields) {
 		List<AggResult> aggResults = new ArrayList<>();
 		for (AggField field : fields) {
-			Terms sortAggregate = searchResponse.getAggregations().get(
-					field.getField() + "_aggs");
+			Terms sortAggregate = searchResponse.getAggregations().get(field.getField() + "_aggs");
 			if (null != sortAggregate && null != sortAggregate.getBuckets()) {
 				for (Terms.Bucket entry : sortAggregate.getBuckets()) {
 					// 新建一个对象
-					AggResult aggResult = new AggResult(entry.getKeyAsString(),
-							entry.getDocCount(), field.getField());
+					AggResult aggResult = new AggResult(entry.getKeyAsString(), entry.getDocCount(), field.getField());
 					// 嵌套循环
 					List<AggResult> temp = getSubAgg(entry, field.getSubAggs());
 					if (null != temp)
@@ -325,19 +299,16 @@ public class SearchHelper {
 		return aggResults;
 	}
 
-	private static List<AggResult> getSubAgg(Terms.Bucket entry,
-			List<AggField> fields) {
+	private static List<AggResult> getSubAgg(Terms.Bucket entry, List<AggField> fields) {
 		if (null == entry || null == fields || fields.size() <= 0)
 			return null;
 		List<AggResult> aggResults = null;
 		for (AggField field : fields) {
-			Terms subAgg = entry.getAggregations().get(
-					field.getField() + "_aggs");
+			Terms subAgg = entry.getAggregations().get(field.getField() + "_aggs");
 			if (null != subAgg) {
 				aggResults = new ArrayList<>();
 				for (Terms.Bucket subEntry : subAgg.getBuckets()) {
-					AggResult aggResult = new AggResult(
-							subEntry.getKeyAsString(), entry.getDocCount(),
+					AggResult aggResult = new AggResult(subEntry.getKeyAsString(), entry.getDocCount(),
 							field.getField());
 					// 嵌套循环
 					List<AggResult> temp = getSubAgg(entry, field.getSubAggs());
@@ -351,14 +322,14 @@ public class SearchHelper {
 		return aggResults;
 	}
 
-	public static TermsBuilder addSubAggs(TermsBuilder termBuilder,
-			List<AggField> subFields) {
+	public static TermsBuilder addSubAggs(TermsBuilder termBuilder, List<AggField> subFields) {
 		if (null == subFields || subFields.size() <= 0)
 			return termBuilder;
 		for (AggField field : subFields) {
-			termBuilder.subAggregation(
-					AggregationBuilders.terms(field.getField() + "_aggs")
-							.field(field.getField() + ".raw")).size(100);
+			termBuilder
+					.subAggregation(
+							AggregationBuilders.terms(field.getField() + "_aggs").field(field.getField() + ".raw"))
+					.size(100);
 			termBuilder = addSubAggs(termBuilder, field.getSubAggs());
 		}
 		return termBuilder;
