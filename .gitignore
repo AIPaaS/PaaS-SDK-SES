@@ -13,3 +13,5 @@
 /sdk-ses-base/.settings
 /sdk-ses-base/.classpath
 /sdk-ses-base/.project
+/build/
+/.gradle/

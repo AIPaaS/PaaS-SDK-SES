@@ -12,17 +12,23 @@ import java.util.regex.Pattern;
 
 public class SearchOption implements Serializable {
 	/**
-     *
-     */
+	 *
+	 */
 	private static final long serialVersionUID = 1L;
 	private SearchLogic searchLogic = SearchLogic.must;
 	private SearchType searchType = SearchType.querystring;
 	private DataFilter dataFilter = DataFilter.exists;
+	private TermOperator termOperator = TermOperator.OR;
 	/* querystring精度，取值[1-100]的整数 */
 	private String queryStringPrecision = "100";
 	/* 排名权重 */
 	private float boost = 1.0f;
 	private boolean highlight = false;
+
+	public enum TermOperator {
+		// 对于QueryString 或者 Match的词之间的关系
+		AND, OR
+	}
 
 	public enum SearchType {
 		/* 按照quert_string搜索，搜索非词组时候使用 */
@@ -36,8 +42,7 @@ public class SearchOption implements Serializable {
 		must
 		/* 逻辑should关系 */, should, must_not;
 
-		public void convertQueryBuilder(BoolQueryBuilder rootQueryBuilder,
-				QueryBuilder childQueryBuilder) {
+		public void convertQueryBuilder(BoolQueryBuilder rootQueryBuilder, QueryBuilder childQueryBuilder) {
 			switch (this) {
 			case should: {
 				rootQueryBuilder.should(childQueryBuilder);
@@ -66,9 +71,8 @@ public class SearchOption implements Serializable {
 		exists, notExists, all
 	}
 
-	public SearchOption(SearchType searchType, SearchLogic searchLogic,
-			String queryStringPrecision, DataFilter dataFilter, float boost,
-			int highlight) {
+	public SearchOption(SearchType searchType, SearchLogic searchLogic, String queryStringPrecision,
+			DataFilter dataFilter, float boost, int highlight) {
 		this.setSearchLogic(searchLogic);
 		this.setSearchType(searchType);
 		this.setQueryStringPrecision(queryStringPrecision);
@@ -83,6 +87,20 @@ public class SearchOption implements Serializable {
 	public SearchOption(SearchLogic searchLogic, SearchType searchType) {
 		this.setSearchLogic(searchLogic);
 		this.setSearchType(searchType);
+	}
+
+	public SearchOption(SearchLogic searchLogic, SearchType searchType, TermOperator termOperator) {
+		this.setSearchLogic(searchLogic);
+		this.setSearchType(searchType);
+		this.termOperator = termOperator;
+	}
+
+	public TermOperator getTermOperator() {
+		return termOperator;
+	}
+
+	public void setTermOperator(TermOperator termOperator) {
+		this.termOperator = termOperator;
 	}
 
 	public DataFilter getDataFilter() {
@@ -146,15 +164,13 @@ public class SearchOption implements Serializable {
 
 	public static boolean isDate(Object object) {
 		return object instanceof java.util.Date
-				|| Pattern.matches("[1-2][0-9][0-9][0-9]-[0-9][0-9].*",
-						object.toString());
+				|| Pattern.matches("[1-2][0-9][0-9][0-9]-[0-9][0-9].*", object.toString());
 	}
 
 	public static String formatDateFromDate(Date date) {
 		if (null == date)
 			return null;
-		SimpleDateFormat dateFormat_hms = new SimpleDateFormat(
-				"yyyy-MM-dd'T'HH:mm:ssZZZ");
+		SimpleDateFormat dateFormat_hms = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ");
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 		try {
 			String result = dateFormat_hms.format(date);
