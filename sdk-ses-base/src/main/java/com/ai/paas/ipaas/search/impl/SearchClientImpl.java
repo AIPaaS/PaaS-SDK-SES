@@ -72,10 +72,8 @@ public class SearchClientImpl implements ISearchClient {
 	private String highlightCSS = "span,span";
 	private String indexName;
 	private String _id = null;
-	private static Settings settings = Settings.settingsBuilder()
-			.put("client.transport.ping_timeout", "60s")
-			.put("client.transport.sniff", "true")
-			.put("client.transport.ignore_cluster_name", "true").build();
+	private static Settings settings = Settings.settingsBuilder().put("client.transport.ping_timeout", "60s")
+			.put("client.transport.sniff", "true").put("client.transport.ignore_cluster_name", "true").build();
 	private String hosts = null;
 	// 创建私有对象
 	private TransportClient client;
@@ -98,8 +96,7 @@ public class SearchClientImpl implements ISearchClient {
 				String address = item.split(":")[0];
 				int port = Integer.parseInt(item.split(":")[1]);
 				/* 通过tcp连接搜索服务器，如果连接不上，有一种可能是服务器端与客户端的jar包版本不匹配 */
-				client.addTransportAddress(new InetSocketTransportAddress(
-						new InetSocketAddress(address, port)));
+				client.addTransportAddress(new InetSocketTransportAddress(new InetSocketAddress(address, port)));
 			}
 		} catch (Exception e) {
 			logger.error(e.getMessage(), e);
@@ -119,16 +116,13 @@ public class SearchClientImpl implements ISearchClient {
 
 	private SearchResponse count(String indexName, Object queryBuilder) {
 		try {
-			SearchRequestBuilder searchRequestBuilder = client.prepareSearch(
-					indexName).setSize(0);
+			SearchRequestBuilder searchRequestBuilder = client.prepareSearch(indexName).setSize(0);
 			if (queryBuilder instanceof QueryBuilder) {
-				searchRequestBuilder = searchRequestBuilder
-						.setQuery((QueryBuilder) queryBuilder);
+				searchRequestBuilder = searchRequestBuilder.setQuery((QueryBuilder) queryBuilder);
 			}
 			if (queryBuilder instanceof byte[]) {
 				String query = new String((byte[]) queryBuilder);
-				searchRequestBuilder = searchRequestBuilder
-						.setQuery(QueryBuilders.wrapperQuery(query));
+				searchRequestBuilder = searchRequestBuilder.setQuery(QueryBuilders.wrapperQuery(query));
 			}
 			return searchRequestBuilder.get();
 		} catch (Exception e) {
@@ -142,14 +136,11 @@ public class SearchClientImpl implements ISearchClient {
 	}
 
 	public List<String> getSuggest(String field, String value, int count) {
-		if (StringUtil.isBlank(field) || StringUtil.isBlank(value)
-				|| count <= 0)
+		if (StringUtil.isBlank(field) || StringUtil.isBlank(value) || count <= 0)
 			return null;
-		SearchResponse response = client
-				.prepareSearch(indexName)
-				.setQuery(
-						QueryBuilders.matchQuery(field, value).operator(
-								Operator.AND)).setFrom(0).setSize(count).get();
+		SearchResponse response = client.prepareSearch(indexName)
+				.setQuery(QueryBuilders.matchQuery(field, value).operator(Operator.AND)).setFrom(0).setSize(count)
+				.get();
 		if (null == response)
 			return null;
 		SearchHits hits = response.getHits();
@@ -167,8 +158,7 @@ public class SearchClientImpl implements ISearchClient {
 	public boolean insert(Map<String, Object> data) {
 		if (null == data || data.size() <= 0)
 			return false;
-		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ")
-				.create();
+		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ").create();
 		return insert(gson.toJson(data));
 	}
 
@@ -180,19 +170,16 @@ public class SearchClientImpl implements ISearchClient {
 		// 判断一下是否有id字段
 		String id = SearchHelper.getId(json, _id);
 		if (StringUtil.isBlank(id)) {
-			response = client.prepareIndex(indexName, indexName)
-					.setOpType(IndexRequest.OpType.CREATE).setSource(json)
+			response = client.prepareIndex(indexName, indexName).setOpType(IndexRequest.OpType.CREATE).setSource(json)
 					.get();
 		} else {
-			response = client.prepareIndex(indexName, indexName, id)
-					.setOpType(IndexRequest.OpType.CREATE).setSource(json)
-					.get();
+			response = client.prepareIndex(indexName, indexName, id).setOpType(IndexRequest.OpType.CREATE)
+					.setSource(json).setRefresh(true).get();
 		}
 		if (null != response && response.isCreated()) {
 			return true;
 		} else {
-			throw new SearchRuntimeException("index error!" + json,
-					response.toString());
+			throw new SearchRuntimeException("index error!" + json, response.toString());
 		}
 	}
 
@@ -200,8 +187,7 @@ public class SearchClientImpl implements ISearchClient {
 	public <T> boolean insert(T data) {
 		if (null == data)
 			return false;
-		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ")
-				.create();
+		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ").create();
 		return insert(gson.toJson(data));
 	}
 
@@ -214,13 +200,12 @@ public class SearchClientImpl implements ISearchClient {
 		try {
 			builder = jsonBuilder.getBuilder();
 			SearchHelper.hasId(builder, _id);
-			IndexResponse response = client.prepareIndex(indexName, indexName)
-					.setSource(builder).get();
+			IndexResponse response = client.prepareIndex(indexName, indexName).setSource(builder).setRefresh(true)
+					.get();
 			if (null != response && response.isCreated()) {
 				return true;
 			} else {
-				throw new SearchRuntimeException("index error!", jsonBuilder
-						.getBuilder().toString());
+				throw new SearchRuntimeException("index error!", jsonBuilder.getBuilder().toString());
 			}
 		} catch (Exception e) {
 			throw new SearchRuntimeException(jsonBuilder.toString(), e);
@@ -234,8 +219,7 @@ public class SearchClientImpl implements ISearchClient {
 	public boolean delete(String id) {
 		if (StringUtil.isBlank(id))
 			throw new SearchRuntimeException("Illegel argument,id=" + id);
-		DeleteResponse response = client
-				.prepareDelete(indexName, indexName, id).get();
+		DeleteResponse response = client.prepareDelete(indexName, indexName, id).setRefresh(true).get();
 		if (null != response && response.isFound())
 			return true;
 		return false;
@@ -249,14 +233,13 @@ public class SearchClientImpl implements ISearchClient {
 		for (String id : ids) {
 			bulkRequest.add(client.prepareDelete(indexName, indexName, id));
 		}
-		BulkResponse bulkResponse = bulkRequest.get();
+		BulkResponse bulkResponse = bulkRequest.setRefresh(true).get();
 		if (!bulkResponse.hasFailures()) {
 			return true;
 		} else {
 			// 这里要做个日志，哪些成功了
 			for (BulkItemResponse response : bulkResponse.getItems()) {
-				logger.error("Doc id:" + response.getId() + " is falided:"
-						+ response.isFailed());
+				logger.error("Doc id:" + response.getId() + " is falided:" + response.isFailed());
 			}
 			return false;
 		}
@@ -271,16 +254,15 @@ public class SearchClientImpl implements ISearchClient {
 		QueryBuilder queryBuilder = null;
 		queryBuilder = SearchHelper.createQueryBuilder(searchCriteria);
 		SearchResponse scrollResp = client.prepareSearch(indexName)
-				.addSort(SortParseElement.DOC_FIELD_NAME, SortOrder.ASC)
-				.setScroll(new TimeValue(60000)).setQuery(queryBuilder)
-				.setSize(100).execute().actionGet();
+				.addSort(SortParseElement.DOC_FIELD_NAME, SortOrder.ASC).setScroll(new TimeValue(60000))
+				.setQuery(queryBuilder).setSize(100).execute().actionGet();
 		while (true) {
 			// 循环获取所有ids
 			for (SearchHit hit : scrollResp.getHits()) {
 				ids.add(hit.getId());
 			}
-			scrollResp = client.prepareSearchScroll(scrollResp.getScrollId())
-					.setScroll(new TimeValue(600000)).execute().actionGet();
+			scrollResp = client.prepareSearchScroll(scrollResp.getScrollId()).setScroll(new TimeValue(600000)).execute()
+					.actionGet();
 			// Break condition: No hits are returned
 			if (scrollResp.getHits().getHits().length == 0) {
 				break;
@@ -296,14 +278,9 @@ public class SearchClientImpl implements ISearchClient {
 		GetMappingsResponse mappings;
 		GetSettingsResponse settings;
 		try {
-			settings = client.admin().indices()
-					.getSettings(new GetSettingsRequest().indices(indexName))
-					.get();
-			mappings = client.admin().indices()
-					.getMappings(new GetMappingsRequest().indices(indexName))
-					.get();
-			DeleteIndexResponse delete = client.admin().indices()
-					.delete(new DeleteIndexRequest(indexName)).get();
+			settings = client.admin().indices().getSettings(new GetSettingsRequest().indices(indexName)).get();
+			mappings = client.admin().indices().getMappings(new GetMappingsRequest().indices(indexName)).get();
+			DeleteIndexResponse delete = client.admin().indices().delete(new DeleteIndexRequest(indexName)).get();
 			if (!delete.isAcknowledged()) {
 				logger.error("Index wasn't deleted");
 				return false;
@@ -311,25 +288,14 @@ public class SearchClientImpl implements ISearchClient {
 				// 看看是否包含这个type
 				if (mappings.getMappings().containsKey(indexName)) {
 
-					CreateIndexResponse indexResponse = client
-							.admin()
-							.indices()
-							.prepareCreate(indexName)
-							.setSettings(
-									settings.getIndexToSettings()
-											.get(indexName)).get();
+					CreateIndexResponse indexResponse = client.admin().indices().prepareCreate(indexName)
+							.setSettings(settings.getIndexToSettings().get(indexName)).get();
 
 					if (indexResponse.isAcknowledged()) {
-						PutMappingResponse putMappingResponse = client
-								.admin()
-								.indices()
-								.preparePutMapping()
-								.setIndices(indexName)
-								.setType(indexName)
-								.setSource(
-										mappings.getMappings().get(indexName)
-												.get(indexName).source()
-												.string()).get();
+						PutMappingResponse putMappingResponse = client.admin().indices().preparePutMapping()
+								.setIndices(indexName).setType(indexName)
+								.setSource(mappings.getMappings().get(indexName).get(indexName).source().string())
+								.get();
 						if (putMappingResponse.isAcknowledged())
 							return true;
 						else
@@ -348,10 +314,8 @@ public class SearchClientImpl implements ISearchClient {
 	public boolean update(String id, Map<String, Object> data) {
 		if (StringUtil.isBlank(id) || null == data || data.size() <= 0)
 			return false;
-		UpdateResponse response = client
-				.prepareUpdate(indexName, indexName, id).setRefresh(true)
-				.setConsistencyLevel(WriteConsistencyLevel.DEFAULT)
-				.setDoc(data).get();
+		UpdateResponse response = client.prepareUpdate(indexName, indexName, id).setRefresh(true)
+				.setConsistencyLevel(WriteConsistencyLevel.DEFAULT).setDoc(data).setRefresh(true).get();
 		if (!StringUtil.isBlank(response.getId()))
 			return true;
 		else
@@ -362,10 +326,8 @@ public class SearchClientImpl implements ISearchClient {
 	public boolean update(String id, String json) {
 		if (StringUtil.isBlank(id) || StringUtil.isBlank(json))
 			return false;
-		UpdateResponse response = client
-				.prepareUpdate(indexName, indexName, id).setRefresh(true)
-				.setConsistencyLevel(WriteConsistencyLevel.DEFAULT)
-				.setDoc(json).get();
+		UpdateResponse response = client.prepareUpdate(indexName, indexName, id).setRefresh(true)
+				.setConsistencyLevel(WriteConsistencyLevel.DEFAULT).setDoc(json).setRefresh(true).get();
 		if (!StringUtil.isBlank(response.getId()))
 			return true;
 		else
@@ -376,8 +338,7 @@ public class SearchClientImpl implements ISearchClient {
 	public <T> boolean update(String id, T data) {
 		if (StringUtil.isBlank(id) || null == data)
 			return false;
-		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ")
-				.create();
+		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ").create();
 		return update(id, gson.toJson(data));
 	}
 
@@ -385,10 +346,9 @@ public class SearchClientImpl implements ISearchClient {
 	public boolean update(String id, JsonBuilder jsonBuilder) {
 		if (StringUtil.isBlank(id) || null == jsonBuilder)
 			return false;
-		UpdateResponse response = client
-				.prepareUpdate(indexName, indexName, id).setRefresh(true)
-				.setConsistencyLevel(WriteConsistencyLevel.DEFAULT)
-				.setDoc(jsonBuilder.getBuilder()).get();
+		UpdateResponse response = client.prepareUpdate(indexName, indexName, id).setRefresh(true)
+				.setConsistencyLevel(WriteConsistencyLevel.DEFAULT).setDoc(jsonBuilder.getBuilder()).setRefresh(true)
+				.get();
 		if (!StringUtil.isBlank(response.getId()))
 			return true;
 		else
@@ -399,10 +359,8 @@ public class SearchClientImpl implements ISearchClient {
 	public boolean upsert(String id, Map<String, Object> data) {
 		if (StringUtil.isBlank(id) || null == data || data.size() <= 0)
 			return false;
-		UpdateResponse response = client
-				.prepareUpdate(indexName, indexName, id).setRefresh(true)
-				.setConsistencyLevel(WriteConsistencyLevel.DEFAULT)
-				.setUpsert(data).setDoc(data).get();
+		UpdateResponse response = client.prepareUpdate(indexName, indexName, id).setRefresh(true)
+				.setConsistencyLevel(WriteConsistencyLevel.DEFAULT).setUpsert(data).setDoc(data).setRefresh(true).get();
 		if (!StringUtil.isBlank(response.getId()))
 			return true;
 		else
@@ -413,10 +371,8 @@ public class SearchClientImpl implements ISearchClient {
 	public boolean upsert(String id, String json) {
 		if (StringUtil.isBlank(id) || StringUtil.isBlank(json))
 			return false;
-		UpdateResponse response = client
-				.prepareUpdate(indexName, indexName, id).setRefresh(true)
-				.setConsistencyLevel(WriteConsistencyLevel.DEFAULT)
-				.setUpsert(json).setDoc(json).get();
+		UpdateResponse response = client.prepareUpdate(indexName, indexName, id).setRefresh(true)
+				.setConsistencyLevel(WriteConsistencyLevel.DEFAULT).setUpsert(json).setDoc(json).setRefresh(true).get();
 		if (!StringUtil.isBlank(response.getId()))
 			return true;
 		else
@@ -427,8 +383,7 @@ public class SearchClientImpl implements ISearchClient {
 	public <T> boolean upsert(String id, T data) {
 		if (StringUtil.isBlank(id) || null == data)
 			return false;
-		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ")
-				.create();
+		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ").create();
 		return upsert(id, gson.toJson(data));
 	}
 
@@ -436,11 +391,9 @@ public class SearchClientImpl implements ISearchClient {
 	public boolean upsert(String id, JsonBuilder jsonBuilder) {
 		if (StringUtil.isBlank(id) || null == jsonBuilder)
 			return false;
-		UpdateResponse response = client
-				.prepareUpdate(indexName, indexName, id).setRefresh(true)
-				.setConsistencyLevel(WriteConsistencyLevel.DEFAULT)
-				.setUpsert(jsonBuilder.getBuilder())
-				.setDoc(jsonBuilder.getBuilder()).get();
+		UpdateResponse response = client.prepareUpdate(indexName, indexName, id).setRefresh(true)
+				.setConsistencyLevel(WriteConsistencyLevel.DEFAULT).setUpsert(jsonBuilder.getBuilder())
+				.setDoc(jsonBuilder.getBuilder()).setRefresh(true).get();
 		if (!StringUtil.isBlank(response.getId()))
 			return true;
 		else
@@ -449,8 +402,7 @@ public class SearchClientImpl implements ISearchClient {
 
 	private void logBulkRespone(BulkResponse bulkResponse) {
 		for (BulkItemResponse response : bulkResponse.getItems()) {
-			logger.error("insert error," + response.getId() + ","
-					+ response.getFailure());
+			logger.error("insert error," + response.getId() + "," + response.getFailure());
 		}
 	}
 
@@ -462,29 +414,25 @@ public class SearchClientImpl implements ISearchClient {
 		BulkResponse bulkResponse = null;
 		for (Map<String, Object> data : datas) {
 			if (null != data.get(_id)) {
-				bulkRequest.add(client.prepareIndex(indexName, indexName,
-						data.get(_id).toString()).setSource(data));
+				bulkRequest.add(client.prepareIndex(indexName, indexName, data.get(_id).toString()).setSource(data));
 			} else {
-				bulkRequest.add(client.prepareIndex(indexName, indexName)
-						.setSource(data));
+				bulkRequest.add(client.prepareIndex(indexName, indexName).setSource(data));
 			}
 			if (bulkRequest.numberOfActions() > 100) {
 				bulkResponse = bulkRequest.get();
-				logger.info("rebuildIndex(): indexed {}, hasFailures: {}",
-						bulkRequest.numberOfActions(),
+				logger.info("rebuildIndex(): indexed {}, hasFailures: {}", bulkRequest.numberOfActions(),
 						bulkResponse.hasFailures());
 			}
 		}
 		if (bulkRequest.numberOfActions() > 0) {
-			bulkResponse = bulkRequest.get();
+			bulkResponse = bulkRequest.setRefresh(true).get();
 		}
 		if (!bulkResponse.hasFailures()) {
 			return true;
 		} else {
 			logger.error("insert error", bulkResponse.buildFailureMessage());
 			logBulkRespone(bulkResponse);
-			throw new SearchRuntimeException("insert error", "insert error"
-					+ bulkResponse.buildFailureMessage());
+			throw new SearchRuntimeException("insert error", "insert error" + bulkResponse.buildFailureMessage());
 		}
 	}
 
@@ -496,31 +444,26 @@ public class SearchClientImpl implements ISearchClient {
 		BulkResponse bulkResponse = null;
 		for (String json : jsons) {
 			if (SearchHelper.hasId(json, _id)) {
-				bulkRequest.add(client.prepareIndex(indexName, indexName,
-						SearchHelper.getId(json, _id).toString()).setSource(
-						json));
-			} else {
-				bulkRequest.add(client.prepareIndex(indexName, indexName)
+				bulkRequest.add(client.prepareIndex(indexName, indexName, SearchHelper.getId(json, _id).toString())
 						.setSource(json));
+			} else {
+				bulkRequest.add(client.prepareIndex(indexName, indexName).setSource(json));
 			}
 			if (bulkRequest.numberOfActions() > 100) {
-				bulkResponse = bulkRequest.get();
-				logger.info("rebuildIndex(): indexed {}, hasFailures: {}",
-						bulkRequest.numberOfActions(),
+				bulkResponse = bulkRequest.setRefresh(true).get();
+				logger.info("rebuildIndex(): indexed {}, hasFailures: {}", bulkRequest.numberOfActions(),
 						bulkResponse.hasFailures());
 			}
 		}
 		if (bulkRequest.numberOfActions() > 0) {
-			bulkResponse = bulkRequest.get();
+			bulkResponse = bulkRequest.setRefresh(true).get();
 		}
 		if (!bulkResponse.hasFailures()) {
 			return true;
 		} else {
-			this.logger.error("insert error",
-					bulkResponse.buildFailureMessage());
+			this.logger.error("insert error", bulkResponse.buildFailureMessage());
 			logBulkRespone(bulkResponse);
-			throw new SearchRuntimeException("insert error", "insert error"
-					+ bulkResponse.buildFailureMessage());
+			throw new SearchRuntimeException("insert error", "insert error" + bulkResponse.buildFailureMessage());
 		}
 	}
 
@@ -529,8 +472,7 @@ public class SearchClientImpl implements ISearchClient {
 		if (null == datas || datas.size() <= 0)
 			return false;
 		List<String> jsons = new ArrayList<>();
-		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ")
-				.create();
+		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ").create();
 		for (T t : datas) {
 			jsons.add(gson.toJson(t));
 		}
@@ -545,145 +487,117 @@ public class SearchClientImpl implements ISearchClient {
 		BulkResponse bulkResponse = null;
 		for (JsonBuilder jsonBuilder : jsonBuilders) {
 			if (SearchHelper.hasId(jsonBuilder.getBuilder(), _id)) {
-				bulkRequest.add(client.prepareIndex(
-						indexName,
-						indexName,
-						SearchHelper.getId(jsonBuilder.getBuilder(), _id)
-								.toString())
+				bulkRequest.add(client
+						.prepareIndex(indexName, indexName,
+								SearchHelper.getId(jsonBuilder.getBuilder(), _id).toString())
 						.setSource(jsonBuilder.getBuilder()));
 			} else {
-				bulkRequest.add(client.prepareIndex(indexName, indexName)
-						.setSource(jsonBuilder.getBuilder()));
+				bulkRequest.add(client.prepareIndex(indexName, indexName).setSource(jsonBuilder.getBuilder()));
 			}
 			if (bulkRequest.numberOfActions() > 100) {
-				bulkResponse = bulkRequest.get();
-				logger.info("rebuildIndex(): indexed {}, hasFailures: {}",
-						bulkRequest.numberOfActions(),
+				bulkResponse = bulkRequest.setRefresh(true).get();
+				logger.info("rebuildIndex(): indexed {}, hasFailures: {}", bulkRequest.numberOfActions(),
 						bulkResponse.hasFailures());
 			}
 		}
 		if (bulkRequest.numberOfActions() > 0) {
-			bulkResponse = bulkRequest.get();
+			bulkResponse = bulkRequest.setRefresh(true).get();
 		}
 		if (!bulkResponse.hasFailures()) {
 			return true;
 		} else {
-			this.logger.error("insert error",
-					bulkResponse.buildFailureMessage());
+			this.logger.error("insert error", bulkResponse.buildFailureMessage());
 			logBulkRespone(bulkResponse);
-			throw new SearchRuntimeException("insert error", "insert error"
-					+ bulkResponse.buildFailureMessage());
+			throw new SearchRuntimeException("insert error", "insert error" + bulkResponse.buildFailureMessage());
 		}
 	}
 
 	@Override
-	public boolean bulkMapUpdate(List<String> ids,
-			List<Map<String, Object>> datas) {
+	public boolean bulkMapUpdate(List<String> ids, List<Map<String, Object>> datas) {
 		if (null == ids || null == datas || ids.size() != datas.size())
-			throw new SearchRuntimeException(
-					"Null parameters or size not equal!");
+			throw new SearchRuntimeException("Null parameters or size not equal!");
 		BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
 		int i = 0;
 		for (String documentId : ids) {
-			bulkRequestBuilder.add(client
-					.prepareUpdate(indexName, indexName, documentId)
-					.setUpsert(datas.get(i)).setDoc(datas.get(i++)));
+			bulkRequestBuilder.add(client.prepareUpdate(indexName, indexName, documentId).setUpsert(datas.get(i))
+					.setDoc(datas.get(i++)));
 		}
 
-		BulkResponse bulkResponse = bulkRequestBuilder.get();
+		BulkResponse bulkResponse = bulkRequestBuilder.setRefresh(true).get();
 		if (!bulkResponse.hasFailures())
 			return true;
 		else {
-			this.logger.error("update error",
-					bulkResponse.buildFailureMessage());
+			this.logger.error("update error", bulkResponse.buildFailureMessage());
 			logBulkRespone(bulkResponse);
-			throw new SearchRuntimeException("update error", "update error"
-					+ bulkResponse.buildFailureMessage());
+			throw new SearchRuntimeException("update error", "update error" + bulkResponse.buildFailureMessage());
 		}
 	}
 
 	@Override
 	public boolean bulkJsonUpdate(List<String> ids, List<String> jsons) {
 		if (null == ids || null == jsons || ids.size() != jsons.size())
-			throw new SearchRuntimeException(
-					"Null parameters or size not equal!");
+			throw new SearchRuntimeException("Null parameters or size not equal!");
 		BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
 		int i = 0;
 		for (String documentId : ids) {
-			bulkRequestBuilder.add(client
-					.prepareUpdate(indexName, indexName, documentId)
-					.setUpsert(jsons.get(i)).setDoc(jsons.get(i++)));
+			bulkRequestBuilder.add(client.prepareUpdate(indexName, indexName, documentId).setUpsert(jsons.get(i))
+					.setDoc(jsons.get(i++)));
 		}
 
-		BulkResponse bulkResponse = bulkRequestBuilder.get();
+		BulkResponse bulkResponse = bulkRequestBuilder.setRefresh(true).get();
 		if (!bulkResponse.hasFailures())
 			return true;
 		else {
-			this.logger.error("update error",
-					bulkResponse.buildFailureMessage());
+			this.logger.error("update error", bulkResponse.buildFailureMessage());
 			logBulkRespone(bulkResponse);
-			throw new SearchRuntimeException("update error", "update error"
-					+ bulkResponse.buildFailureMessage());
+			throw new SearchRuntimeException("update error", "update error" + bulkResponse.buildFailureMessage());
 		}
 	}
 
 	@Override
 	public <T> boolean bulkUpdate(List<String> ids, List<T> datas) {
 		if (null == ids || null == datas || ids.size() != datas.size())
-			throw new SearchRuntimeException(
-					"Null parameters or size not equal!");
+			throw new SearchRuntimeException("Null parameters or size not equal!");
 		BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
 		int i = 0;
-		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ")
-				.create();
+		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ").create();
 		for (String documentId : ids) {
-			bulkRequestBuilder.add(client
-					.prepareUpdate(indexName, indexName, documentId)
-					.setUpsert(gson.toJson(datas.get(i)))
-					.setDoc(gson.toJson(datas.get(i++))));
+			bulkRequestBuilder.add(client.prepareUpdate(indexName, indexName, documentId)
+					.setUpsert(gson.toJson(datas.get(i))).setDoc(gson.toJson(datas.get(i++))));
 		}
 
-		BulkResponse bulkResponse = bulkRequestBuilder.get();
+		BulkResponse bulkResponse = bulkRequestBuilder.setRefresh(true).get();
 		if (!bulkResponse.hasFailures())
 			return true;
 		else {
-			this.logger.error("update error",
-					bulkResponse.buildFailureMessage());
+			this.logger.error("update error", bulkResponse.buildFailureMessage());
 			logBulkRespone(bulkResponse);
-			throw new SearchRuntimeException("update error", "update error"
-					+ bulkResponse.buildFailureMessage());
+			throw new SearchRuntimeException("update error", "update error" + bulkResponse.buildFailureMessage());
 		}
 	}
 
 	@Override
 	public boolean bulkUpdate(List<String> ids, Set<JsonBuilder> jsonBuilders) {
-		if (null == ids || null == jsonBuilders
-				|| ids.size() != jsonBuilders.size())
-			throw new SearchRuntimeException(
-					"Null parameters or size not equal!");
+		if (null == ids || null == jsonBuilders || ids.size() != jsonBuilders.size())
+			throw new SearchRuntimeException("Null parameters or size not equal!");
 		BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
 		int i = 0;
 		for (JsonBuilder jsonBuilder : jsonBuilders) {
-			bulkRequestBuilder.add(client
-					.prepareUpdate(indexName, indexName, ids.get(i++))
-					.setUpsert(jsonBuilder.getBuilder())
-					.setDoc(jsonBuilder.getBuilder()));
+			bulkRequestBuilder.add(client.prepareUpdate(indexName, indexName, ids.get(i++))
+					.setUpsert(jsonBuilder.getBuilder()).setDoc(jsonBuilder.getBuilder()));
 		}
-		BulkResponse bulkResponse = bulkRequestBuilder.get();
+		BulkResponse bulkResponse = bulkRequestBuilder.setRefresh(true).get();
 		if (!bulkResponse.hasFailures())
 			return true;
 		else {
-			this.logger.error("update error",
-					bulkResponse.buildFailureMessage());
+			this.logger.error("update error", bulkResponse.buildFailureMessage());
 			logBulkRespone(bulkResponse);
-			throw new SearchRuntimeException("update error", "update error"
-					+ bulkResponse.buildFailureMessage());
+			throw new SearchRuntimeException("update error", "update error" + bulkResponse.buildFailureMessage());
 		}
 	}
 
 	@Override
-	public boolean bulkMapUpsert(List<String> ids,
-			List<Map<String, Object>> datas) {
+	public boolean bulkMapUpsert(List<String> ids, List<Map<String, Object>> datas) {
 		return bulkMapUpdate(ids, datas);
 	}
 
@@ -702,8 +616,7 @@ public class SearchClientImpl implements ISearchClient {
 		return bulkUpsert(ids, jsonBuilders);
 	}
 
-	private <T> Result<T> search(QueryBuilder queryBuilder, int from,
-			int offset, List<Sort> sorts, Class<T> clazz,
+	private <T> Result<T> search(QueryBuilder queryBuilder, int from, int offset, List<Sort> sorts, Class<T> clazz,
 			List<SearchCriteria> searchCriterias) {
 		Result<T> result = new Result<>();
 		result.setResultCode(PaaSConstant.ExceptionCode.SYSTEM_ERROR);
@@ -713,26 +626,23 @@ public class SearchClientImpl implements ISearchClient {
 			long count = searchResponse.getHits().totalHits();
 
 			SearchRequestBuilder searchRequestBuilder = null;
-			searchRequestBuilder = client.prepareSearch(indexName)
-					.setSearchType(SearchType.DEFAULT).setQuery(queryBuilder)
-					.setFrom(from).setSize(offset).setExplain(true);
+			searchRequestBuilder = client.prepareSearch(indexName).setSearchType(SearchType.DEFAULT)
+					.setQuery(queryBuilder).setFrom(from).setSize(offset).setExplain(true);
 			if (sorts == null || sorts.isEmpty()) {
 				/* 如果不需要排序 */
 			} else {
 				/* 如果需要排序 */
 				for (Sort sort : sorts) {
-					SortOrder sortOrder = sort.getOrder().compareTo(
-							Sort.SortOrder.DESC) == 0 ? SortOrder.DESC
+					SortOrder sortOrder = sort.getOrder().compareTo(Sort.SortOrder.DESC) == 0 ? SortOrder.DESC
 							: SortOrder.ASC;
 
-					searchRequestBuilder = searchRequestBuilder.addSort(sort
-							.getSortBy().toLowerCase(), sortOrder);
+					searchRequestBuilder = searchRequestBuilder.addSort(sort.getSortBy().toLowerCase(), sortOrder);
 				}
 			}
 			// 增加高亮
 			if (null != searchCriterias) {
-				searchRequestBuilder = SearchHelper.createHighlight(
-						searchRequestBuilder, searchCriterias, highlightCSS);
+				searchRequestBuilder = SearchHelper.createHighlight(searchRequestBuilder, searchCriterias,
+						highlightCSS);
 			}
 			searchResponse = searchRequestBuilder.get();
 			List<T> list = SearchHelper.getSearchResult(searchResponse, clazz);
@@ -748,52 +658,41 @@ public class SearchClientImpl implements ISearchClient {
 	}
 
 	@Override
-	public <T> Result<T> searchBySQL(String query, int from, int offset,
-			List<Sort> sorts, Class<T> clazz) {
+	public <T> Result<T> searchBySQL(String query, int from, int offset, List<Sort> sorts, Class<T> clazz) {
 		// 创建query
 		QueryBuilder queryBuilder = SearchHelper.createStringSQLBuilder(query);
 		return search(queryBuilder, from, offset, sorts, clazz, null);
 	}
 
 	@Override
-	public <T> Result<T> search(List<SearchCriteria> searchCriterias, int from,
-			int offset, List<Sort> sorts, Class<T> clazz) {
+	public <T> Result<T> search(List<SearchCriteria> searchCriterias, int from, int offset, List<Sort> sorts,
+			Class<T> clazz) {
 		// 创建query
-		QueryBuilder queryBuilder = SearchHelper
-				.createQueryBuilder(searchCriterias);
+		QueryBuilder queryBuilder = SearchHelper.createQueryBuilder(searchCriterias);
 		return search(queryBuilder, from, offset, sorts, clazz, searchCriterias);
 	}
 
-	public <T> Result<T> searchByDSL(String dslJson, int from, int offset,
-			@Nullable List<Sort> sorts, Class<T> clazz) {
+	public <T> Result<T> searchByDSL(String dslJson, int from, int offset, @Nullable List<Sort> sorts, Class<T> clazz) {
 		QueryBuilder queryBuilder = QueryBuilders.wrapperQuery(dslJson);
 		return search(queryBuilder, from, offset, sorts, clazz, null);
 	}
 
 	@Override
-	public Result<Map<String, Long>> aggregate(
-			List<SearchCriteria> searchCriterias, String field) {
+	public Result<Map<String, Long>> aggregate(List<SearchCriteria> searchCriterias, String field) {
 		Result<Map<String, Long>> result = new Result<Map<String, Long>>();
 		result.setResultCode(PaaSConstant.ExceptionCode.SYSTEM_ERROR);
 		try {
-			QueryBuilder queryBuilder = SearchHelper
-					.createQueryBuilder(searchCriterias);
+			QueryBuilder queryBuilder = SearchHelper.createQueryBuilder(searchCriterias);
 			if (queryBuilder == null)
 				return result;
-			SearchResponse searchResponse = client
-					.prepareSearch(indexName)
-					.setSearchType(SearchType.DEFAULT)
+			SearchResponse searchResponse = client.prepareSearch(indexName).setSearchType(SearchType.DEFAULT)
 					.setQuery(queryBuilder)
-					.addAggregation(
-							AggregationBuilders.terms(field + "_aggs")
-									.field(field + ".raw").size(100))
+					.addAggregation(AggregationBuilders.terms(field + "_aggs").field(field + ".raw").size(100))
 					.setSize(0).get();
 
-			Terms sortAggregate = searchResponse.getAggregations().get(
-					field + "_aggs");
+			Terms sortAggregate = searchResponse.getAggregations().get(field + "_aggs");
 			for (Terms.Bucket entry : sortAggregate.getBuckets()) {
-				result.addAgg(new AggResult(entry.getKeyAsString(), entry
-						.getDocCount(), field));
+				result.addAgg(new AggResult(entry.getKeyAsString(), entry.getDocCount(), field));
 			}
 			result.setCounts(searchResponse.getHits().getTotalHits());
 			result.setResultCode(PaaSConstant.RPC_CALL_OK);
@@ -805,35 +704,28 @@ public class SearchClientImpl implements ISearchClient {
 	}
 
 	@Override
-	public Result<List<AggResult>> aggregate(
-			List<SearchCriteria> searchCriterias, List<AggField> fields) {
-		if (null == searchCriterias || null == fields
-				|| searchCriterias.size() <= 0 || fields.size() <= 0)
+	public Result<List<AggResult>> aggregate(List<SearchCriteria> searchCriterias, List<AggField> fields) {
+		if (null == searchCriterias || null == fields || searchCriterias.size() <= 0 || fields.size() <= 0)
 			throw new SearchRuntimeException("IllegelArguments! null");
 		Result<List<AggResult>> result = new Result<List<AggResult>>();
 		result.setResultCode(PaaSConstant.ExceptionCode.SYSTEM_ERROR);
 		try {
-			QueryBuilder queryBuilder = SearchHelper
-					.createQueryBuilder(searchCriterias);
+			QueryBuilder queryBuilder = SearchHelper.createQueryBuilder(searchCriterias);
 			if (queryBuilder == null)
 				return result;
 			result.setResultCode(PaaSConstant.RPC_CALL_OK);
-			SearchRequestBuilder searchRequestBuilder = client
-					.prepareSearch(indexName).setSearchType(SearchType.DEFAULT)
-					.setQuery(queryBuilder);
+			SearchRequestBuilder searchRequestBuilder = client.prepareSearch(indexName)
+					.setSearchType(SearchType.DEFAULT).setQuery(queryBuilder);
 
 			for (AggField aggField : fields) {
 				// 先建第一级
-				TermsBuilder termBuilder = AggregationBuilders
-						.terms(aggField.getField() + "_aggs")
+				TermsBuilder termBuilder = AggregationBuilders.terms(aggField.getField() + "_aggs")
 						.field(aggField.getField() + ".raw").size(0);
 				// 循环创建子聚合
-				termBuilder = SearchHelper.addSubAggs(termBuilder,
-						aggField.getSubAggs());
+				termBuilder = SearchHelper.addSubAggs(termBuilder, aggField.getSubAggs());
 				searchRequestBuilder.addAggregation(termBuilder);
 			}
-			SearchResponse searchResponse = searchRequestBuilder.setSize(0)
-					.get();
+			SearchResponse searchResponse = searchRequestBuilder.setSize(0).get();
 
 			result.setCounts(searchResponse.getHits().getTotalHits());
 			result.setAggs(SearchHelper.getAgg(searchResponse, fields));
@@ -845,20 +737,14 @@ public class SearchClientImpl implements ISearchClient {
 	}
 
 	@Override
-	public <T> Result<T> fullTextSearch(String text, int from, int offset,
-			List<Sort> sorts, Class<T> clazz) {
+	public <T> Result<T> fullTextSearch(String text, int from, int offset, List<Sort> sorts, Class<T> clazz) {
 		Result<T> result = new Result<>();
 		result.setResultCode(PaaSConstant.ExceptionCode.SYSTEM_ERROR);
 		try {
-			SearchRequestBuilder searchRequestBuilder = client
-					.prepareSearch(indexName)
+			SearchRequestBuilder searchRequestBuilder = client.prepareSearch(indexName)
 					.setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-					.setQuery(
-							QueryBuilders.matchQuery("_all", text)
-									.operator(Operator.AND)
-									.minimumShouldMatch("75%")).setFrom(from)
-					.setSize(offset).setExplain(true)
-					.setHighlighterRequireFieldMatch(true);
+					.setQuery(QueryBuilders.matchQuery("_all", text).operator(Operator.AND).minimumShouldMatch("75%"))
+					.setFrom(from).setSize(offset).setExplain(true).setHighlighterRequireFieldMatch(true);
 			SearchResponse response = searchRequestBuilder.get();
 
 			List<T> list = SearchHelper.getSearchResult(response, clazz);
@@ -875,46 +761,39 @@ public class SearchClientImpl implements ISearchClient {
 	}
 
 	@Override
-	public <T> Result<T> fullTextSearch(String text, List<String> qryFields,
-			List<AggField> aggFields, int from, int offset, List<Sort> sorts,
-			Class<T> clazz) {
+	public <T> Result<T> fullTextSearch(String text, List<String> qryFields, List<AggField> aggFields, int from,
+			int offset, List<Sort> sorts, Class<T> clazz) {
 		Result<T> result = new Result<>();
 		result.setResultCode(PaaSConstant.ExceptionCode.SYSTEM_ERROR);
 		try {
 			// 如果带聚合必须指定对哪些字段
 			BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery();
 			for (String qryField : qryFields) {
-				queryBuilder.should(QueryBuilders.matchQuery(qryField, text)
-						.operator(Operator.AND).minimumShouldMatch("75%"));
+				queryBuilder.should(
+						QueryBuilders.matchQuery(qryField, text).operator(Operator.AND).minimumShouldMatch("75%"));
 			}
-			SearchRequestBuilder searchRequestBuilder = client
-					.prepareSearch(indexName)
-					.setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-					.setQuery(queryBuilder).setFrom(from).setSize(offset);
+			SearchRequestBuilder searchRequestBuilder = client.prepareSearch(indexName)
+					.setSearchType(SearchType.DFS_QUERY_THEN_FETCH).setQuery(queryBuilder).setFrom(from)
+					.setSize(offset);
 			if (sorts == null || sorts.isEmpty()) {
 				/* 如果不需要排序 */
 			} else {
 				/* 如果需要排序 */
 				for (Sort sort : sorts) {
-					SortOrder sortOrder = sort.getOrder().compareTo(
-							Sort.SortOrder.DESC) == 0 ? SortOrder.DESC
+					SortOrder sortOrder = sort.getOrder().compareTo(Sort.SortOrder.DESC) == 0 ? SortOrder.DESC
 							: SortOrder.ASC;
 
-					searchRequestBuilder = searchRequestBuilder.addSort(sort
-							.getSortBy().toLowerCase(), sortOrder);
+					searchRequestBuilder = searchRequestBuilder.addSort(sort.getSortBy().toLowerCase(), sortOrder);
 				}
 			}
-			searchRequestBuilder.setExplain(false)
-					.setHighlighterRequireFieldMatch(true);
+			searchRequestBuilder.setExplain(false).setHighlighterRequireFieldMatch(true);
 			// 此处加上聚合内容
 			for (AggField aggField : aggFields) {
 				// 先建第一级
-				TermsBuilder termBuilder = AggregationBuilders
-						.terms(aggField.getField() + "_aggs")
+				TermsBuilder termBuilder = AggregationBuilders.terms(aggField.getField() + "_aggs")
 						.field(aggField.getField() + ".raw").size(0);
 				// 循环创建子聚合
-				termBuilder = SearchHelper.addSubAggs(termBuilder,
-						aggField.getSubAggs());
+				termBuilder = SearchHelper.addSubAggs(termBuilder, aggField.getSubAggs());
 				searchRequestBuilder.addAggregation(termBuilder);
 			}
 			SearchResponse response = searchRequestBuilder.get();
@@ -934,11 +813,9 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public <T> T getById(String id, Class<T> clazz) {
-		GetResponse response = client.prepareGet(indexName, indexName, id)
-				.get();
+		GetResponse response = client.prepareGet(indexName, indexName, id).get();
 		if (null != response && response.isExists()) {
-			Gson gson = new GsonBuilder().setDateFormat(
-					"yyyy-MM-dd'T'HH:mm:ssZZZ").create();
+			Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ").create();
 			return gson.fromJson(response.getSourceAsString(), clazz);
 		} else
 			return null;
@@ -946,8 +823,7 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public String getById(String id) {
-		GetResponse response = client.prepareGet(indexName, indexName, id)
-				.get();
+		GetResponse response = client.prepareGet(indexName, indexName, id).get();
 		if (null != response && response.isExists())
 			return response.getSourceAsString();
 		else
@@ -960,24 +836,17 @@ public class SearchClientImpl implements ISearchClient {
 			shards = 1;
 		if (replicas <= 0)
 			replicas = 1;
-		String setting = " {" + "\"number_of_shards\":\"" + shards + "\","
-				+ "\"number_of_replicas\":\"" + replicas + "\","
-				+ "\"client.transport.ping_timeout\":\"60s\","
-				+ " \"analysis\": {" + "         \"filter\": {"
-				+ "            \"nGram_filter\": {"
-				+ "               \"type\": \"nGram\","
-				+ "               \"min_gram\": 1,"
-				+ "               \"max_gram\": 10" + "            }"
-				+ "         }," + "         \"analyzer\": {"
-				+ "            \"nGram_analyzer\": {"
-				+ "               \"type\": \"custom\","
-				+ "               \"tokenizer\": \"ik_max_word\","
-				+ "               \"filter\": ["
-				+ "                  \"lowercase\","
-				+ "                  \"nGram_filter\"" + "               ]"
-				+ "            }" + "         }" + "      }" + "   " + "}";
-		CreateIndexResponse createResponse = client.admin().indices()
-				.prepareCreate(indexName).setSettings(setting).get();
+		String setting = " {" + "\"number_of_shards\":\"" + shards + "\"," + "\"number_of_replicas\":\"" + replicas
+				+ "\"," + "\"client.transport.ping_timeout\":\"60s\"," + " \"analysis\": {" + "         \"filter\": {"
+				+ "            \"nGram_filter\": {" + "               \"type\": \"nGram\","
+				+ "               \"min_gram\": 1," + "               \"max_gram\": 10" + "            }"
+				+ "         }," + "         \"analyzer\": {" + "            \"nGram_analyzer\": {"
+				+ "               \"type\": \"custom\"," + "               \"tokenizer\": \"ik_max_word\","
+				+ "               \"filter\": [" + "                  \"lowercase\","
+				+ "                  \"nGram_filter\"" + "               ]" + "            }" + "         }" + "      }"
+				+ "   " + "}";
+		CreateIndexResponse createResponse = client.admin().indices().prepareCreate(indexName).setSettings(setting)
+				.get();
 		if (createResponse.isAcknowledged()) {
 			return true;
 		}
@@ -988,8 +857,7 @@ public class SearchClientImpl implements ISearchClient {
 	public boolean deleteIndex(String indexName) {
 		DeleteIndexResponse delete;
 		try {
-			delete = client.admin().indices()
-					.delete(new DeleteIndexRequest(indexName)).get();
+			delete = client.admin().indices().delete(new DeleteIndexRequest(indexName)).get();
 			if (!delete.isAcknowledged()) {
 				logger.error("Index wasn't deleted!index=" + indexName);
 				return false;
@@ -1009,8 +877,7 @@ public class SearchClientImpl implements ISearchClient {
 		Assert.notNull(json, "mapping can not null");
 		// 转换成json看看
 		JsonObject typeObj = null;
-		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ")
-				.create();
+		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ").create();
 		JsonObject jsonObj = gson.fromJson(json, JsonObject.class);
 		if (null == jsonObj.get(type)) {
 			// 看看有没有properties
@@ -1030,8 +897,7 @@ public class SearchClientImpl implements ISearchClient {
 			typeObj = jsonObj;
 		}
 
-		PutMappingResponse putMappingResponse = client.admin().indices()
-				.preparePutMapping(indexName).setType(type)
+		PutMappingResponse putMappingResponse = client.admin().indices().preparePutMapping(indexName).setType(type)
 				.setSource(gson.toJson(typeObj)).get();
 		gson = null;
 		if (putMappingResponse.isAcknowledged())
@@ -1044,8 +910,7 @@ public class SearchClientImpl implements ISearchClient {
 	public boolean existIndex(String indexName) {
 		Assert.notNull(indexName, "Index Name can not null");
 		try {
-			IndicesExistsResponse response = client.admin().indices()
-					.exists(new IndicesExistsRequest(indexName)).get();
+			IndicesExistsResponse response = client.admin().indices().exists(new IndicesExistsRequest(indexName)).get();
 			if (null != response && response.isExists())
 				return true;
 			else
@@ -1058,44 +923,36 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public boolean refresh() {
-		RefreshResponse response = client.admin().indices()
-				.prepareRefresh(indexName).get();
+		RefreshResponse response = client.admin().indices().prepareRefresh(indexName).get();
 		if (null != response && response.getFailedShards() <= 0)
 			return true;
 		return false;
 	}
 
 	@Override
-	public String searchBySQL(String querySQL, int from, int offset,
-			List<Sort> sorts) {
+	public String searchBySQL(String querySQL, int from, int offset, List<Sort> sorts) {
 		Gson gson = new Gson();
-		return gson.toJson(searchBySQL(querySQL, from, offset, sorts,
-				String.class));
+		return gson.toJson(searchBySQL(querySQL, from, offset, sorts, String.class));
 	}
 
 	@Override
-	public String search(List<SearchCriteria> searchCriterias, int from,
-			int offset, List<Sort> sorts) {
+	public String search(List<SearchCriteria> searchCriterias, int from, int offset, List<Sort> sorts) {
 		Gson gson = new Gson();
-		return gson.toJson(search(searchCriterias, from, offset, sorts,
-				String.class));
+		return gson.toJson(search(searchCriterias, from, offset, sorts, String.class));
 	}
 
 	@Override
-	public String searchByDSL(String dslJson, int from, int offset,
-			List<Sort> sorts) {
+	public String searchByDSL(String dslJson, int from, int offset, List<Sort> sorts) {
 		Gson gson = new Gson();
-		return gson.toJson(searchByDSL(dslJson, from, offset, sorts,
-				String.class));
+		return gson.toJson(searchByDSL(dslJson, from, offset, sorts, String.class));
 	}
 
 	@Override
-	public <T> Result<T> fullTextSearch(String text, List<AggField> aggFields,
-			int from, int offset, List<Sort> sorts, Class<T> clazz) {
+	public <T> Result<T> fullTextSearch(String text, List<AggField> aggFields, int from, int offset, List<Sort> sorts,
+			Class<T> clazz) {
 		List<String> qryFields = new ArrayList<>();
 		qryFields.add("_all");
-		return fullTextSearch(text, qryFields, aggFields, from, offset, sorts,
-				clazz);
+		return fullTextSearch(text, qryFields, aggFields, from, offset, sorts, clazz);
 	}
 
 	@Override
@@ -1107,8 +964,7 @@ public class SearchClientImpl implements ISearchClient {
 	}
 
 	@Override
-	public boolean addMapping(String indexName, String type, String json,
-			String id) {
+	public boolean addMapping(String indexName, String type, String json, String id) {
 		if (!StringUtil.isBlank(id))
 			this._id = id;
 		return addMapping(indexName, type, json);
@@ -1116,8 +972,8 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public boolean createIndex(String indexName, String settings) {
-		CreateIndexResponse createResponse = client.admin().indices()
-				.prepareCreate(indexName).setSettings(settings).get();
+		CreateIndexResponse createResponse = client.admin().indices().prepareCreate(indexName).setSettings(settings)
+				.get();
 		if (createResponse.isAcknowledged()) {
 			return true;
 		}
@@ -1126,8 +982,7 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public boolean existMapping(String indexName, String mapping) {
-		GetMappingsResponse response = client.admin().indices()
-				.prepareGetMappings(indexName).get();
+		GetMappingsResponse response = client.admin().indices().prepareGetMappings(indexName).get();
 		if (null != response) {
 			return response.getMappings().containsKey(mapping);
 		}
