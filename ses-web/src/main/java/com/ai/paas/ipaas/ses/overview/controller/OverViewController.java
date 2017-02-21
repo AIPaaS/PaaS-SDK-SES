@@ -33,9 +33,9 @@ public class OverViewController {
 		try {
 			SesUserInstance ins = sesUserInst.queryInst(userId, serviceId);
 			//*****追加hostip的内外网地址对应 start******
-			Stirng hostIps=ISesManage.getHostIp();
-			Stirng hostIp;
-			List<String> hostList =hostIps.split(SesConstants.SPLITER_COMMA);
+			String hostIps=ISesManage.getHostIp();
+			String hostIp;
+			ArrayList<String> hostList =hostIps.split(SesConstants.SPLITER_COMMA);
 			for(int i=0;i<hostList.length();i++){
 				if (hostList[i].contains(ins.getHostIp())){
 					hostIp = hostList[i].split(SesConstants.SPLITER_COLON)[1];
