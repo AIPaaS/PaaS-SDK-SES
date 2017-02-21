@@ -14,6 +14,7 @@ import com.ai.paas.ipaas.ses.common.constants.SesConstants;
 import com.ai.paas.ipaas.ses.dataimport.util.ParamUtil;
 import com.ai.paas.ipaas.ses.manage.rest.interfaces.IRPCSesUserInst;
 import com.ai.paas.ipaas.vo.ses.SesUserInstance;
+import com.ai.paas.ipaas.ses.service.interfaces.ISesManage;
 
 @Controller
 @RequestMapping(value = "/overview")
@@ -30,9 +31,19 @@ public class OverViewController {
 		model.addAttribute("userId", userId);
 		model.addAttribute("serviceId", serviceId);
 		try {
-
 			SesUserInstance ins = sesUserInst.queryInst(userId, serviceId);
-			String addr = "http://" + ins.getHostIp() + ":" + ins.getSesPort()
+			//*****追加hostip的内外网地址对应 start******
+			Stirng hostIps=ISesManage.getHostIp();
+			Stirng hostIp;
+			List<String> hostList =hostIps.split(SesConstants.SPLITER_COMMA);
+			for(int i=0;i<hostList.length();i++){
+				if (hostList[i].contains(ins.getHostIp())){
+					hostIp = hostList[i].split(SesConstants.SPLITER_COLON)[1];
+					break;
+				}
+			}
+			//*****追加hostip的内外网地址对应 end******
+			String addr = "http://" + hostIp + ":" + ins.getSesPort()
 					+ "/_plugin/head/";
 			model.addAttribute("addr", addr);
 		} catch (PaasException e) {
