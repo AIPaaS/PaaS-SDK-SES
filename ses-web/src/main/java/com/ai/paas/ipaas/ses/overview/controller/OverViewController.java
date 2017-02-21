@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
-
+import java.util.ArrayList;
 import com.ai.paas.ipaas.PaasException;
 import com.ai.paas.ipaas.ses.common.constants.SesConstants;
 import com.ai.paas.ipaas.ses.dataimport.util.ParamUtil;
@@ -32,15 +32,20 @@ public class OverViewController {
 		try {
 			SesUserInstance ins = sesUserInst.queryInst(userId, serviceId);
 			//*****追加hostip的内外网地址对应 start******
-			String hostIps=sesUserInst.getHostIp();
+			String hostIpStr=sesUserInst.getHostIp();
 			String hostIp;
-			ArrayList<String> hostList =hostIps.split(SesConstants.SPLITER_COMMA);
-			for(int i=0;i<hostList.length();i++){
-				if (hostList[i].contains(ins.getHostIp())){
-					hostIp = hostList[i].split(SesConstants.SPLITER_COLON)[1];
-					break;
-				}
+			if(hostIpStr != null){
+				ArrayList<String> hostList =hostIpStr.split(SesConstants.SPLITER_COMMA);
+			    for(int i=0;i<hostList.length();i++){
+			    	if (hostList[i].contains(ins.getHostIp())){
+			    		hostIp = hostList[i].split(SesConstants.SPLITER_COLON)[1];
+					    break;
+					    }
+			    	}
+			}else{
+				hostIp = ins.getHostIp();
 			}
+			
 			//*****追加hostip的内外网地址对应 end******
 			String addr = "http://" + hostIp + ":" + ins.getSesPort()
 					+ "/_plugin/head/";
