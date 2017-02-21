@@ -36,7 +36,7 @@ public class OverViewController {
 			String hostIp;
 			if(hostIpStr != null){
 				String[] hostList =hostIpStr.split(SesConstants.SPLITER_COMMA);
-			    for(int i=0;i<hostList.size();i++){
+			    for(int i=0;i<hostList.length;i++){
 			    	if (hostList[i].contains(ins.getHostIp())){
 			    		hostIp = hostList[i].split(SesConstants.SPLITER_COLON)[1];
 					    break;
