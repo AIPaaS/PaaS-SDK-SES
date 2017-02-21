@@ -14,7 +14,6 @@ import com.ai.paas.ipaas.ses.common.constants.SesConstants;
 import com.ai.paas.ipaas.ses.dataimport.util.ParamUtil;
 import com.ai.paas.ipaas.ses.manage.rest.interfaces.IRPCSesUserInst;
 import com.ai.paas.ipaas.vo.ses.SesUserInstance;
-import com.ai.paas.ipaas.ses.service.interfaces.ISesManage;
 
 @Controller
 @RequestMapping(value = "/overview")
@@ -33,7 +32,7 @@ public class OverViewController {
 		try {
 			SesUserInstance ins = sesUserInst.queryInst(userId, serviceId);
 			//*****追加hostip的内外网地址对应 start******
-			String hostIps=ISesManage.getHostIp();
+			String hostIps=sesUserInst.getHostIp();
 			String hostIp;
 			ArrayList<String> hostList =hostIps.split(SesConstants.SPLITER_COMMA);
 			for(int i=0;i<hostList.length();i++){
