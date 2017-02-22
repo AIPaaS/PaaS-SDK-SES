@@ -29,21 +29,21 @@ public class OverViewController {
 		String serviceId = ParamUtil.getUser(request).get("sid");
 		model.addAttribute("userId", userId);
 		model.addAttribute("serviceId", serviceId);
+		
 		try {
 			SesUserInstance ins = sesUserInst.queryInst(userId, serviceId);
+					
 			//*****追加hostip的内外网地址对应 start******
-			String hostIpStr=sesUserInst.getHostIp();
-			String hostIp;
+			String hostIp = ins.getHostIp();
+			String hostIpStr = sesUserInst.getHostIp();			
 			if(hostIpStr != null){
-				String[] hostList =hostIpStr.split(SesConstants.SPLITER_COMMA);
+				String[] hostList = hostIpStr.split(SesConstants.SPLITER_COMMA);
 			    for(int i=0;i<hostList.length;i++){
 			    	if (hostList[i].contains(ins.getHostIp())){
 			    		hostIp = hostList[i].split(SesConstants.SPLITER_COLON)[1];
 					    break;
 					    }
 			    	}
-			}else{
-				hostIp = ins.getHostIp();
 			}
 			
 			//*****追加hostip的内外网地址对应 end******
