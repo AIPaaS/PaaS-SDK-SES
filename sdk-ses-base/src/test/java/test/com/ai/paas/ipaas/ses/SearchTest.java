@@ -386,7 +386,7 @@ public class SearchTest {
 		result = client.searchBySQL(qry, 0, 10, null, User.class);
 		assertTrue(result.getCount() == 1);
 		qry = "age:(>=40 AND <55) ";
-		result = client.searchBySQL(qry, 0, 10, null, User.class);
+		result = client.searchBySQL(qry, 0, 1, null, User.class);
 		assertTrue(result.getCount() == 2);
 	}
 

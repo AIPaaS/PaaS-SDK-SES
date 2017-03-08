@@ -36,9 +36,9 @@ public class SearchHelper {
 	private SearchHelper() {
 
 	}
+	private static Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create();
 
 	public static String getId(String json, String id) {
-		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create();
 		JsonObject obj = gson.fromJson(json, JsonObject.class);
 		if (null != obj.get(id))
 			return obj.get(id).getAsString();
@@ -67,7 +67,7 @@ public class SearchHelper {
 	}
 
 	public static boolean hasId(String json, String id) {
-		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create();
+		
 		JsonObject obj = gson.fromJson(json, JsonObject.class);
 		if (null != obj.get(id))
 			return true;
@@ -224,7 +224,6 @@ public class SearchHelper {
 			if (hits.getTotalHits() == 0) {
 				return results;
 			}
-			Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create();
 			for (SearchHit searchHit : hits.getHits()) {
 				String source = searchHit.getSourceAsString();
 				if (null != clazz && !clazz.getName().equals(String.class.getName()))
@@ -244,7 +243,6 @@ public class SearchHelper {
 			if (hits.getTotalHits() == 0) {
 				return null;
 			}
-			Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create();
 			String source = null;
 			List<String> results = new ArrayList<>();
 			for (SearchHit searchHit : hits.getHits()) {

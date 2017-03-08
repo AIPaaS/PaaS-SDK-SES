@@ -77,6 +77,8 @@ public class SearchClientImpl implements ISearchClient {
 	private String hosts = null;
 	// 创建私有对象
 	private TransportClient client;
+	private Gson esgson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ").create();
+	private Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
 
 	public SearchClientImpl(String hosts, String indexName, String id) {
 		this.indexName = indexName;
@@ -114,23 +116,6 @@ public class SearchClientImpl implements ISearchClient {
 		this.highlightCSS = highlightCSS;
 	}
 
-	private SearchResponse count(String indexName, Object queryBuilder) {
-		try {
-			SearchRequestBuilder searchRequestBuilder = client.prepareSearch(indexName).setSize(0);
-			if (queryBuilder instanceof QueryBuilder) {
-				searchRequestBuilder = searchRequestBuilder.setQuery((QueryBuilder) queryBuilder);
-			}
-			if (queryBuilder instanceof byte[]) {
-				String query = new String((byte[]) queryBuilder);
-				searchRequestBuilder = searchRequestBuilder.setQuery(QueryBuilders.wrapperQuery(query));
-			}
-			return searchRequestBuilder.get();
-		} catch (Exception e) {
-			logger.error("search count error", e);
-			throw new SearchRuntimeException("ES search count error", e);
-		}
-	}
-
 	public List<String> getSuggest(String value, int count) {
 		return getSuggest("_all", value, count);
 	}
@@ -158,8 +143,7 @@ public class SearchClientImpl implements ISearchClient {
 	public boolean insert(Map<String, Object> data) {
 		if (null == data || data.size() <= 0)
 			return false;
-		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ").create();
-		return insert(gson.toJson(data));
+		return insert(esgson.toJson(data));
 	}
 
 	@Override
@@ -187,8 +171,7 @@ public class SearchClientImpl implements ISearchClient {
 	public <T> boolean insert(T data) {
 		if (null == data)
 			return false;
-		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ").create();
-		return insert(gson.toJson(data));
+		return insert(esgson.toJson(data));
 	}
 
 	@Override
@@ -338,8 +321,7 @@ public class SearchClientImpl implements ISearchClient {
 	public <T> boolean update(String id, T data) {
 		if (StringUtil.isBlank(id) || null == data)
 			return false;
-		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ").create();
-		return update(id, gson.toJson(data));
+		return update(id, esgson.toJson(data));
 	}
 
 	@Override
@@ -383,8 +365,7 @@ public class SearchClientImpl implements ISearchClient {
 	public <T> boolean upsert(String id, T data) {
 		if (StringUtil.isBlank(id) || null == data)
 			return false;
-		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ").create();
-		return upsert(id, gson.toJson(data));
+		return upsert(id, esgson.toJson(data));
 	}
 
 	@Override
@@ -472,9 +453,8 @@ public class SearchClientImpl implements ISearchClient {
 		if (null == datas || datas.size() <= 0)
 			return false;
 		List<String> jsons = new ArrayList<>();
-		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ").create();
 		for (T t : datas) {
-			jsons.add(gson.toJson(t));
+			jsons.add(esgson.toJson(t));
 		}
 		return bulkJsonInsert(jsons);
 	}
@@ -560,10 +540,9 @@ public class SearchClientImpl implements ISearchClient {
 			throw new SearchRuntimeException("Null parameters or size not equal!");
 		BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
 		int i = 0;
-		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ").create();
 		for (String documentId : ids) {
 			bulkRequestBuilder.add(client.prepareUpdate(indexName, indexName, documentId)
-					.setUpsert(gson.toJson(datas.get(i))).setDoc(gson.toJson(datas.get(i++))));
+					.setUpsert(esgson.toJson(datas.get(i))).setDoc(esgson.toJson(datas.get(i++))));
 		}
 
 		BulkResponse bulkResponse = bulkRequestBuilder.setRefresh(true).get();
@@ -617,13 +596,12 @@ public class SearchClientImpl implements ISearchClient {
 	}
 
 	private <T> Result<T> search(QueryBuilder queryBuilder, int from, int offset, List<Sort> sorts, Class<T> clazz,
-			List<SearchCriteria> searchCriterias) {
+			List<SearchCriteria> searchCriterias, String[] resultFields) {
 		Result<T> result = new Result<>();
 		result.setResultCode(PaaSConstant.ExceptionCode.SYSTEM_ERROR);
 		try {
 			/* 查询搜索总数 */
-			SearchResponse searchResponse = count(indexName, queryBuilder);
-			long count = searchResponse.getHits().totalHits();
+			// 此种实现不好，查询两次。即使分页，也可以得到总数
 
 			SearchRequestBuilder searchRequestBuilder = null;
 			searchRequestBuilder = client.prepareSearch(indexName).setSearchType(SearchType.DEFAULT)
@@ -644,11 +622,11 @@ public class SearchClientImpl implements ISearchClient {
 				searchRequestBuilder = SearchHelper.createHighlight(searchRequestBuilder, searchCriterias,
 						highlightCSS);
 			}
-			searchResponse = searchRequestBuilder.get();
+			SearchResponse searchResponse = searchRequestBuilder.setFetchSource(resultFields, null).get();
 			List<T> list = SearchHelper.getSearchResult(searchResponse, clazz);
 
 			result.setContents(list);
-			result.setCounts(count);
+			result.setCounts(searchResponse.getHits().getTotalHits());
 			result.setResultCode(PaaSConstant.RPC_CALL_OK);
 		} catch (Exception e) {
 			this.logger.error(e.getMessage(), e);
@@ -661,7 +639,25 @@ public class SearchClientImpl implements ISearchClient {
 	public <T> Result<T> searchBySQL(String query, int from, int offset, List<Sort> sorts, Class<T> clazz) {
 		// 创建query
 		QueryBuilder queryBuilder = SearchHelper.createStringSQLBuilder(query);
-		return search(queryBuilder, from, offset, sorts, clazz, null);
+		return search(queryBuilder, from, offset, sorts, clazz, null, null);
+	}
+
+	@Override
+	public <T> Result<T> searchBySQL(String querySQL, int from, int offset, List<Sort> sorts, Class<T> clazz,
+			String[] resultFields) {
+		// 创建query
+		QueryBuilder queryBuilder = SearchHelper.createStringSQLBuilder(querySQL);
+		return search(queryBuilder, from, offset, sorts, clazz, null, resultFields);
+	}
+
+	@Override
+	public String searchBySQL(String querySQL, int from, int offset, List<Sort> sorts) {
+		return gson.toJson(searchBySQL(querySQL, from, offset, sorts, String.class));
+	}
+
+	@Override
+	public String searchBySQL(String querySQL, int from, int offset, List<Sort> sorts, String[] resultFields) {
+		return gson.toJson(searchBySQL(querySQL, from, offset, sorts, String.class, resultFields));
 	}
 
 	@Override
@@ -669,12 +665,48 @@ public class SearchClientImpl implements ISearchClient {
 			Class<T> clazz) {
 		// 创建query
 		QueryBuilder queryBuilder = SearchHelper.createQueryBuilder(searchCriterias);
-		return search(queryBuilder, from, offset, sorts, clazz, searchCriterias);
+		return search(queryBuilder, from, offset, sorts, clazz, searchCriterias, null);
+	}
+
+	@Override
+	public <T> Result<T> search(List<SearchCriteria> searchCriterias, int from, int offset, List<Sort> sorts,
+			Class<T> clazz, String[] resultFields) {
+		// 创建query
+		QueryBuilder queryBuilder = SearchHelper.createQueryBuilder(searchCriterias);
+		return search(queryBuilder, from, offset, sorts, clazz, searchCriterias, resultFields);
+	}
+
+	@Override
+	public String search(List<SearchCriteria> searchCriterias, int from, int offset, List<Sort> sorts) {
+		return gson.toJson(search(searchCriterias, from, offset, sorts, String.class));
+	}
+
+	@Override
+	public String search(List<SearchCriteria> searchCriterias, int from, int offset, List<Sort> sorts,
+			String[] resultFields) {
+		return gson.toJson(search(searchCriterias, from, offset, sorts, String.class, resultFields));
 	}
 
 	public <T> Result<T> searchByDSL(String dslJson, int from, int offset, @Nullable List<Sort> sorts, Class<T> clazz) {
 		QueryBuilder queryBuilder = QueryBuilders.wrapperQuery(dslJson);
-		return search(queryBuilder, from, offset, sorts, clazz, null);
+		return search(queryBuilder, from, offset, sorts, clazz, null, null);
+	}
+
+	@Override
+	public <T> Result<T> searchByDSL(String dslJson, int from, int offset, List<Sort> sorts, Class<T> clazz,
+			String[] resultFields) {
+		QueryBuilder queryBuilder = QueryBuilders.wrapperQuery(dslJson);
+		return search(queryBuilder, from, offset, sorts, clazz, null, resultFields);
+	}
+
+	@Override
+	public String searchByDSL(String dslJson, int from, int offset, List<Sort> sorts) {
+		return gson.toJson(searchByDSL(dslJson, from, offset, sorts, String.class));
+	}
+
+	@Override
+	public String searchByDSL(String dslJson, int from, int offset, List<Sort> sorts, String[] resultFields) {
+		return gson.toJson(searchByDSL(dslJson, from, offset, sorts, String.class, resultFields));
 	}
 
 	@Override
@@ -815,8 +847,7 @@ public class SearchClientImpl implements ISearchClient {
 	public <T> T getById(String id, Class<T> clazz) {
 		GetResponse response = client.prepareGet(indexName, indexName, id).get();
 		if (null != response && response.isExists()) {
-			Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ").create();
-			return gson.fromJson(response.getSourceAsString(), clazz);
+			return esgson.fromJson(response.getSourceAsString(), clazz);
 		} else
 			return null;
 	}
@@ -877,8 +908,7 @@ public class SearchClientImpl implements ISearchClient {
 		Assert.notNull(json, "mapping can not null");
 		// 转换成json看看
 		JsonObject typeObj = null;
-		Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ").create();
-		JsonObject jsonObj = gson.fromJson(json, JsonObject.class);
+		JsonObject jsonObj = esgson.fromJson(json, JsonObject.class);
 		if (null == jsonObj.get(type)) {
 			// 看看有没有properties
 			if (null == jsonObj.get("properties")) {
@@ -898,8 +928,7 @@ public class SearchClientImpl implements ISearchClient {
 		}
 
 		PutMappingResponse putMappingResponse = client.admin().indices().preparePutMapping(indexName).setType(type)
-				.setSource(gson.toJson(typeObj)).get();
-		gson = null;
+				.setSource(esgson.toJson(typeObj)).get();
 		if (putMappingResponse.isAcknowledged())
 			return true;
 		else
@@ -927,24 +956,6 @@ public class SearchClientImpl implements ISearchClient {
 		if (null != response && response.getFailedShards() <= 0)
 			return true;
 		return false;
-	}
-
-	@Override
-	public String searchBySQL(String querySQL, int from, int offset, List<Sort> sorts) {
-		Gson gson = new Gson();
-		return gson.toJson(searchBySQL(querySQL, from, offset, sorts, String.class));
-	}
-
-	@Override
-	public String search(List<SearchCriteria> searchCriterias, int from, int offset, List<Sort> sorts) {
-		Gson gson = new Gson();
-		return gson.toJson(search(searchCriterias, from, offset, sorts, String.class));
-	}
-
-	@Override
-	public String searchByDSL(String dslJson, int from, int offset, List<Sort> sorts) {
-		Gson gson = new Gson();
-		return gson.toJson(searchByDSL(dslJson, from, offset, sorts, String.class));
 	}
 
 	@Override

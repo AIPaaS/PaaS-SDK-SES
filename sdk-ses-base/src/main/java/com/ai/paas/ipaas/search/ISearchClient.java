@@ -39,7 +39,7 @@ public interface ISearchClient {
 	 * 
 	 * @param data
 	 * @return 插入数据是否成功
-	 */ 
+	 */
 	public <T> boolean insert(T data);
 
 	/**
@@ -193,8 +193,7 @@ public interface ISearchClient {
 	 * @param datas
 	 * @return 更新是否成功,如果有一条更新失败，则返回失败
 	 */
-	public boolean bulkMapUpdate(List<String> ids,
-			List<Map<String, Object>> datas);
+	public boolean bulkMapUpdate(List<String> ids, List<Map<String, Object>> datas);
 
 	/**
 	 * 更新多个文档，合并模式
@@ -230,8 +229,7 @@ public interface ISearchClient {
 	 * @param datas
 	 * @return 更新是否成功,如果有一条更新失败，则返回失败
 	 */
-	public boolean bulkMapUpsert(List<String> ids,
-			List<Map<String, Object>> datas);
+	public boolean bulkMapUpsert(List<String> ids, List<Map<String, Object>> datas);
 
 	/**
 	 * 更新多个文档，不存在就插入
@@ -262,8 +260,7 @@ public interface ISearchClient {
 
 	/**
 	 * 按照条件查询，age:(>=10 AND <50) | age:(>=10 AND <50) AND name:1234
-	 * 查询结果受模型定义及分词定义影响
-	 * 具体语法请参见：https
+	 * 查询结果受模型定义及分词定义影响 具体语法请参见：https
 	 * ://www.elastic.co/guide/en/elasticsearch/reference/current/query
 	 * -dsl-query-string-query.html
 	 * 
@@ -274,8 +271,25 @@ public interface ISearchClient {
 	 * @param clazz
 	 * @return 查询结果对象
 	 */
-	public <T> Result<T> searchBySQL(String querySQL, int from, int offset,
-			@Nullable List<Sort> sorts, Class<T> clazz);
+	public <T> Result<T> searchBySQL(String querySQL, int from, int offset, @Nullable List<Sort> sorts, Class<T> clazz);
+
+	/**
+	 * 按照条件查询，age:(>=10 AND <50) | age:(>=10 AND <50) AND name:1234
+	 * 查询结果受模型定义及分词定义影响 具体语法请参见：https
+	 * ://www.elastic.co/guide/en/elasticsearch/reference/current/query
+	 * -dsl-query-string-query.html
+	 * 
+	 * @param querySQL
+	 * @param from
+	 * @param offset
+	 * @param sorts
+	 * @param clazz
+	 * @param resultFields
+	 *            指定返回的结果字段
+	 * @return
+	 */
+	public <T> Result<T> searchBySQL(String querySQL, int from, int offset, @Nullable List<Sort> sorts, Class<T> clazz,
+			String[] resultFields);
 
 	/**
 	 * 按照条件查询，age:(>=10 AND <50) | age:(>=10 AND <50) AND name:1234
@@ -289,8 +303,23 @@ public interface ISearchClient {
 	 * @param sorts
 	 * @return json格式的结果
 	 */
-	public String searchBySQL(String querySQL, int from, int offset,
-			@Nullable List<Sort> sorts);
+	public String searchBySQL(String querySQL, int from, int offset, @Nullable List<Sort> sorts);
+
+	/**
+	 * 按照条件查询，age:(>=10 AND <50) | age:(>=10 AND <50) AND name:1234
+	 * 具体语法请参见：https
+	 * ://www.elastic.co/guide/en/elasticsearch/reference/current/query
+	 * -dsl-query-string-query.html
+	 * 
+	 * @param querySQL
+	 * @param from
+	 * @param offset
+	 * @param sorts
+	 * @param resultFields
+	 *            指定返回的结果字段
+	 * @return
+	 */
+	public String searchBySQL(String querySQL, int from, int offset, @Nullable List<Sort> sorts, String[] resultFields);
 
 	/**
 	 * 
@@ -301,8 +330,21 @@ public interface ISearchClient {
 	 * @param clazz
 	 * @return 查询结果对象
 	 */
-	public <T> Result<T> search(List<SearchCriteria> searchCriterias, int from,
-			int offset, @Nullable List<Sort> sorts, Class<T> clazz);
+	public <T> Result<T> search(List<SearchCriteria> searchCriterias, int from, int offset, @Nullable List<Sort> sorts,
+			Class<T> clazz);
+
+	/**
+	 * 按照查询条件分页查询
+	 * @param searchCriterias
+	 * @param from
+	 * @param offset
+	 * @param sorts
+	 * @param clazz
+	 * @param resultFields 指定返回的结果字段
+	 * @return
+	 */
+	public <T> Result<T> search(List<SearchCriteria> searchCriterias, int from, int offset, @Nullable List<Sort> sorts,
+			Class<T> clazz,String[] resultFields);
 
 	/**
 	 * @param searchCriterias
@@ -311,8 +353,18 @@ public interface ISearchClient {
 	 * @param sorts
 	 * @return 返回json
 	 */
-	public String search(List<SearchCriteria> searchCriterias, int from,
-			int offset, @Nullable List<Sort> sorts);
+	public String search(List<SearchCriteria> searchCriterias, int from, int offset, @Nullable List<Sort> sorts);
+
+	/**
+	 * 
+	 * @param searchCriterias
+	 * @param from
+	 * @param offset
+	 * @param sorts
+	 * @param resultFields 指定返回的结果字段
+	 * @return
+	 */
+	public String search(List<SearchCriteria> searchCriterias, int from, int offset, @Nullable List<Sort> sorts,String[] resultFields);
 
 	/**
 	 * DSL格式的查询
@@ -328,8 +380,19 @@ public interface ISearchClient {
 	 * @param clazz
 	 * @return 查询结果对象
 	 */
-	public <T> Result<T> searchByDSL(String dslJson, int from, int offset,
-			@Nullable List<Sort> sorts, Class<T> clazz);
+	public <T> Result<T> searchByDSL(String dslJson, int from, int offset, @Nullable List<Sort> sorts, Class<T> clazz);
+	
+	/**
+	 * 
+	 * @param dslJson
+	 * @param from
+	 * @param offset
+	 * @param sorts
+	 * @param clazz
+	 * @param resultFields
+	 * @return
+	 */
+	public <T> Result<T> searchByDSL(String dslJson, int from, int offset, @Nullable List<Sort> sorts, Class<T> clazz,String[] resultFields);
 
 	/**
 	 * DSL格式的查询
@@ -344,8 +407,18 @@ public interface ISearchClient {
 	 * @param sorts
 	 * @return 返回json
 	 */
-	public String searchByDSL(String dslJson, int from, int offset,
-			@Nullable List<Sort> sorts);
+	public String searchByDSL(String dslJson, int from, int offset, @Nullable List<Sort> sorts);
+
+	/**
+	 * 
+	 * @param dslJson
+	 * @param from
+	 * @param offset
+	 * @param sorts
+	 * @param resultFields
+	 * @return
+	 */
+	public String searchByDSL(String dslJson, int from, int offset, @Nullable List<Sort> sorts,String[] resultFields);
 
 	/**
 	 * 全文检索
@@ -357,8 +430,7 @@ public interface ISearchClient {
 	 * @param clazz
 	 * @return 查询结果对象
 	 */
-	public <T> Result<T> fullTextSearch(String text, int from, int offset,
-			@Nullable List<Sort> sorts, Class<T> clazz);
+	public <T> Result<T> fullTextSearch(String text, int from, int offset, @Nullable List<Sort> sorts, Class<T> clazz);
 
 	/**
 	 * 全文检索 指定对哪些字段进行全文索引，各字段是或者关系
@@ -374,9 +446,8 @@ public interface ISearchClient {
 	 * @param clazz
 	 * @return 查询结果对象
 	 */
-	public <T> Result<T> fullTextSearch(String text, List<String> qryFields,
-			List<AggField> aggFields, int from, int offset,
-			@Nullable List<Sort> sorts, Class<T> clazz);
+	public <T> Result<T> fullTextSearch(String text, List<String> qryFields, List<AggField> aggFields, int from,
+			int offset, @Nullable List<Sort> sorts, Class<T> clazz);
 
 	/**
 	 * 全文检索 对所有字段进行
@@ -389,8 +460,8 @@ public interface ISearchClient {
 	 * @param clazz
 	 * @return 查询结果对象
 	 */
-	public <T> Result<T> fullTextSearch(String text, List<AggField> aggFields,
-			int from, int offset, @Nullable List<Sort> sorts, Class<T> clazz);
+	public <T> Result<T> fullTextSearch(String text, List<AggField> aggFields, int from, int offset,
+			@Nullable List<Sort> sorts, Class<T> clazz);
 
 	/**
 	 * 根据id获取文档，
@@ -417,7 +488,7 @@ public interface ISearchClient {
 	 * @param field
 	 * @param value
 	 * @param count
-	 * @return  返回提示列表
+	 * @return 返回提示列表
 	 * 
 	 */
 	public List<String> getSuggest(String field, String value, int count);
@@ -438,8 +509,7 @@ public interface ISearchClient {
 	 * @param field
 	 * @return 返回结果对象，包含汇聚和结果
 	 */
-	public Result<Map<String, Long>> aggregate(
-			List<SearchCriteria> searchCriterias, String field);
+	public Result<Map<String, Long>> aggregate(List<SearchCriteria> searchCriterias, String field);
 
 	/**
 	 * 根据查询条件进行多个字段的聚合
@@ -448,8 +518,7 @@ public interface ISearchClient {
 	 * @param fields
 	 * @return 返回结果对象，包含汇聚和结果
 	 */
-	public Result<List<AggResult>> aggregate(
-			List<SearchCriteria> searchCriterias, List<AggField> fields);
+	public Result<List<AggResult>> aggregate(List<SearchCriteria> searchCriterias, List<AggField> fields);
 
 	/**
 	 * 创建索引
@@ -461,23 +530,18 @@ public interface ISearchClient {
 
 	/**
 	 * 创建索引，可以指定索引的设置
+	 * 
 	 * @param indexName
-	 * @param settings json格式的" {" + "\"number_of_shards\":\""5\","
-				+ "\"number_of_replicas\":\"2\","
-				+ "\"client.transport.ping_timeout\":\"60s\","
-				+ " \"analysis\": {" + "         \"filter\": {"
-				+ "            \"nGram_filter\": {"
-				+ "               \"type\": \"nGram\","
-				+ "               \"min_gram\": 1,"
-				+ "               \"max_gram\": 10" + "            }"
-				+ "         }," + "         \"analyzer\": {"
-				+ "            \"nGram_analyzer\": {"
-				+ "               \"type\": \"custom\","
-				+ "               \"tokenizer\": \"ik_max_word\","
-				+ "               \"filter\": ["
-				+ "                  \"lowercase\","
-				+ "                  \"nGram_filter\"" + "               ]"
-				+ "            }" + "         }" + "      }" + "   " + "}"
+	 * @param settings
+	 *            json格式的" {" + "\"number_of_shards\":\""5\"," +
+	 *            "\"number_of_replicas\":\"2\"," +
+	 *            "\"client.transport.ping_timeout\":\"60s\"," + " \"analysis\":
+	 *            {" + " \"filter\": {" + " \"nGram_filter\": {" + " \"type\":
+	 *            \"nGram\"," + " \"min_gram\": 1," + " \"max_gram\": 10" + " }"
+	 *            + " }," + " \"analyzer\": {" + " \"nGram_analyzer\": {" + "
+	 *            \"type\": \"custom\"," + " \"tokenizer\": \"ik_max_word\"," +
+	 *            " \"filter\": [" + " \"lowercase\"," + " \"nGram_filter\"" + "
+	 *            ]" + " }" + " }" + " }" + " " + "}"
 	 * @return 是否创建索引成功
 	 */
 	public boolean createIndex(String indexName, String settings);
@@ -497,14 +561,15 @@ public interface ISearchClient {
 	 * @return 索引是否存在
 	 */
 	public boolean existIndex(String indexName);
-	
+
 	/**
 	 * 判断索引模型是否存在
+	 * 
 	 * @param indexName
 	 * @param mapping
 	 * @return
 	 */
-	public boolean existMapping(String indexName,String mapping);
+	public boolean existMapping(String indexName, String mapping);
 
 	/**
 	 * 增加索引对象定义，自从2.0以后，不支持在设置ID为文档的某个字段，需要在 插入或获取时自己指定
@@ -514,6 +579,7 @@ public interface ISearchClient {
 	 * @param type
 	 *            "userInfo"
 	 * @param json
+	 * 
 	 *            <pre>
 	 * {
 	 *   "userInfo" : {
@@ -523,7 +589,8 @@ public interface ISearchClient {
 	 *     }
 	 *   }
 	 * }
-	 * </pre>
+	 *            </pre>
+	 * 
 	 * @return 增加模型是否成功
 	 */
 	public boolean addMapping(String indexName, String type, String json);
@@ -541,8 +608,7 @@ public interface ISearchClient {
 	 *            主键字段
 	 * @return 增加模型是否成功
 	 */
-	public boolean addMapping(String indexName, String type, String json,
-			String id);
+	public boolean addMapping(String indexName, String type, String json, String id);
 
 	/**
 	 * 刷新插入或者更新
