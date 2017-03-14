@@ -20,7 +20,7 @@ public class SearchOption implements Serializable {
 	private DataFilter dataFilter = DataFilter.exists;
 	private TermOperator termOperator = TermOperator.OR;
 	/* querystring精度，取值[1-100]的整数 */
-	private String queryStringPrecision = "100";
+	private String queryStringPrecision = "90%";
 	/* 排名权重 */
 	private float boost = 1.0f;
 	private boolean highlight = false;

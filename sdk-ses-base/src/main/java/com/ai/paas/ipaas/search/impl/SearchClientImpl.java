@@ -622,6 +622,7 @@ public class SearchClientImpl implements ISearchClient {
 				searchRequestBuilder = SearchHelper.createHighlight(searchRequestBuilder, searchCriterias,
 						highlightCSS);
 			}
+			logger.info("--ES search:" + searchRequestBuilder.toString());
 			SearchResponse searchResponse = searchRequestBuilder.setFetchSource(resultFields, null).get();
 			List<T> list = SearchHelper.getSearchResult(searchResponse, clazz);
 
