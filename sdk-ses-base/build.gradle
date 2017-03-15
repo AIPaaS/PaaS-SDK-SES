@@ -36,6 +36,11 @@ publishing {
 	                        delegate.artifactId("ipaas-common")
 	                        delegate.version("0.3")
 	                    }
+						 delegate.dependency {
+							 delegate.groupId("org.jboss.resteasy")
+							 delegate.artifactId("resteasy-jackson-provider")
+							 delegate.version("3.1.0.Final")
+						 }
 	                }
 	            }
 	        }
@@ -57,7 +62,13 @@ publishing {
 	                        delegate.groupId("com.ai")
 	                        delegate.artifactId("ipaas-common")
 	                        delegate.version("0.3")
+							
 	                    }
+					   delegate.dependency {
+						   delegate.groupId("org.jboss.resteasy")
+						   delegate.artifactId("resteasy-jackson-provider")
+						   delegate.version("3.1.0.Final")
+					   }
 	                }
 	            }
 	        }

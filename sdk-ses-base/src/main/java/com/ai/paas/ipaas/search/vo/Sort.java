@@ -1,12 +1,52 @@
 package com.ai.paas.ipaas.search.vo;
 
-public class Sort {
+import java.io.Serializable;
+
+import com.ai.paas.ipaas.util.StringUtil;
+
+public class Sort implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -7214829498157852617L;
+
 	public enum SortOrder {
-		ASC, DESC
+		ASC(1), DESC(2);
+		private final int value;
+
+		SortOrder(int v) {
+			value = v;
+		}
+
+		@org.codehaus.jackson.annotate.JsonValue
+		public int value() {
+			return value;
+		}
+
+		@org.codehaus.jackson.annotate.JsonCreator
+		public static SortOrder fromValue(int typeCode) {
+			for (SortOrder c : SortOrder.values()) {
+				if (c.value == typeCode) {
+					return c;
+				}
+			}
+			throw new IllegalArgumentException("Invalid Status type code: " + typeCode);
+
+		}
 	}
 
 	private String sortBy;
 	private SortOrder order = SortOrder.DESC;
+
+	public Sort() {
+
+	}
+
+	public Sort(String order, String sortBy) {
+		this.sortBy = sortBy;
+		if (!StringUtil.isBlank(order) && "ASC".equalsIgnoreCase(order))
+			this.order = SortOrder.ASC;
+	}
 
 	public Sort(String sortBy, SortOrder order) {
 		this.sortBy = sortBy;

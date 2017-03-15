@@ -4,7 +4,7 @@ allprojects{
     apply plugin: 'maven-publish'
 
     ext {
-		moduleVersion = version != "unspecified"?version:'0.3.5'
+		moduleVersion = version != "unspecified"?version:'0.4.0'
 		moduleMode = project.hasProperty('mode') ? project.getProperty('mode') : 'R'
 		if(moduleMode == 'S'){
 			moduleVersion = moduleVersion + "-SNAPSHOT";
@@ -36,7 +36,8 @@ subprojects{
     }
 
     dependencies{
-
+		compile 'org.jboss.resteasy:resteasy-jackson-provider:3.1.0.Final'
+		
 		testCompile(
 			"org.springframework:spring-test:3.2.13.RELEASE",
 			"junit:junit:4.11"

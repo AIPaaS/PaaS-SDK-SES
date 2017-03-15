@@ -1,5 +1,6 @@
 package com.ai.paas.ipaas.search.vo;
 
+
 //搜索选项定义
 
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -27,20 +28,83 @@ public class SearchOption implements Serializable {
 
 	public enum TermOperator {
 		// 对于QueryString 或者 Match的词之间的关系
-		AND, OR
+		AND(1), OR(2);
+		private final int value;
+
+		TermOperator(int v) {
+			value = v;
+		}
+
+		@org.codehaus.jackson.annotate.JsonValue
+		public int value() {
+			return value;
+		}
+
+		@org.codehaus.jackson.annotate.JsonCreator
+		public static TermOperator fromValue(int typeCode) {
+			for (TermOperator c : TermOperator.values()) {
+				if (c.value == typeCode) {
+					return c;
+				}
+			}
+			throw new IllegalArgumentException("Invalid Status type code: " + typeCode);
+
+		}
 	}
 
 	public enum SearchType {
 		/* 按照quert_string搜索，搜索非词组时候使用 */
-		querystring
-		/* 按照区间搜索 */, range
-		/* 按照词组搜索，搜索一个词时候使用 */, term, match;
+		querystring(1)
+		/* 按照区间搜索 */, range(2)
+		/* 按照词组搜索，搜索一个词时候使用 */, term(3), match(4);
+		private final int value;
+
+		SearchType(int v) {
+			value = v;
+		}
+
+		@org.codehaus.jackson.annotate.JsonValue
+		public int value() {
+			return value;
+		}
+
+		@org.codehaus.jackson.annotate.JsonCreator
+		public static SearchType fromValue(int typeCode) {
+			for (SearchType c : SearchType.values()) {
+				if (c.value == typeCode) {
+					return c;
+				}
+			}
+			throw new IllegalArgumentException("Invalid Status type code: " + typeCode);
+
+		}
 	}
 
 	public enum SearchLogic {
 		/* 逻辑must关系 */
-		must
-		/* 逻辑should关系 */, should, must_not;
+		must(1)
+		/* 逻辑should关系 */, should(2), must_not(3);
+		private final int value;
+
+		SearchLogic(int v) {
+			value = v;
+		}
+
+		@org.codehaus.jackson.annotate.JsonValue
+		public int value() {
+			return value;
+		}
+
+		@org.codehaus.jackson.annotate.JsonCreator
+		public static SearchLogic fromValue(int typeCode) {
+			for (SearchLogic c : SearchLogic.values()) {
+				if (c.value == typeCode) {
+					return c;
+				}
+			}
+			throw new IllegalArgumentException("Invalid Status type code: " + typeCode);
+
+		}
 
 		public void convertQueryBuilder(BoolQueryBuilder rootQueryBuilder, QueryBuilder childQueryBuilder) {
 			switch (this) {
@@ -68,7 +132,29 @@ public class SearchOption implements Serializable {
 	 */
 	public enum DataFilter {
 		/* 只显示有值的 *//* 显示没有值的 *//* 显示全部 */
-		exists, notExists, all
+		exists(1), notExists(2), all(3);
+		private final int value;
+
+		DataFilter(int v) {
+			value = v;
+		}
+
+		@org.codehaus.jackson.annotate.JsonValue
+		public int value() {
+			return value;
+		}
+
+		@org.codehaus.jackson.annotate.JsonCreator
+		public static DataFilter fromValue(int typeCode) {
+			for (DataFilter c : DataFilter.values()) {
+				if (c.value == typeCode) {
+					return c;
+				}
+			}
+			throw new IllegalArgumentException("Invalid Status type code: " + typeCode);
+
+		}
+
 	}
 
 	public SearchOption(SearchType searchType, SearchLogic searchLogic, String queryStringPrecision,

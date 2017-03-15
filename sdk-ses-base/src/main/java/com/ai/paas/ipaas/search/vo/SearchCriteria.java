@@ -34,13 +34,6 @@ public class SearchCriteria implements Serializable {
 		return field;
 	}
 
-	public String getFormatField() {
-		if (null != field)
-			return field.toLowerCase();
-		else
-			return null;
-	}
-
 	public void setField(String Field) {
 		this.field = Field;
 	}

@@ -36,6 +36,7 @@ public class SearchHelper {
 	private SearchHelper() {
 
 	}
+
 	private static Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create();
 
 	public static String getId(String json, String id) {
@@ -67,7 +68,7 @@ public class SearchHelper {
 	}
 
 	public static boolean hasId(String json, String id) {
-		
+
 		JsonObject obj = gson.fromJson(json, JsonObject.class);
 		if (null != obj.get(id))
 			return true;
@@ -109,7 +110,7 @@ public class SearchHelper {
 					}
 				}
 
-				String field = searchCriteria.getFormatField();
+				String field = getLowerFormatField(searchCriteria.getField());
 				if (!StringUtil.isBlank(field)) {
 					SearchOption searchOption = searchCriteria.getOption();
 					QueryBuilder queryBuilder = createSingleFieldQueryBuilder(field, searchCriteria.getFieldValue(),
@@ -125,6 +126,12 @@ public class SearchHelper {
 			throw new SearchRuntimeException("ES create builder error", e);
 
 		}
+	}
+
+	private static String getLowerFormatField(String field) {
+		if (StringUtil.isBlank(field))
+			return null;
+		return field.toLowerCase();
 	}
 
 	/*
@@ -258,7 +265,7 @@ public class SearchHelper {
 	public static SearchRequestBuilder createHighlight(SearchRequestBuilder searchRequestBuilder,
 			List<SearchCriteria> searchCriterias, String highlightCSS) {
 		for (SearchCriteria searchCriteria : searchCriterias) {
-			String field = searchCriteria.getFormatField();
+			String field = getLowerFormatField(searchCriteria.getField());
 			SearchOption searchOption = searchCriteria.getOption();
 			if (searchOption.isHighlight()) {
 				/*
