@@ -65,6 +65,7 @@ import com.ai.paas.ipaas.util.Assert;
 import com.ai.paas.ipaas.util.StringUtil;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 public class SearchClientImpl implements ISearchClient {
@@ -916,8 +917,18 @@ public class SearchClientImpl implements ISearchClient {
 				// 这里好办了,补上两层
 				JsonObject properties = new JsonObject();
 				properties.add("properties", jsonObj);
+				// 增加动态mapping分词模板,对于所有的字符串应用分词
+				String dynamicTemplate = "{ \"ik\": {" + "\"match\":              \"*\","
+						+ "  \"match_mapping_type\": \"string\"," + "  \"mapping\": {"
+						+ "      \"type\":           \"string\"," + "      \"analyzer\":       \"ik_max_word\"" + "  }"
+						+ " }}";
+				JsonObject dynamicT = esgson.fromJson(dynamicTemplate, JsonObject.class);
+				JsonArray dynamicTemplates = new JsonArray();
+				dynamicTemplates.add(dynamicT);
+				properties.add("dynamic_templates", dynamicTemplates);
 				typeObj = new JsonObject();
 				typeObj.add(type, properties);
+
 			} else {
 				// 这里也好办了,补上一层
 				typeObj = new JsonObject();

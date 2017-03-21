@@ -84,7 +84,7 @@ public class SearchTest {
 
 	@Test
 	public void testInsertString() {
-		String data = "{\"userId\":103,\"name\":\"爱丢恶化缺乏\",\"age\":30,\"created\":\"2016-06-17T23:15:09\"}";
+		String data = "{\"userId\":103,\"name\":\"爱丢恶化缺乏\",\"age\":30,\"created\":\"2016-06-17T23:15:09\",\"test\":\"中华人民共和国\"}";
 		assertTrue(client.insert(data));
 	}
 
@@ -433,6 +433,14 @@ public class SearchTest {
 				+ "{ \"range\": { \"created\": { \"gte\": \"2016-06-20\" }}}"
 				+ "]" + "}" + "}" + "}";
 		Result<User> result = client.searchByDSL(qry, 0, 10, null, User.class);
+		assertTrue(result.getCount() == 1);
+		String data = "{\"userId\":103,\"name\":\"爱丢恶化缺乏\",\"age\":30,\"created\":\"2016-06-17T23:15:09\",\"test\":\"中华人民共和国\"}";
+		client.insert(data);
+		qry = "{" + "\"query\": { " + "\"bool\": {" + "\"must\": ["
+				+ "  { \"match\": { \"test\":   \"中华\"}}"
+				 + "]"
+				 + "}" + "}" + "}";
+		result = client.searchByDSL(qry, 0, 10, null, User.class);
 		assertTrue(result.getCount() == 1);
 	}
 
