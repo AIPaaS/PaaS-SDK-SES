@@ -41,7 +41,7 @@ public class SearchTest {
 
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
-		String hosts = "127.0.0.1:9300,127.0.0.1:9300,127.0.0.1:9300";
+		String hosts = "10.1.235.22:9300,10.1.235.23:9300,10.1.235.24:9300";
 		mapping = "{"
 				+ "   \"userInfo\" : {"
 				+ "     \"properties\" : {"

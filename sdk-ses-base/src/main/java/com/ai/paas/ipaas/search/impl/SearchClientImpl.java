@@ -615,7 +615,7 @@ public class SearchClientImpl implements ISearchClient {
 					SortOrder sortOrder = sort.getOrder().compareTo(Sort.SortOrder.DESC) == 0 ? SortOrder.DESC
 							: SortOrder.ASC;
 
-					searchRequestBuilder = searchRequestBuilder.addSort(sort.getSortBy().toLowerCase(), sortOrder);
+					searchRequestBuilder = searchRequestBuilder.addSort(sort.getSortBy(), sortOrder);
 				}
 			}
 			// 增加高亮
@@ -817,7 +817,7 @@ public class SearchClientImpl implements ISearchClient {
 					SortOrder sortOrder = sort.getOrder().compareTo(Sort.SortOrder.DESC) == 0 ? SortOrder.DESC
 							: SortOrder.ASC;
 
-					searchRequestBuilder = searchRequestBuilder.addSort(sort.getSortBy().toLowerCase(), sortOrder);
+					searchRequestBuilder = searchRequestBuilder.addSort(sort.getSortBy(), sortOrder);
 				}
 			}
 			searchRequestBuilder.setExplain(false).setHighlighterRequireFieldMatch(true);

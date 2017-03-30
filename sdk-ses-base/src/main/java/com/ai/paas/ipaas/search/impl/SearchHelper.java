@@ -131,7 +131,7 @@ public class SearchHelper {
 	private static String getLowerFormatField(String field) {
 		if (StringUtil.isBlank(field))
 			return null;
-		return field.toLowerCase();
+		return field;
 	}
 
 	/*
@@ -156,7 +156,7 @@ public class SearchHelper {
 					// 这里得判断是否为空
 					if (null == obj)
 						continue;
-					formatValue = obj.toString().trim().replace("*", "").toLowerCase();// 格式化搜索数据
+					formatValue = obj.toString().trim().replace("*", "");// 格式化搜索数据
 
 					if (mySearchOption.getSearchType() == SearchOption.SearchType.querystring) {
 						if (formatValue.length() == 1) {
