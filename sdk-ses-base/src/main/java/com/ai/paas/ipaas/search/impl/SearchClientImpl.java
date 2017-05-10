@@ -384,7 +384,7 @@ public class SearchClientImpl implements ISearchClient {
 
 	private void logBulkRespone(BulkResponse bulkResponse) {
 		for (BulkItemResponse response : bulkResponse.getItems()) {
-			logger.error("insert error," + response.getId() + "," + response.getFailure());
+			logger.error("insert error," + response.getId() + "," + response.getFailureMessage());
 		}
 	}
 
@@ -875,7 +875,7 @@ public class SearchClientImpl implements ISearchClient {
 				+ "               \"min_gram\": 1," + "               \"max_gram\": 10" + "            }"
 				+ "         }," + "         \"analyzer\": {" + "            \"nGram_analyzer\": {"
 				+ "               \"type\": \"custom\"," + "               \"tokenizer\": \"ik_max_word\","
-				+ "               \"filter\": [" + "                  \"lowercase\","
+				+ "               \"filter\": [" + "                  \"stop\","
 				+ "                  \"nGram_filter\"" + "               ]" + "            }" + "         }" + "      }"
 				+ "   " + "}";
 		CreateIndexResponse createResponse = client.admin().indices().prepareCreate(indexName).setSettings(setting)
@@ -913,28 +913,25 @@ public class SearchClientImpl implements ISearchClient {
 		JsonObject jsonObj = esgson.fromJson(json, JsonObject.class);
 		if (null == jsonObj.get(type)) {
 			// 看看有没有properties
-			if (null == jsonObj.get("properties")) {
-				// 这里好办了,补上两层
-				JsonObject properties = new JsonObject();
-				properties.add("properties", jsonObj);
-				// 增加动态mapping分词模板,对于所有的字符串应用分词
-				String dynamicTemplate = "{ \"ik\": {" + "\"match\":              \"*\","
-						+ "  \"match_mapping_type\": \"string\"," + "  \"mapping\": {"
-						+ "      \"type\":           \"string\"," + "      \"analyzer\":       \"ik_max_word\"" + "  }"
-						+ " }}";
-				JsonObject dynamicT = esgson.fromJson(dynamicTemplate, JsonObject.class);
-				JsonArray dynamicTemplates = new JsonArray();
-				dynamicTemplates.add(dynamicT);
-				properties.add("dynamic_templates", dynamicTemplates);
-				typeObj = new JsonObject();
-				typeObj.add(type, properties);
+			// 这里好办了,补上两层
+			JsonObject properties = new JsonObject();
+			properties.add("properties", jsonObj);
+			// 增加动态mapping分词模板,对于所有的字符串应用分词
+			String dynamicTemplate = "{ \"ik\": {" + "\"match\":              \"*\","
+					+ "  \"match_mapping_type\": \"string\"," + "  \"mapping\": {"
+					+ "      \"type\":           \"string\"," + "      \"analyzer\":       \"ik_max_word\"" + "  }"
+					+ " }}";
+			JsonObject dynamicT = esgson.fromJson(dynamicTemplate, JsonObject.class);
+			JsonArray dynamicTemplates = new JsonArray();
+			dynamicTemplates.add(dynamicT);
+			properties.add("dynamic_templates", dynamicTemplates);
+			typeObj = new JsonObject();
+			typeObj.add(type, properties);
 
-			} else {
-				// 这里也好办了,补上一层
-				typeObj = new JsonObject();
-				typeObj.add(type, jsonObj);
-			}
-		} else {
+			// 这里也好办了,补上一层
+		} else
+
+		{
 			// 存在就看自己是否正确构造
 			typeObj = jsonObj;
 		}

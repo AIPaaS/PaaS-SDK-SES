@@ -41,12 +41,13 @@ public class SearchTest {
 
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
-		String hosts = "10.1.235.22:9300,10.1.235.23:9300,10.1.235.24:9300";
+		//String hosts = "10.1.235.22:9300,10.1.235.23:9300,10.1.235.24:9300";
+		String hosts = "127.0.0.1:9300";
 		mapping = "{"
 				+ "   \"userInfo\" : {"
 				+ "     \"properties\" : {"
 				+ "     	\"userId\" :  {\"type\" : \"string\", \"store\" : \"yes\",\"index\": \"not_analyzed\"},"
-				+ "       	\"name\" : {\"type\" : \"string\", \"store\" : \"yes\",\"analyzer\":\"ik_smart\"},"
+				+ "       	\"name\" : {\"type\" : \"string\", \"store\" : \"yes\",\"analyzer\":\"nGram_analyzer\"},"
 				+ "       	\"age\" : {\"type\" : \"integer\"},"
 				+ "       	\"created\" : {\"type\" : \"date\", \"format\" : \"strict_date_optional_time||epoch_millis\"}"
 				+ "     }" + "   }" + " }";
@@ -270,10 +271,11 @@ public class SearchTest {
 
 	@Test
 	public void testBulkInsertListOfT() {
+		client.addMapping(indexName, "userInfo", mapping);
 		List<User> datas = new ArrayList<>();
-		User user1 = new User("105", "当萨菲罗斯开发送发了多少分旬1234", 31, new Date());
-		User user2 = new User("106", "当萨菲罗斯开发送发了多少分旬1235", 41, new Date());
-		User user3 = new User("107", "当萨菲罗斯开发送发了多少分旬1236", 51, new Date());
+		User user1 = new User("105", "Test ABC Match", 31, new Date());
+		User user2 = new User("106", "test match", 41, new Date());
+		User user3 = new User("107", "This is a test", 51, new Date());
 		datas.add(user1);
 		datas.add(user2);
 		datas.add(user3);
@@ -750,26 +752,26 @@ public class SearchTest {
 	@Test
 	public void testAddMapping() {
 
-		String mapping = "{"
-				+ "   \"userInfo\" : {"
-				+ "     \"properties\" : {"
-				+ "     	\"userId\" :  {\"type\" : \"string\", \"store\" : \"yes\",\"index\": \"not_analyzed\"},"
-				+ "       	\"name\" : {\"type\" : \"string\", \"store\" : \"yes\",\"analyzer\":\"ik_smart\"},"
-				+ "       	\"age\" : {\"type\" : \"integer\"},"
-				+ "       	\"created\" : {\"type\" : \"date\", \"format\" : \"strict_date_optional_time||epoch_millis\"}"
-				+ "     }" + "   }" + " }";
-
-		assertTrue(client.addMapping("user", "user", mapping));
-
-		String mapping1 = "{"
-				+ "     \"properties\" : {"
-				+ "     	\"userId\" :  {\"type\" : \"string\", \"store\" : \"yes\",\"index\": \"not_analyzed\"},"
-				+ "       	\"name\" : {\"type\" : \"string\", \"store\" : \"yes\",\"analyzer\":\"ik_smart\"},"
-				+ "       	\"age\" : {\"type\" : \"integer\"},"
-				+ "       	\"created\" : {\"type\" : \"date\", \"format\" : \"strict_date_optional_time||epoch_millis\"}"
-				+ "     }" + " }";
-
-		assertTrue(client.addMapping("user", "userInfo1", mapping1));
+//		String mapping = "{"
+//				+ "   \"userInfo\" : {"
+//				+ "     \"properties\" : {"
+//				+ "     	\"userId\" :  {\"type\" : \"string\", \"store\" : \"yes\",\"index\": \"not_analyzed\"},"
+//				+ "       	\"name\" : {\"type\" : \"string\", \"store\" : \"yes\",\"analyzer\":\"ik_smart\"},"
+//				+ "       	\"age\" : {\"type\" : \"integer\"},"
+//				+ "       	\"created\" : {\"type\" : \"date\", \"format\" : \"strict_date_optional_time||epoch_millis\"}"
+//				+ "     }" + "   }" + " }";
+//
+//		assertTrue(client.addMapping("user", "user", mapping));
+//
+//		String mapping1 = "{"
+//				+ "     \"properties\" : {"
+//				+ "     	\"userId\" :  {\"type\" : \"string\", \"store\" : \"yes\",\"index\": \"not_analyzed\"},"
+//				+ "       	\"name\" : {\"type\" : \"string\", \"store\" : \"yes\",\"analyzer\":\"ik_smart\"},"
+//				+ "       	\"age\" : {\"type\" : \"integer\"},"
+//				+ "       	\"created\" : {\"type\" : \"date\", \"format\" : \"strict_date_optional_time||epoch_millis\"}"
+//				+ "     }" + " }";
+//
+//		assertTrue(client.addMapping("user", "userInfo1", mapping1));
 		String mapping2 = "{"
 				+ "     	\"userId\" :  {\"type\" : \"string\", \"store\" : \"yes\",\"index\": \"not_analyzed\"},"
 				+ "       	\"name\" : {\"type\" : \"string\", \"store\" : \"yes\",\"analyzer\":\"ik_smart\"},"

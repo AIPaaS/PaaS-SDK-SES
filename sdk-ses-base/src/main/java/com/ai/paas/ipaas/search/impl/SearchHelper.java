@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
@@ -157,7 +158,7 @@ public class SearchHelper {
 					if (null == obj)
 						continue;
 					formatValue = obj.toString().trim().replace("*", "");// 格式化搜索数据
-
+					formatValue = StringEscapeUtils.escapeJson(formatValue);
 					if (mySearchOption.getSearchType() == SearchOption.SearchType.querystring) {
 						if (formatValue.length() == 1) {
 							/*
