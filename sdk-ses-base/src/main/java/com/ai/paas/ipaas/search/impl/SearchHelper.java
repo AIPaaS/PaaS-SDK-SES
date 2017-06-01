@@ -10,6 +10,8 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.MatchQueryBuilder;
@@ -225,19 +227,42 @@ public class SearchHelper {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <T> List<T> getSearchResult(SearchResponse response, Class<T> clazz) {
+	public static <T> List<T> getSearchResult(TransportClient client, SearchResponse response, Class<T> clazz, int from,
+			int offset) {
 		try {
 			List<T> results = new ArrayList<>();
 			SearchHits hits = response.getHits();
 			if (hits.getTotalHits() == 0) {
 				return results;
 			}
-			for (SearchHit searchHit : hits.getHits()) {
-				String source = searchHit.getSourceAsString();
-				if (null != clazz && !clazz.getName().equals(String.class.getName()))
-					results.add(gson.fromJson(source, clazz));
-				else
-					results.add((T) source);
+			int start = -1;
+			while (true) {
+				for (SearchHit hit : response.getHits().getHits()) {
+					start++;
+					// from， offset处
+					// Handle the hit...
+					if (start >= from && start < (from + offset)) {
+						// 找到位置，开始存储，到偏移就结束
+						String source = hit.getSourceAsString();
+						if (null != clazz && !clazz.getName().equals(String.class.getName()))
+							results.add(gson.fromJson(source, clazz));
+						else
+							results.add((T) source);
+					} else if (start >= (from + offset)) {
+						// 退到外层
+						break;
+					}
+				}
+				if (start >= (from + offset)) {
+					// 退出while
+					break;
+				}
+				response = client.prepareSearchScroll(response.getScrollId()).setScroll(new TimeValue(60000)).execute()
+						.actionGet();
+				// Break condition: No hits are returned
+				if (response.getHits().getHits().length == 0) {
+					break;
+				}
 			}
 			return results;
 		} catch (Exception e) {

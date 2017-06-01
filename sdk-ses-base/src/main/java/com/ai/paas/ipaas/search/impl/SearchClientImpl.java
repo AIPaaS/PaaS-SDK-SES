@@ -48,7 +48,6 @@ import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsBuilder;
 import org.elasticsearch.search.sort.SortOrder;
-import org.elasticsearch.search.sort.SortParseElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -238,7 +237,8 @@ public class SearchClientImpl implements ISearchClient {
 		QueryBuilder queryBuilder = null;
 		queryBuilder = SearchHelper.createQueryBuilder(searchCriteria);
 		SearchResponse scrollResp = client.prepareSearch(indexName)
-				.addSort(SortParseElement.DOC_FIELD_NAME, SortOrder.ASC).setScroll(new TimeValue(60000))
+				.setSearchType(SearchType.QUERY_THEN_FETCH)
+				.setScroll(new TimeValue(60000))
 				.setQuery(queryBuilder).setSize(100).execute().actionGet();
 		while (true) {
 			// 循环获取所有ids
@@ -605,8 +605,10 @@ public class SearchClientImpl implements ISearchClient {
 			// 此种实现不好，查询两次。即使分页，也可以得到总数
 
 			SearchRequestBuilder searchRequestBuilder = null;
-			searchRequestBuilder = client.prepareSearch(indexName).setSearchType(SearchType.DEFAULT)
-					.setQuery(queryBuilder).setFrom(from).setSize(offset).setExplain(true);
+			searchRequestBuilder = client.prepareSearch(indexName)
+					.setSearchType(SearchType.QUERY_THEN_FETCH)
+					.setScroll(new TimeValue(60000))
+					.setQuery(queryBuilder).setSize(100).setExplain(true);
 			if (sorts == null || sorts.isEmpty()) {
 				/* 如果不需要排序 */
 			} else {
@@ -625,7 +627,7 @@ public class SearchClientImpl implements ISearchClient {
 			}
 			logger.info("--ES search:" + searchRequestBuilder.toString());
 			SearchResponse searchResponse = searchRequestBuilder.setFetchSource(resultFields, null).get();
-			List<T> list = SearchHelper.getSearchResult(searchResponse, clazz);
+			List<T> list = SearchHelper.getSearchResult(client, searchResponse, clazz, from, offset);
 
 			result.setContents(list);
 			result.setCounts(searchResponse.getHits().getTotalHits());
@@ -776,12 +778,13 @@ public class SearchClientImpl implements ISearchClient {
 		result.setResultCode(PaaSConstant.ExceptionCode.SYSTEM_ERROR);
 		try {
 			SearchRequestBuilder searchRequestBuilder = client.prepareSearch(indexName)
-					.setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+					.setSearchType(SearchType.QUERY_THEN_FETCH)
+					.setScroll(new TimeValue(60000))
 					.setQuery(QueryBuilders.matchQuery("_all", text).operator(Operator.AND).minimumShouldMatch("75%"))
-					.setFrom(from).setSize(offset).setExplain(true).setHighlighterRequireFieldMatch(true);
+					.setSize(100).setExplain(true).setHighlighterRequireFieldMatch(true);
 			SearchResponse response = searchRequestBuilder.get();
 
-			List<T> list = SearchHelper.getSearchResult(response, clazz);
+			List<T> list = SearchHelper.getSearchResult(client, response, clazz, from, offset);
 
 			result.setContents(list);
 			result.setCounts(response.getHits().totalHits());
@@ -807,8 +810,9 @@ public class SearchClientImpl implements ISearchClient {
 						QueryBuilders.matchQuery(qryField, text).operator(Operator.AND).minimumShouldMatch("75%"));
 			}
 			SearchRequestBuilder searchRequestBuilder = client.prepareSearch(indexName)
-					.setSearchType(SearchType.DFS_QUERY_THEN_FETCH).setQuery(queryBuilder).setFrom(from)
-					.setSize(offset);
+					.setSearchType(SearchType.QUERY_THEN_FETCH)
+					.setScroll(new TimeValue(60000))
+					.setQuery(queryBuilder).setSize(100);
 			if (sorts == null || sorts.isEmpty()) {
 				/* 如果不需要排序 */
 			} else {
@@ -832,7 +836,7 @@ public class SearchClientImpl implements ISearchClient {
 			}
 			SearchResponse response = searchRequestBuilder.get();
 
-			List<T> list = SearchHelper.getSearchResult(response, clazz);
+			List<T> list = SearchHelper.getSearchResult(client, response, clazz, from, offset);
 
 			result.setContents(list);
 			result.setCounts(response.getHits().totalHits());
@@ -875,9 +879,8 @@ public class SearchClientImpl implements ISearchClient {
 				+ "               \"min_gram\": 1," + "               \"max_gram\": 10" + "            }"
 				+ "         }," + "         \"analyzer\": {" + "            \"nGram_analyzer\": {"
 				+ "               \"type\": \"custom\"," + "               \"tokenizer\": \"ik_max_word\","
-				+ "               \"filter\": [" + "                  \"stop\","
-				+ "                  \"nGram_filter\"" + "               ]" + "            }" + "         }" + "      }"
-				+ "   " + "}";
+				+ "               \"filter\": [" + "                  \"stop\"," + "                  \"nGram_filter\""
+				+ "               ]" + "            }" + "         }" + "      }" + "   " + "}";
 		CreateIndexResponse createResponse = client.admin().indices().prepareCreate(indexName).setSettings(setting)
 				.get();
 		if (createResponse.isAcknowledged()) {

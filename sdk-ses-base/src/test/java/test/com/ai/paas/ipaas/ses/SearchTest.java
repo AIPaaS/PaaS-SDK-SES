@@ -41,11 +41,9 @@ public class SearchTest {
 
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
-		//String hosts = "10.1.235.22:9300,10.1.235.23:9300,10.1.235.24:9300";
+		// String hosts = "10.1.235.22:9300,10.1.235.23:9300,10.1.235.24:9300";
 		String hosts = "127.0.0.1:9300";
-		mapping = "{"
-				+ "   \"userInfo\" : {"
-				+ "     \"properties\" : {"
+		mapping = "{" + "   \"userInfo\" : {" + "     \"properties\" : {"
 				+ "     	\"userId\" :  {\"type\" : \"string\", \"store\" : \"yes\",\"index\": \"not_analyzed\"},"
 				+ "       	\"name\" : {\"type\" : \"string\", \"store\" : \"yes\",\"analyzer\":\"nGram_analyzer\"},"
 				+ "       	\"age\" : {\"type\" : \"integer\"},"
@@ -97,9 +95,8 @@ public class SearchTest {
 
 	@Test
 	public void testInsertJsonBuilder() throws IOException, Exception {
-		JsonBuilder jsonBuilder = new JsonBuilder().startObject()
-				.field("userId", 106).field("name", "每逢佳节倍思亲").field("age", 31)
-				.field("created", new Date()).endObject();
+		JsonBuilder jsonBuilder = new JsonBuilder().startObject().field("userId", 106).field("name", "每逢佳节倍思亲")
+				.field("age", 31).field("created", new Date()).endObject();
 		assertTrue(client.insert(jsonBuilder));
 	}
 
@@ -191,8 +188,7 @@ public class SearchTest {
 		User user = null;
 		user = new User("105", "当萨菲罗斯开发送发了多少分旬123", 31, new Date());
 		client.insert(user);
-		JsonBuilder jsonBuilder = new JsonBuilder().startObject()
-				.field("name", "每逢佳节倍思亲").endObject();
+		JsonBuilder jsonBuilder = new JsonBuilder().startObject().field("name", "每逢佳节倍思亲").endObject();
 		assertTrue(client.update("105", jsonBuilder));
 	}
 
@@ -224,11 +220,9 @@ public class SearchTest {
 
 	@Test
 	public void testUpsertStringJsonBuilder() throws Throwable, Exception {
-		JsonBuilder jsonBuilder = new JsonBuilder().startObject()
-				.field("name", "每逢佳节倍思亲").endObject();
+		JsonBuilder jsonBuilder = new JsonBuilder().startObject().field("name", "每逢佳节倍思亲").endObject();
 		assertTrue(client.upsert("105", jsonBuilder));
-		jsonBuilder = new JsonBuilder().startObject().field("age", 56)
-				.endObject();
+		jsonBuilder = new JsonBuilder().startObject().field("age", 56).endObject();
 		assertTrue(client.upsert("105", jsonBuilder));
 	}
 
@@ -273,9 +267,9 @@ public class SearchTest {
 	public void testBulkInsertListOfT() {
 		client.addMapping(indexName, "userInfo", mapping);
 		List<User> datas = new ArrayList<>();
-		User user1 = new User("105", "Test ABC Match", 31, new Date());
-		User user2 = new User("106", "test match", 41, new Date());
-		User user3 = new User("107", "This is a test", 51, new Date());
+		User user1 = new User("105", "Test ABC Match开发123", 31, new Date());
+		User user2 = new User("106", "test 开发 match", 41, new Date());
+		User user3 = new User("107", "This 开发 is a test", 51, new Date());
 		datas.add(user1);
 		datas.add(user2);
 		datas.add(user3);
@@ -284,15 +278,12 @@ public class SearchTest {
 
 	@Test
 	public void testBulkInsertSetOfJsonBuilder() throws Throwable, Exception {
-		JsonBuilder jsonBuilder1 = new JsonBuilder().startObject()
-				.field("userId", 106).field("name", "每逢佳节倍思亲").field("age", 31)
-				.field("created", new Date()).endObject();
-		JsonBuilder jsonBuilder2 = new JsonBuilder().startObject()
-				.field("userId", 107).field("name", "每逢佳节倍思亲").field("age", 31)
-				.field("created", new Date()).endObject();
-		JsonBuilder jsonBuilder3 = new JsonBuilder().startObject()
-				.field("userId", 108).field("name", "每逢佳节倍思亲").field("age", 31)
-				.field("created", new Date()).endObject();
+		JsonBuilder jsonBuilder1 = new JsonBuilder().startObject().field("userId", 106).field("name", "每逢佳节倍思亲")
+				.field("age", 31).field("created", new Date()).endObject();
+		JsonBuilder jsonBuilder2 = new JsonBuilder().startObject().field("userId", 107).field("name", "每逢佳节倍思亲")
+				.field("age", 31).field("created", new Date()).endObject();
+		JsonBuilder jsonBuilder3 = new JsonBuilder().startObject().field("userId", 108).field("name", "每逢佳节倍思亲")
+				.field("age", 31).field("created", new Date()).endObject();
 		Set<JsonBuilder> datas = new HashSet<>();
 		datas.add(jsonBuilder1);
 		datas.add(jsonBuilder2);
@@ -360,12 +351,9 @@ public class SearchTest {
 	@Test
 	public void testBulkUpdateListOfStringSetOfJsonBuilder() throws Throwable {
 		testBulkInsertSetOfJsonBuilder();
-		JsonBuilder jsonBuilder1 = new JsonBuilder().startObject()
-				.field("name", "每逢佳节倍思亲1").endObject();
-		JsonBuilder jsonBuilder2 = new JsonBuilder().startObject()
-				.field("name", "每逢佳节倍思亲2").endObject();
-		JsonBuilder jsonBuilder3 = new JsonBuilder().startObject()
-				.field("name", "每逢佳节倍思亲3").endObject();
+		JsonBuilder jsonBuilder1 = new JsonBuilder().startObject().field("name", "每逢佳节倍思亲1").endObject();
+		JsonBuilder jsonBuilder2 = new JsonBuilder().startObject().field("name", "每逢佳节倍思亲2").endObject();
+		JsonBuilder jsonBuilder3 = new JsonBuilder().startObject().field("name", "每逢佳节倍思亲3").endObject();
 		Set<JsonBuilder> datas = new HashSet<>();
 		datas.add(jsonBuilder1);
 		datas.add(jsonBuilder2);
@@ -397,11 +385,9 @@ public class SearchTest {
 		testBulkInsertListOfT();
 		client.refresh();
 		List<SearchCriteria> searchCriterias = new ArrayList<>();
-		SearchCriteria searchCriteria = new SearchCriteria("age", "31",
-				new SearchOption());
+		SearchCriteria searchCriteria = new SearchCriteria("age", "31", new SearchOption());
 		searchCriterias.add(searchCriteria);
-		Result<User> result = client.search(searchCriterias, 0, 10, null,
-				User.class);
+		Result<User> result = client.search(searchCriterias, 0, 10, null, User.class);
 		assertTrue(result.getCount() == 1);
 		// 复杂查询，name含有“开发”或者含有“1234”且年龄在31-45之间的
 		searchCriteria = new SearchCriteria();
@@ -414,8 +400,7 @@ public class SearchTest {
 		searchCriterias.clear();
 		searchCriterias.add(searchCriteria);
 		SearchCriteria searchCriteria1 = new SearchCriteria();
-		searchCriteria1.setOption(new SearchOption(SearchLogic.must,
-				SearchType.range));
+		searchCriteria1.setOption(new SearchOption(SearchLogic.must, SearchType.range));
 		searchCriteria1.setField("age");
 		searchCriteria1.addFieldValue("31");
 		searchCriteria1.addFieldValue("45");
@@ -428,20 +413,16 @@ public class SearchTest {
 	public void testSearchByDSL() {
 		testBulkInsertListOfT();
 		client.refresh();
-		String qry = "{" + "\"query\": { " + "\"bool\": {" + "\"must\": ["
-				+ "  { \"match\": { \"name\":   \"开发\"}},"
-				+ "        { \"match\": { \"age\": 51 }}" + "],"
-				+ "\"filter\": [" + "{ \"term\":  { \"userId\": \"107\" }},"
-				+ "{ \"range\": { \"created\": { \"gte\": \"2016-06-20\" }}}"
+		String qry = "{" + "\"query\": { " + "\"bool\": {" + "\"must\": [" + "  { \"match\": { \"name\":   \"开发\"}},"
+				+ "        { \"match\": { \"age\": 51 }}" + "]," + "\"filter\": ["
+				+ "{ \"term\":  { \"userId\": \"107\" }}," + "{ \"range\": { \"created\": { \"gte\": \"2016-06-20\" }}}"
 				+ "]" + "}" + "}" + "}";
 		Result<User> result = client.searchByDSL(qry, 0, 10, null, User.class);
 		assertTrue(result.getCount() == 1);
 		String data = "{\"userId\":103,\"name\":\"爱丢恶化缺乏\",\"age\":30,\"created\":\"2016-06-17T23:15:09\",\"test\":\"中华人民共和国\"}";
 		client.insert(data);
-		qry = "{" + "\"query\": { " + "\"bool\": {" + "\"must\": ["
-				+ "  { \"match\": { \"test\":   \"中华\"}}"
-				 + "]"
-				 + "}" + "}" + "}";
+		qry = "{" + "\"query\": { " + "\"bool\": {" + "\"must\": [" + "  { \"match\": { \"test\":   \"中华\"}}" + "]"
+				+ "}" + "}" + "}";
 		result = client.searchByDSL(qry, 0, 10, null, User.class);
 		assertTrue(result.getCount() == 1);
 	}
@@ -450,11 +431,9 @@ public class SearchTest {
 	public void testSearchByDSLString() {
 		testBulkInsertListOfT();
 		client.refresh();
-		String qry = "{" + "\"query\": { " + "\"bool\": {" + "\"must\": ["
-				+ "  { \"match\": { \"name\":   \"开发\"}},"
-				+ "        { \"match\": { \"age\": 51 }}" + "],"
-				+ "\"filter\": [" + "{ \"term\":  { \"userId\": \"107\" }},"
-				+ "{ \"range\": { \"created\": { \"gte\": \"2016-06-20\" }}}"
+		String qry = "{" + "\"query\": { " + "\"bool\": {" + "\"must\": [" + "  { \"match\": { \"name\":   \"开发\"}},"
+				+ "        { \"match\": { \"age\": 51 }}" + "]," + "\"filter\": ["
+				+ "{ \"term\":  { \"userId\": \"107\" }}," + "{ \"range\": { \"created\": { \"gte\": \"2016-06-20\" }}}"
 				+ "]" + "}" + "}" + "}";
 		String result = client.searchByDSL(qry, 0, 10, null);
 		Gson gson = new Gson();
@@ -464,50 +443,38 @@ public class SearchTest {
 
 	@Test
 	public void getSuggestStringString() {
-		String mapping = "{"
-				+ "   \"user\" : {"
-				+ "  \"_all\": {"
-				+ "\"analyzer\": \"nGram_analyzer\","
-				+ "\"search_analyzer\": \"ik_max_word\","
-				+ "\"term_vector\": \"no\","
-				+ "\"store\": \"false\""
-				+ "},"
+		String mapping = "{" + "   \"user\" : {" + "  \"_all\": {" + "\"analyzer\": \"nGram_analyzer\","
+				+ "\"search_analyzer\": \"ik_max_word\"," + "\"term_vector\": \"no\"," + "\"store\": \"false\"" + "},"
 				+ "     \"properties\" : {"
 				+ "     	\"userId\" :  {\"type\" : \"string\", \"store\" : \"yes\",\"index\": \"not_analyzed\"},"
 				+ "       	\"name\" : {\"type\" : \"string\", \"analyzer\":\"nGram_analyzer\"},"
 				+ "       	\"age\" : {\"type\" : \"integer\"},"
 				+ "       	\"created\" : {\"type\" : \"date\", \"format\" : \"strict_date_optional_time||epoch_millis\"}"
 				+ "     }" + "   }" + " }";
-
-		client.addMapping("user", "user", mapping);
+		if (!client.existMapping("user", "user"))
+			client.addMapping("user", "user", mapping);
 		testBulkInsertListOfT();
 		client.refresh();
 		List<String> suggests = client.getSuggest("开", 10);
 		assertTrue(suggests.size() == 3);
 		suggests = client.getSuggest("4", 10);
 		// 因为搜索所有的字段，只要含有就显示
-		System.out.println(suggests.size());
-		assertTrue(suggests.size() == 3);
+		System.out.println(suggests);
+		assertTrue(suggests == null);
 	}
 
 	@Test
 	public void getSuggestStringStringString() {
-		String mapping = "{"
-				+ "   \"user\" : {"
-				+ "  \"_all\": {"
-				+ "\"analyzer\": \"nGram_analyzer\","
-				+ "\"search_analyzer\": \"ik_max_word\","
-				+ "\"term_vector\": \"no\","
-				+ "\"store\": \"false\""
-				+ "},"
+		String mapping = "{" + "   \"user\" : {" + "  \"_all\": {" + "\"analyzer\": \"nGram_analyzer\","
+				+ "\"search_analyzer\": \"ik_max_word\"," + "\"term_vector\": \"no\"," + "\"store\": \"false\"" + "},"
 				+ "     \"properties\" : {"
 				+ "     	\"userId\" :  {\"type\" : \"string\", \"store\" : \"yes\",\"index\": \"not_analyzed\"},"
 				+ "       	\"name\" : {\"type\" : \"string\", \"analyzer\":\"nGram_analyzer\"},"
 				+ "       	\"age\" : {\"type\" : \"integer\"},"
 				+ "       	\"created\" : {\"type\" : \"date\", \"format\" : \"strict_date_optional_time||epoch_millis\"}"
 				+ "     }" + "   }" + " }";
-
-		client.addMapping("user", "user", mapping);
+		if (!client.existMapping("user", "user"))
+			client.addMapping("user", "user", mapping);
 		testBulkInsertListOfT();
 		client.refresh();
 		List<String> suggests = client.getSuggest("name", "开", 10);
@@ -519,28 +486,17 @@ public class SearchTest {
 
 	@Test
 	public void testAggregateListOfSearchCriteriaString() {
-		String mapping = "{"
-				+ "   \"user\" : {"
-				+ "  \"_all\": {"
-				+ "\"analyzer\": \"nGram_analyzer\","
-				+ "\"search_analyzer\": \"ik_max_word\","
-				+ "\"term_vector\": \"no\","
-				+ "\"store\": \"false\""
-				+ "},"
+		String mapping = "{" + "   \"user\" : {" + "  \"_all\": {" + "\"analyzer\": \"nGram_analyzer\","
+				+ "\"search_analyzer\": \"ik_max_word\"," + "\"term_vector\": \"no\"," + "\"store\": \"false\"" + "},"
 				+ "     \"properties\" : {"
 				+ "     	\"userId\" :  {\"type\" : \"string\", \"store\" : \"yes\",\"index\": \"not_analyzed\"},"
-				+ "       	\"name\" : {\"type\" : \"string\", \"analyzer\":\"nGram_analyzer\","
-				+ " \"fields\": {"
-				+ "     \"raw\": {"
-				+ "        \"type\": \"string\","
-				+ "        \"index\": \"not_analyzed\""
-				+ "     }}"
-				+ "},"
-				+ "       	\"age\" : {\"type\" : \"integer\"},"
+				+ "       	\"name\" : {\"type\" : \"string\", \"analyzer\":\"nGram_analyzer\"," + " \"fields\": {"
+				+ "     \"raw\": {" + "        \"type\": \"string\"," + "        \"index\": \"not_analyzed\""
+				+ "     }}" + "}," + "       	\"age\" : {\"type\" : \"integer\"},"
 				+ "       	\"created\" : {\"type\" : \"date\", \"format\" : \"strict_date_optional_time||epoch_millis\"}"
 				+ "     }" + "   }" + " }";
-
-		client.addMapping("user", "user", mapping);
+		if (!client.existMapping("user", "user"))
+			client.addMapping("user", "user", mapping);
 		testBulkInsertListOfT();
 		client.refresh();
 		List<SearchCriteria> searchCriterias = new ArrayList<>();
@@ -550,41 +506,25 @@ public class SearchTest {
 		values.add("41");
 		searchCriteria.setFieldValue(values);
 		searchCriterias.add(searchCriteria);
-		Result<Map<String, Long>> result = client.aggregate(searchCriterias,
-				"name");
+		Result<Map<String, Long>> result = client.aggregate(searchCriterias, "name");
 		assertTrue(result.getCount() == 1);
 	}
 
 	@Test
 	public void testAggregateListOfSearchCriteriaListOfString() {
-		String mapping = "{"
-				+ "   \"user\" : {"
-				+ "  \"_all\": {"
-				+ "\"analyzer\": \"nGram_analyzer\","
-				+ "\"search_analyzer\": \"ik_max_word\","
-				+ "\"term_vector\": \"no\","
-				+ "\"store\": \"false\""
-				+ "},"
+		String mapping = "{" + "   \"user\" : {" + "  \"_all\": {" + "\"analyzer\": \"nGram_analyzer\","
+				+ "\"search_analyzer\": \"ik_max_word\"," + "\"term_vector\": \"no\"," + "\"store\": \"false\"" + "},"
 				+ "     \"properties\" : {"
 				+ "     	\"userId\" :  {\"type\" : \"string\", \"store\" : \"yes\",\"index\": \"not_analyzed\"},"
-				+ "       	\"name\" : {\"type\" : \"string\", \"analyzer\":\"nGram_analyzer\","
-				+ " \"fields\": {"
-				+ "     \"raw\": {"
-				+ "        \"type\": \"string\","
-				+ "        \"index\": \"not_analyzed\""
-				+ "     }}"
-				+ "},"
-				+ "       	\"age\" : {\"type\" : \"integer\","
-				+ " \"fields\": {"
-				+ "     \"raw\": {"
-				+ "        \"type\": \"integer\","
-				+ "        \"index\": \"not_analyzed\""
-				+ "     }}"
-				+ "},"
+				+ "       	\"name\" : {\"type\" : \"string\", \"analyzer\":\"nGram_analyzer\"," + " \"fields\": {"
+				+ "     \"raw\": {" + "        \"type\": \"string\"," + "        \"index\": \"not_analyzed\""
+				+ "     }}" + "}," + "       	\"age\" : {\"type\" : \"integer\"," + " \"fields\": {"
+				+ "     \"raw\": {" + "        \"type\": \"integer\"," + "        \"index\": \"not_analyzed\""
+				+ "     }}" + "},"
 				+ "       	\"created\" : {\"type\" : \"date\", \"format\" : \"strict_date_optional_time||epoch_millis\"}"
 				+ "     }" + "   }" + " }";
-
-		client.addMapping("user", "user", mapping);
+		if (!client.existMapping("user", "user"))
+			client.addMapping("user", "user", mapping);
 		testBulkInsertListOfT();
 		testBulkJsonInsert();
 		client.refresh();
@@ -598,8 +538,7 @@ public class SearchTest {
 		List<AggField> fields = new ArrayList<>();
 		fields.add(new AggField("name"));
 		fields.add(new AggField("age"));
-		Result<List<AggResult>> result = client.aggregate(searchCriterias,
-				fields);
+		Result<List<AggResult>> result = client.aggregate(searchCriterias, fields);
 		assertTrue(result.getAggs().size() == 7);
 		// 测试一下嵌套
 		fields = new ArrayList<>();
@@ -610,39 +549,24 @@ public class SearchTest {
 		fields.add(name);
 		fields.add(new AggField("age"));
 		result = client.aggregate(searchCriterias, fields);
-		assertTrue(result.getAggs().size() == 7);
+		assertTrue(result.getAggs().size() == 6);
 	}
 
 	@Test
 	public void testFullTextSearchWithFieldWithAgg() {
-		String mapping = "{"
-				+ "   \"user\" : {"
-				+ "  \"_all\": {"
-				+ "\"analyzer\": \"nGram_analyzer\","
-				+ "\"search_analyzer\": \"ik_max_word\","
-				+ "\"term_vector\": \"no\","
-				+ "\"store\": \"false\""
-				+ "},"
+		String mapping = "{" + "   \"user\" : {" + "  \"_all\": {" + "\"analyzer\": \"nGram_analyzer\","
+				+ "\"search_analyzer\": \"ik_max_word\"," + "\"term_vector\": \"no\"," + "\"store\": \"false\"" + "},"
 				+ "     \"properties\" : {"
 				+ "     	\"userId\" :  {\"type\" : \"string\", \"store\" : \"yes\",\"index\": \"not_analyzed\"},"
-				+ "       	\"name\" : {\"type\" : \"string\", \"analyzer\":\"nGram_analyzer\","
-				+ " \"fields\": {"
-				+ "     \"raw\": {"
-				+ "        \"type\": \"string\","
-				+ "        \"index\": \"not_analyzed\""
-				+ "     }}"
-				+ "},"
-				+ "       	\"age\" : {\"type\" : \"integer\","
-				+ " \"fields\": {"
-				+ "     \"raw\": {"
-				+ "        \"type\": \"integer\","
-				+ "        \"index\": \"not_analyzed\""
-				+ "     }}"
-				+ "},"
+				+ "       	\"name\" : {\"type\" : \"string\", \"analyzer\":\"nGram_analyzer\"," + " \"fields\": {"
+				+ "     \"raw\": {" + "        \"type\": \"string\"," + "        \"index\": \"not_analyzed\""
+				+ "     }}" + "}," + "       	\"age\" : {\"type\" : \"integer\"," + " \"fields\": {"
+				+ "     \"raw\": {" + "        \"type\": \"integer\"," + "        \"index\": \"not_analyzed\""
+				+ "     }}" + "},"
 				+ "       	\"created\" : {\"type\" : \"date\", \"format\" : \"strict_date_optional_time||epoch_millis\"}"
 				+ "     }" + "   }" + " }";
-
-		client.addMapping("user", "user", mapping);
+		if (!client.existMapping("user", "user"))
+			client.addMapping("user", "user", mapping);
 		testBulkInsertListOfT();
 		testBulkJsonInsert();
 		client.refresh();
@@ -655,41 +579,25 @@ public class SearchTest {
 		List<Sort> sorts = new ArrayList<>();
 		Sort sort = new Sort("age", SortOrder.ASC);
 		sorts.add(sort);
-		Result<User> result = client.fullTextSearch(text, fields, 0, 10, sorts,
-				User.class);
+		Result<User> result = client.fullTextSearch(text, fields, 0, 10, sorts, User.class);
 		assertTrue(result.getCount() == 6);
 	}
 
 	@Test
 	public void testFullTextSearchWithAgg() {
-		String mapping = "{"
-				+ "   \"user\" : {"
-				+ "  \"_all\": {"
-				+ "\"analyzer\": \"nGram_analyzer\","
-				+ "\"search_analyzer\": \"ik_max_word\","
-				+ "\"term_vector\": \"no\","
-				+ "\"store\": \"false\""
-				+ "},"
+		String mapping = "{" + "   \"user\" : {" + "  \"_all\": {" + "\"analyzer\": \"nGram_analyzer\","
+				+ "\"search_analyzer\": \"ik_max_word\"," + "\"term_vector\": \"no\"," + "\"store\": \"false\"" + "},"
 				+ "     \"properties\" : {"
 				+ "     	\"userId\" :  {\"type\" : \"string\", \"store\" : \"yes\",\"index\": \"not_analyzed\"},"
-				+ "       	\"name\" : {\"type\" : \"string\", \"analyzer\":\"nGram_analyzer\","
-				+ " \"fields\": {"
-				+ "     \"raw\": {"
-				+ "        \"type\": \"string\","
-				+ "        \"index\": \"not_analyzed\""
-				+ "     }}"
-				+ "},"
-				+ "       	\"age\" : {\"type\" : \"integer\","
-				+ " \"fields\": {"
-				+ "     \"raw\": {"
-				+ "        \"type\": \"integer\","
-				+ "        \"index\": \"not_analyzed\""
-				+ "     }}"
-				+ "},"
+				+ "       	\"name\" : {\"type\" : \"string\", \"analyzer\":\"nGram_analyzer\"," + " \"fields\": {"
+				+ "     \"raw\": {" + "        \"type\": \"string\"," + "        \"index\": \"not_analyzed\""
+				+ "     }}" + "}," + "       	\"age\" : {\"type\" : \"integer\"," + " \"fields\": {"
+				+ "     \"raw\": {" + "        \"type\": \"integer\"," + "        \"index\": \"not_analyzed\""
+				+ "     }}" + "},"
 				+ "       	\"created\" : {\"type\" : \"date\", \"format\" : \"strict_date_optional_time||epoch_millis\"}"
 				+ "     }" + "   }" + " }";
-
-		client.addMapping("user", "user", mapping);
+		if (!client.existMapping("user", "user"))
+			client.addMapping("user", "user", mapping);
 		testBulkInsertListOfT();
 		testBulkJsonInsert();
 		client.refresh();
@@ -699,8 +607,7 @@ public class SearchTest {
 		fields.add(new AggField("age"));
 		List<String> qryFields = new ArrayList<>();
 		qryFields.add("name");
-		Result<User> result = client.fullTextSearch(text, qryFields, fields, 0,
-				10, null, User.class);
+		Result<User> result = client.fullTextSearch(text, qryFields, fields, 0, 10, null, User.class);
 		assertTrue(result.getCount() == 6);
 	}
 
@@ -710,8 +617,7 @@ public class SearchTest {
 		client.refresh();
 		String text = "开发";
 
-		Result<User> result = client.fullTextSearch(text, 0, 10, null,
-				User.class);
+		Result<User> result = client.fullTextSearch(text, 0, 10, null, User.class);
 		assertTrue(result.getCount() == 3);
 	}
 
@@ -752,26 +658,32 @@ public class SearchTest {
 	@Test
 	public void testAddMapping() {
 
-//		String mapping = "{"
-//				+ "   \"userInfo\" : {"
-//				+ "     \"properties\" : {"
-//				+ "     	\"userId\" :  {\"type\" : \"string\", \"store\" : \"yes\",\"index\": \"not_analyzed\"},"
-//				+ "       	\"name\" : {\"type\" : \"string\", \"store\" : \"yes\",\"analyzer\":\"ik_smart\"},"
-//				+ "       	\"age\" : {\"type\" : \"integer\"},"
-//				+ "       	\"created\" : {\"type\" : \"date\", \"format\" : \"strict_date_optional_time||epoch_millis\"}"
-//				+ "     }" + "   }" + " }";
-//
-//		assertTrue(client.addMapping("user", "user", mapping));
-//
-//		String mapping1 = "{"
-//				+ "     \"properties\" : {"
-//				+ "     	\"userId\" :  {\"type\" : \"string\", \"store\" : \"yes\",\"index\": \"not_analyzed\"},"
-//				+ "       	\"name\" : {\"type\" : \"string\", \"store\" : \"yes\",\"analyzer\":\"ik_smart\"},"
-//				+ "       	\"age\" : {\"type\" : \"integer\"},"
-//				+ "       	\"created\" : {\"type\" : \"date\", \"format\" : \"strict_date_optional_time||epoch_millis\"}"
-//				+ "     }" + " }";
-//
-//		assertTrue(client.addMapping("user", "userInfo1", mapping1));
+		// String mapping = "{"
+		// + " \"userInfo\" : {"
+		// + " \"properties\" : {"
+		// + " \"userId\" : {\"type\" : \"string\", \"store\" :
+		// \"yes\",\"index\": \"not_analyzed\"},"
+		// + " \"name\" : {\"type\" : \"string\", \"store\" :
+		// \"yes\",\"analyzer\":\"ik_smart\"},"
+		// + " \"age\" : {\"type\" : \"integer\"},"
+		// + " \"created\" : {\"type\" : \"date\", \"format\" :
+		// \"strict_date_optional_time||epoch_millis\"}"
+		// + " }" + " }" + " }";
+		//
+		// assertTrue(client.addMapping("user", "user", mapping));
+		//
+		// String mapping1 = "{"
+		// + " \"properties\" : {"
+		// + " \"userId\" : {\"type\" : \"string\", \"store\" :
+		// \"yes\",\"index\": \"not_analyzed\"},"
+		// + " \"name\" : {\"type\" : \"string\", \"store\" :
+		// \"yes\",\"analyzer\":\"ik_smart\"},"
+		// + " \"age\" : {\"type\" : \"integer\"},"
+		// + " \"created\" : {\"type\" : \"date\", \"format\" :
+		// \"strict_date_optional_time||epoch_millis\"}"
+		// + " }" + " }";
+		//
+		// assertTrue(client.addMapping("user", "userInfo1", mapping1));
 		String mapping2 = "{"
 				+ "     	\"userId\" :  {\"type\" : \"string\", \"store\" : \"yes\",\"index\": \"not_analyzed\"},"
 				+ "       	\"name\" : {\"type\" : \"string\", \"store\" : \"yes\",\"analyzer\":\"ik_smart\"},"

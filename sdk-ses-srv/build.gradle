@@ -21,7 +21,7 @@ publishing {
 						delegate.dependency {
 							delegate.groupId("com.ai")
 							delegate.artifactId("ipaas-ses-base")
-							delegate.version("0.4.4")
+							delegate.version("0.4.6")
 						}		                
 						delegate.dependency {
 							delegate.groupId("com.ai")
@@ -48,7 +48,7 @@ publishing {
 						delegate.dependency {
 							delegate.groupId("com.ai")
 							delegate.artifactId("ipaas-ses-base")
-							delegate.version("0.4.4")
+							delegate.version("0.4.6")
 						}	
 						delegate.dependency {
 							delegate.groupId("com.ai")
