@@ -29,6 +29,10 @@ public class Test {
 		testVO.setSorts(sorts);
 		System.out.println(mapper.writeValueAsString(testVO));
 		
+		
+		String test="dsfsdfsdfds^sdfsdf^dsfsdf";
+		System.out.println(test.replaceAll("\\^", ""));
+		
 	}
 
 }

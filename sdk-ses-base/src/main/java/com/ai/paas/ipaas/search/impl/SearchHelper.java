@@ -160,6 +160,7 @@ public class SearchHelper {
 					if (null == obj)
 						continue;
 					formatValue = obj.toString().trim().replace("*", "");// 格式化搜索数据
+					formatValue = formatValue.replace("\\^", "");// 格式化搜索数据
 					formatValue = StringEscapeUtils.escapeJson(formatValue);
 					if (mySearchOption.getSearchType() == SearchOption.SearchType.querystring) {
 						if (formatValue.length() == 1) {
@@ -222,6 +223,16 @@ public class SearchHelper {
 		} else {
 			begin = null == values[0] ? null : values[0].toString();
 			end = null == values[1] ? null : values[1].toString();
+			if (null != begin) {
+				begin = begin.toString().trim().replace("*", "");// 格式化搜索数据
+				begin = begin.replace("\\^", "");// 格式化搜索数据
+				begin = StringEscapeUtils.escapeJson(begin);
+			}
+			if (null != end) {
+				end = end.toString().trim().replace("*", "");// 格式化搜索数据
+				end = end.replace("\\^", "");// 格式化搜索数据
+				end = StringEscapeUtils.escapeJson(end);
+			}
 		}
 		return QueryBuilders.rangeQuery(field).from(begin).to(end);
 	}
