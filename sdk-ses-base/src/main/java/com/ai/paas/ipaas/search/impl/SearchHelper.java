@@ -159,8 +159,8 @@ public class SearchHelper {
 					// 这里得判断是否为空
 					if (null == obj)
 						continue;
-					formatValue = obj.toString().trim().replace("*", "");// 格式化搜索数据
-					formatValue = formatValue.replace("\\^", "");// 格式化搜索数据
+					formatValue = obj.toString().trim().replaceAll("\\*", "");// 格式化搜索数据
+					formatValue = formatValue.replaceAll("\\^", "");// 格式化搜索数据
 					formatValue = StringEscapeUtils.escapeJson(formatValue);
 					if (mySearchOption.getSearchType() == SearchOption.SearchType.querystring) {
 						if (formatValue.length() == 1) {
@@ -224,13 +224,13 @@ public class SearchHelper {
 			begin = null == values[0] ? null : values[0].toString();
 			end = null == values[1] ? null : values[1].toString();
 			if (null != begin) {
-				begin = begin.toString().trim().replace("*", "");// 格式化搜索数据
-				begin = begin.replace("\\^", "");// 格式化搜索数据
+				begin = begin.toString().trim().replaceAll("\\*", "");// 格式化搜索数据
+				begin = begin.replaceAll("\\^", "");// 格式化搜索数据
 				begin = StringEscapeUtils.escapeJson(begin);
 			}
 			if (null != end) {
-				end = end.toString().trim().replace("*", "");// 格式化搜索数据
-				end = end.replace("\\^", "");// 格式化搜索数据
+				end = end.toString().trim().replaceAll("\\*", "");// 格式化搜索数据
+				end = end.replaceAll("\\^", "");// 格式化搜索数据
 				end = StringEscapeUtils.escapeJson(end);
 			}
 		}
