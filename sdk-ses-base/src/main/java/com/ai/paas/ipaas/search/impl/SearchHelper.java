@@ -188,7 +188,7 @@ public class SearchHelper {
 					queryBuilder = QueryBuilders.matchQuery(field, StringUtils.join(terms, " "))
 							.operator(mySearchOption.getTermOperator() == SearchOption.TermOperator.AND
 									? MatchQueryBuilder.Operator.AND : MatchQueryBuilder.Operator.OR)
-							.type(MatchQueryBuilder.Type.PHRASE_PREFIX);
+							.minimumShouldMatch("90%").type(MatchQueryBuilder.Type.PHRASE_PREFIX);
 
 				}
 			}
