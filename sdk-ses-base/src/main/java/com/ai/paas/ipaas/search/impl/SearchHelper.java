@@ -175,20 +175,24 @@ public class SearchHelper {
 					}
 					terms.add(formatValue);
 				}
+				String qryValue = StringUtils.join(terms, " ");
+				// 在搜索精确匹配时按精确走
 				if (mySearchOption.getSearchType() == SearchOption.SearchType.term) {
 					queryBuilder = QueryBuilders.termsQuery(field, terms).boost(mySearchOption.getBoost());
 				} else if (mySearchOption.getSearchType() == SearchOption.SearchType.querystring) {
 					QueryStringQueryBuilder queryStringQueryBuilder = QueryBuilders
-							.queryStringQuery(StringUtils.join(terms, " "))
+							.queryStringQuery(mySearchOption.getTermOperator() == SearchOption.TermOperator.AND
+									? "\\\"" + qryValue + "\\\"" : qryValue)
 							.defaultOperator(mySearchOption.getTermOperator() == SearchOption.TermOperator.AND
 									? QueryStringQueryBuilder.Operator.AND : QueryStringQueryBuilder.Operator.OR)
 							.minimumShouldMatch(mySearchOption.getQueryStringPrecision());
 					queryBuilder = queryStringQueryBuilder.field(field).boost(mySearchOption.getBoost());
 				} else if (mySearchOption.getSearchType() == SearchOption.SearchType.match) {
-					queryBuilder = QueryBuilders.matchQuery(field, StringUtils.join(terms, " "))
+					queryBuilder = QueryBuilders.matchQuery(field, qryValue)
 							.operator(mySearchOption.getTermOperator() == SearchOption.TermOperator.AND
 									? MatchQueryBuilder.Operator.AND : MatchQueryBuilder.Operator.OR)
-							.minimumShouldMatch("90%").type(MatchQueryBuilder.Type.PHRASE_PREFIX);
+							.minimumShouldMatch(mySearchOption.getQueryStringPrecision())
+							.type(MatchQueryBuilder.Type.PHRASE_PREFIX);
 
 				}
 			}
