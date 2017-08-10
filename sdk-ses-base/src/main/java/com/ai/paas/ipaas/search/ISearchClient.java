@@ -335,16 +335,18 @@ public interface ISearchClient {
 
 	/**
 	 * 按照查询条件分页查询
+	 * 
 	 * @param searchCriterias
 	 * @param from
 	 * @param offset
 	 * @param sorts
 	 * @param clazz
-	 * @param resultFields 指定返回的结果字段
+	 * @param resultFields
+	 *            指定返回的结果字段
 	 * @return
 	 */
 	public <T> Result<T> search(List<SearchCriteria> searchCriterias, int from, int offset, @Nullable List<Sort> sorts,
-			Class<T> clazz,String[] resultFields);
+			Class<T> clazz, String[] resultFields);
 
 	/**
 	 * @param searchCriterias
@@ -361,10 +363,12 @@ public interface ISearchClient {
 	 * @param from
 	 * @param offset
 	 * @param sorts
-	 * @param resultFields 指定返回的结果字段
+	 * @param resultFields
+	 *            指定返回的结果字段
 	 * @return
 	 */
-	public String search(List<SearchCriteria> searchCriterias, int from, int offset, @Nullable List<Sort> sorts,String[] resultFields);
+	public String search(List<SearchCriteria> searchCriterias, int from, int offset, @Nullable List<Sort> sorts,
+			String[] resultFields);
 
 	/**
 	 * DSL格式的查询
@@ -381,7 +385,7 @@ public interface ISearchClient {
 	 * @return 查询结果对象
 	 */
 	public <T> Result<T> searchByDSL(String dslJson, int from, int offset, @Nullable List<Sort> sorts, Class<T> clazz);
-	
+
 	/**
 	 * 
 	 * @param dslJson
@@ -392,7 +396,8 @@ public interface ISearchClient {
 	 * @param resultFields
 	 * @return
 	 */
-	public <T> Result<T> searchByDSL(String dslJson, int from, int offset, @Nullable List<Sort> sorts, Class<T> clazz,String[] resultFields);
+	public <T> Result<T> searchByDSL(String dslJson, int from, int offset, @Nullable List<Sort> sorts, Class<T> clazz,
+			String[] resultFields);
 
 	/**
 	 * DSL格式的查询
@@ -418,7 +423,7 @@ public interface ISearchClient {
 	 * @param resultFields
 	 * @return
 	 */
-	public String searchByDSL(String dslJson, int from, int offset, @Nullable List<Sort> sorts,String[] resultFields);
+	public String searchByDSL(String dslJson, int from, int offset, @Nullable List<Sort> sorts, String[] resultFields);
 
 	/**
 	 * 全文检索
@@ -594,6 +599,33 @@ public interface ISearchClient {
 	 * @return 增加模型是否成功
 	 */
 	public boolean addMapping(String indexName, String type, String json);
+
+	/**
+	 * 增加索引对象定义，自从2.0以后，不支持在设置ID为文档的某个字段，需要在 插入或获取时自己指定
+	 * 
+	 * @param indexName
+	 *            "user"
+	 * @param type
+	 *            "userInfo"
+	 * @param json
+	 * 
+	 * @param addDynamicTemplate
+	 *            是否增加动态模板
+	 * 
+	 *            <pre>
+	 * {
+	 *   "userInfo" : {
+	 *     "properties" : {
+	 *     	 "userId" :  {"type" : "string", "store" : "yes","index": "not_analyzed"}
+	 *       "message" : {"type" : "string", "store" : "yes"}
+	 *     }
+	 *   }
+	 * }
+	 *            </pre>
+	 * 
+	 * @return 增加模型是否成功
+	 */
+	public boolean addMapping(String indexName, String type, String json, boolean addDynamicTemplate);
 
 	/**
 	 * 按照指定的主键和设置创建索引

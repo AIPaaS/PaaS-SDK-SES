@@ -6,8 +6,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.lucene.queryparser.classic.QueryParser;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.transport.TransportClient;
@@ -161,7 +161,7 @@ public class SearchHelper {
 						continue;
 					formatValue = obj.toString().trim().replaceAll("\\*", "");// 格式化搜索数据
 					formatValue = formatValue.replaceAll("\\^", "");// 格式化搜索数据
-					formatValue = StringEscapeUtils.escapeJson(formatValue);
+					formatValue = QueryParser.escape(formatValue);
 					if (mySearchOption.getSearchType() == SearchOption.SearchType.querystring) {
 						if (formatValue.length() == 1) {
 							/*
@@ -230,12 +230,12 @@ public class SearchHelper {
 			if (null != begin) {
 				begin = begin.toString().trim().replaceAll("\\*", "");// 格式化搜索数据
 				begin = begin.replaceAll("\\^", "");// 格式化搜索数据
-				begin = StringEscapeUtils.escapeJson(begin);
+				begin = QueryParser.escape(begin);
 			}
 			if (null != end) {
 				end = end.toString().trim().replaceAll("\\*", "");// 格式化搜索数据
 				end = end.replaceAll("\\^", "");// 格式化搜索数据
-				end = StringEscapeUtils.escapeJson(end);
+				end = QueryParser.escape(end);
 			}
 		}
 		return QueryBuilders.rangeQuery(field).from(begin).to(end);

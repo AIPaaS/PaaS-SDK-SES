@@ -236,10 +236,8 @@ public class SearchClientImpl implements ISearchClient {
 		List<String> ids = new ArrayList<>();
 		QueryBuilder queryBuilder = null;
 		queryBuilder = SearchHelper.createQueryBuilder(searchCriteria);
-		SearchResponse scrollResp = client.prepareSearch(indexName)
-				.setSearchType(SearchType.QUERY_THEN_FETCH)
-				.setScroll(new TimeValue(60000))
-				.setQuery(queryBuilder).setSize(100).execute().actionGet();
+		SearchResponse scrollResp = client.prepareSearch(indexName).setSearchType(SearchType.QUERY_THEN_FETCH)
+				.setScroll(new TimeValue(60000)).setQuery(queryBuilder).setSize(100).execute().actionGet();
 		while (true) {
 			// 循环获取所有ids
 			for (SearchHit hit : scrollResp.getHits()) {
@@ -605,10 +603,8 @@ public class SearchClientImpl implements ISearchClient {
 			// 此种实现不好，查询两次。即使分页，也可以得到总数
 
 			SearchRequestBuilder searchRequestBuilder = null;
-			searchRequestBuilder = client.prepareSearch(indexName)
-					.setSearchType(SearchType.QUERY_THEN_FETCH)
-					.setScroll(new TimeValue(60000))
-					.setQuery(queryBuilder).setSize(100).setExplain(true);
+			searchRequestBuilder = client.prepareSearch(indexName).setSearchType(SearchType.QUERY_THEN_FETCH)
+					.setScroll(new TimeValue(60000)).setQuery(queryBuilder).setSize(100).setExplain(true);
 			if (sorts == null || sorts.isEmpty()) {
 				/* 如果不需要排序 */
 			} else {
@@ -778,8 +774,7 @@ public class SearchClientImpl implements ISearchClient {
 		result.setResultCode(PaaSConstant.ExceptionCode.SYSTEM_ERROR);
 		try {
 			SearchRequestBuilder searchRequestBuilder = client.prepareSearch(indexName)
-					.setSearchType(SearchType.QUERY_THEN_FETCH)
-					.setScroll(new TimeValue(60000))
+					.setSearchType(SearchType.QUERY_THEN_FETCH).setScroll(new TimeValue(60000))
 					.setQuery(QueryBuilders.matchQuery("_all", text).operator(Operator.AND).minimumShouldMatch("75%"))
 					.setSize(100).setExplain(true).setHighlighterRequireFieldMatch(true);
 			SearchResponse response = searchRequestBuilder.get();
@@ -810,9 +805,8 @@ public class SearchClientImpl implements ISearchClient {
 						QueryBuilders.matchQuery(qryField, text).operator(Operator.AND).minimumShouldMatch("75%"));
 			}
 			SearchRequestBuilder searchRequestBuilder = client.prepareSearch(indexName)
-					.setSearchType(SearchType.QUERY_THEN_FETCH)
-					.setScroll(new TimeValue(60000))
-					.setQuery(queryBuilder).setSize(100);
+					.setSearchType(SearchType.QUERY_THEN_FETCH).setScroll(new TimeValue(60000)).setQuery(queryBuilder)
+					.setSize(100);
 			if (sorts == null || sorts.isEmpty()) {
 				/* 如果不需要排序 */
 			} else {
@@ -881,6 +875,7 @@ public class SearchClientImpl implements ISearchClient {
 				+ "               \"type\": \"custom\"," + "               \"tokenizer\": \"ik_max_word\","
 				+ "               \"filter\": [" + "                  \"stop\"," + "                  \"nGram_filter\""
 				+ "               ]" + "            }" + "         }" + "      }" + "   " + "}";
+		
 		CreateIndexResponse createResponse = client.admin().indices().prepareCreate(indexName).setSettings(setting)
 				.get();
 		if (createResponse.isAcknowledged()) {
@@ -907,44 +902,7 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public boolean addMapping(String indexName, String type, String json) {
-		// 这里要做些处理，如果用户没有type,或者对应不上应该报错
-		Assert.notNull(indexName, "Index Name can not null");
-		Assert.notNull(type, "type can not null");
-		Assert.notNull(json, "mapping can not null");
-		// 转换成json看看
-		JsonObject typeObj = null;
-		JsonObject jsonObj = esgson.fromJson(json, JsonObject.class);
-		if (null == jsonObj.get(type)) {
-			// 看看有没有properties
-			// 这里好办了,补上两层
-			JsonObject properties = new JsonObject();
-			properties.add("properties", jsonObj);
-			// 增加动态mapping分词模板,对于所有的字符串应用分词
-			String dynamicTemplate = "{ \"ik\": {" + "\"match\":              \"*\","
-					+ "  \"match_mapping_type\": \"string\"," + "  \"mapping\": {"
-					+ "      \"type\":           \"string\"," + "      \"analyzer\":       \"ik_max_word\"" + "  }"
-					+ " }}";
-			JsonObject dynamicT = esgson.fromJson(dynamicTemplate, JsonObject.class);
-			JsonArray dynamicTemplates = new JsonArray();
-			dynamicTemplates.add(dynamicT);
-			properties.add("dynamic_templates", dynamicTemplates);
-			typeObj = new JsonObject();
-			typeObj.add(type, properties);
-
-			// 这里也好办了,补上一层
-		} else
-
-		{
-			// 存在就看自己是否正确构造
-			typeObj = jsonObj;
-		}
-
-		PutMappingResponse putMappingResponse = client.admin().indices().preparePutMapping(indexName).setType(type)
-				.setSource(esgson.toJson(typeObj)).get();
-		if (putMappingResponse.isAcknowledged())
-			return true;
-		else
-			return false;
+		return addMapping(indexName, type, json, true);
 	}
 
 	@Override
@@ -1010,6 +968,48 @@ public class SearchClientImpl implements ISearchClient {
 			return response.getMappings().containsKey(mapping);
 		}
 		return false;
+	}
+
+	@Override
+	public boolean addMapping(String indexName, String type, String json, boolean addDynamicTemplate) {
+		// 这里要做些处理，如果用户没有type,或者对应不上应该报错
+		Assert.notNull(indexName, "Index Name can not null");
+		Assert.notNull(type, "type can not null");
+		Assert.notNull(json, "mapping can not null");
+		// 转换成json看看
+		JsonObject typeObj = null;
+		JsonObject jsonObj = esgson.fromJson(json, JsonObject.class);
+		if (null == jsonObj.get(type)) {
+			// 看看有没有properties
+			// 这里好办了,补上两层
+			JsonObject properties = new JsonObject();
+			properties.add("properties", jsonObj);
+			if (addDynamicTemplate) {
+				// 增加动态mapping分词模板,对于所有的字符串应用分词
+				String dynamicTemplate = "{ \"ik\": {" + "\"match\":              \"*\","
+						+ "  \"match_mapping_type\": \"string\"," + "  \"mapping\": {"
+						+ "      \"type\":           \"string\"," + "      \"analyzer\":       \"ik_max_word\"" + "  }"
+						+ " }}";
+				JsonObject dynamicT = esgson.fromJson(dynamicTemplate, JsonObject.class);
+				JsonArray dynamicTemplates = new JsonArray();
+				dynamicTemplates.add(dynamicT);
+				properties.add("dynamic_templates", dynamicTemplates);
+			}
+			typeObj = new JsonObject();
+			typeObj.add(type, properties);
+
+			// 这里也好办了,补上一层
+		} else {
+			// 存在就看自己是否正确构造
+			typeObj = jsonObj;
+		}
+
+		PutMappingResponse putMappingResponse = client.admin().indices().preparePutMapping(indexName).setType(type)
+				.setSource(esgson.toJson(typeObj)).get();
+		if (putMappingResponse.isAcknowledged())
+			return true;
+		else
+			return false;
 	}
 
 }

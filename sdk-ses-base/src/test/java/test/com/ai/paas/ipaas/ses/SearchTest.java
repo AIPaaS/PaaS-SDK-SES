@@ -27,6 +27,7 @@ import com.ai.paas.ipaas.search.vo.SearchCriteria;
 import com.ai.paas.ipaas.search.vo.SearchOption;
 import com.ai.paas.ipaas.search.vo.SearchOption.SearchLogic;
 import com.ai.paas.ipaas.search.vo.SearchOption.SearchType;
+import com.ai.paas.ipaas.search.vo.SearchOption.TermOperator;
 import com.ai.paas.ipaas.search.vo.Sort;
 import com.ai.paas.ipaas.search.vo.Sort.SortOrder;
 import com.ai.paas.ipaas.util.DateTimeUtil;
@@ -60,9 +61,9 @@ public class SearchTest {
 
 	@Before
 	public void setUp() throws Exception {
-		if (client.existIndex(indexName))
-			client.deleteIndex(indexName);
-		client.createIndex(indexName, 3, 1);
+		// if (client.existIndex(indexName))
+		// client.deleteIndex(indexName);
+		//client.createIndex(indexName, 3, 1);
 	}
 
 	@After
@@ -265,11 +266,11 @@ public class SearchTest {
 
 	@Test
 	public void testBulkInsertListOfT() {
-		client.addMapping(indexName, "userInfo", mapping);
+		//client.addMapping(indexName, "userInfo", mapping);
 		List<User> datas = new ArrayList<>();
-		User user1 = new User("105", "Test ABC Match开发123", 31, new Date());
-		User user2 = new User("106", "test 开发 match", 41, new Date());
-		User user3 = new User("107", "This 开发 is a test", 51, new Date());
+		User user1 = new User("105", "Test ABC 芦玉Match123", 31, new Date());
+		User user2 = new User("106", "test 开发 芦match玉", 41, new Date());
+		User user3 = new User("107", "This 开发 is a 芦玉test", 51, new Date());
 		datas.add(user1);
 		datas.add(user2);
 		datas.add(user3);
@@ -377,6 +378,18 @@ public class SearchTest {
 		assertTrue(result.getCount() == 1);
 		qry = "age:(>=40 AND <55) ";
 		result = client.searchBySQL(qry, 0, 1, null, User.class);
+		assertTrue(result.getCount() == 2);
+	}
+
+	@Test
+	public void testSearchMatch() {
+		//testBulkInsertListOfT();
+		//client.refresh();
+		List<SearchCriteria> searchCriterias = new ArrayList<>();
+		SearchCriteria searchCriteria = new SearchCriteria("name", "芦玉",
+				new SearchOption(SearchOption.SearchLogic.should, SearchOption.SearchType.match, TermOperator.AND));
+		searchCriterias.add(searchCriteria);
+		Result<User> result = client.search(searchCriterias, 0, 10, null, User.class);
 		assertTrue(result.getCount() == 2);
 	}
 
@@ -641,7 +654,7 @@ public class SearchTest {
 	@Test
 	public void testCreateIndex() {
 		// 先删除
-		client.deleteIndex(indexName);
+		//client.deleteIndex(indexName);
 		assertTrue(client.createIndex("user", 2, 1));
 	}
 
@@ -684,14 +697,18 @@ public class SearchTest {
 		// + " }" + " }";
 		//
 		// assertTrue(client.addMapping("user", "userInfo1", mapping1));
+//		if (client.existIndex("user")) {
+//			client.deleteIndex("user");
+//		}
+		//client.createIndex("user", 2, 1);
 		String mapping2 = "{"
 				+ "     	\"userId\" :  {\"type\" : \"string\", \"store\" : \"yes\",\"index\": \"not_analyzed\"},"
-				+ "       	\"name\" : {\"type\" : \"string\", \"store\" : \"yes\",\"analyzer\":\"ik_smart\"},"
+				+ "       	\"name\" : {\"type\" : \"string\", \"store\" : \"yes\"},"
 				+ "       	\"age\" : {\"type\" : \"integer\"},"
 				+ "       	\"created\" : {\"type\" : \"date\", \"format\" : \"strict_date_optional_time||epoch_millis\"}"
 				+ " }";
 
-		assertTrue(client.addMapping("user", "userInfo2", mapping2));
+		assertTrue(client.addMapping("user", "userInfo", mapping2, false));
 	}
 
 }
