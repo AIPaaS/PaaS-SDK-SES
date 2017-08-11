@@ -31,7 +31,7 @@ public class ChineseMatchTest {
 
 	private QueryBuilder createQueryBuilder() {
 
-		return QueryBuilders.matchQuery("name", QueryParser.escape("芦玉")).operator(MatchQueryBuilder.Operator.AND)
+		return QueryBuilders.matchQuery("name", QueryParser.escape("芦玉!@#$%^&*()';,.~")).operator(MatchQueryBuilder.Operator.AND)
 				.minimumShouldMatch("90%").type(MatchQueryBuilder.Type.PHRASE_PREFIX);
 	}
 
