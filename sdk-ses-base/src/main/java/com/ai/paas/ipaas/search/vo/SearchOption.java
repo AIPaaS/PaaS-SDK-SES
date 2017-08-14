@@ -1,6 +1,5 @@
 package com.ai.paas.ipaas.search.vo;
 
-
 //搜索选项定义
 
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -18,7 +17,7 @@ public class SearchOption implements Serializable {
 	private static final long serialVersionUID = 1L;
 	private SearchLogic searchLogic = SearchLogic.must;
 	private SearchType searchType = SearchType.querystring;
-	private DataFilter dataFilter = DataFilter.exists;
+	private DataFilter dataFilter = null;
 	private TermOperator termOperator = TermOperator.OR;
 	/* querystring精度，取值[1-100]的整数 */
 	private String queryStringPrecision = "90%";
@@ -157,7 +156,7 @@ public class SearchOption implements Serializable {
 
 	}
 
-	public SearchOption(SearchType searchType, SearchLogic searchLogic, String queryStringPrecision,
+	public SearchOption(SearchLogic searchLogic, SearchType searchType, String queryStringPrecision,
 			DataFilter dataFilter, float boost, int highlight) {
 		this.setSearchLogic(searchLogic);
 		this.setSearchType(searchType);
@@ -165,6 +164,14 @@ public class SearchOption implements Serializable {
 		this.setDataFilter(dataFilter);
 		this.setBoost(boost);
 		this.setHighlight(highlight > 0 ? true : false);
+	}
+
+	public SearchOption(SearchLogic searchLogic, SearchType searchType, DataFilter dataFilter) {
+		this.setSearchLogic(searchLogic);
+		this.setSearchType(searchType);
+		this.setQueryStringPrecision(queryStringPrecision);
+		this.setDataFilter(dataFilter);
+		this.setBoost(boost);
 	}
 
 	public SearchOption() {

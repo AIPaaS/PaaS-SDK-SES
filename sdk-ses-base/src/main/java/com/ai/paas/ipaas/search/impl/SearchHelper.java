@@ -143,12 +143,18 @@ public class SearchHelper {
 	public static QueryBuilder createSingleFieldQueryBuilder(String field, List<Object> values,
 			SearchOption mySearchOption) {
 		try {
+
 			if (mySearchOption.getSearchType() == SearchOption.SearchType.range) {
 				/* 区间搜索 */
 				return createRangeQueryBuilder(field, values);
 			}
 			QueryBuilder queryBuilder = null;
-			if (values != null) {
+			// 这里先加个是否存在判断
+			if (mySearchOption.getDataFilter() == SearchOption.DataFilter.exists) {
+				// 需要增加filter搜索
+				queryBuilder = QueryBuilders.existsQuery(field);
+				return queryBuilder;
+			} else if (values != null) {
 				String formatValue = null;
 				List<String> terms = new ArrayList<>();
 				Iterator<Object> iterator = values.iterator();
