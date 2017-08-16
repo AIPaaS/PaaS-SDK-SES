@@ -31,8 +31,9 @@ public class ChineseMatchTest {
 
 	private QueryBuilder createQueryBuilder() {
 
-		return QueryBuilders.matchQuery("name", QueryParser.escape("芦玉!@#$%^&*()';,.~")).operator(MatchQueryBuilder.Operator.AND)
-				.minimumShouldMatch("90%").type(MatchQueryBuilder.Type.PHRASE_PREFIX);
+//		return QueryBuilders.matchQuery("name", QueryParser.escape("芦玉!@#$%^&*()';,.~")).operator(MatchQueryBuilder.Operator.AND)
+//				.minimumShouldMatch("90%").type(MatchQueryBuilder.Type.PHRASE_PREFIX);
+		return QueryBuilders.rangeQuery("id").from(125);
 	}
 
 	public static void main(String[] args) {

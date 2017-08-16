@@ -229,10 +229,12 @@ public class SearchHelper {
 			 * （4）如果是从数据库导出的数据，请确定数据库字段是char或者varchar类型，而不是date类型（此类型可能会有问题）
 			 */
 			begin = SearchOption.formatDate(values[0]);
-			end = SearchOption.formatDate(values[1]);
+			if (values.length > 1)
+				end = SearchOption.formatDate(values[1]);
 		} else {
 			begin = null == values[0] ? null : values[0].toString();
-			end = null == values[1] ? null : values[1].toString();
+			if (values.length > 1)
+				end = null == values[1] ? null : values[1].toString();
 			if (null != begin) {
 				begin = begin.toString().trim().replaceAll("\\*", "");// 格式化搜索数据
 				begin = begin.replaceAll("\\^", "");// 格式化搜索数据
@@ -244,7 +246,10 @@ public class SearchHelper {
 				end = QueryParser.escape(end);
 			}
 		}
-		return QueryBuilders.rangeQuery(field).from(begin).to(end);
+		if (StringUtil.isBlank(end))
+			return QueryBuilders.rangeQuery(field).from(begin);
+		else
+			return QueryBuilders.rangeQuery(field).from(begin).to(end);
 	}
 
 	@SuppressWarnings("unchecked")

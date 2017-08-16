@@ -63,7 +63,7 @@ public class SearchTest {
 	public void setUp() throws Exception {
 		// if (client.existIndex(indexName))
 		// client.deleteIndex(indexName);
-		//client.createIndex(indexName, 3, 1);
+		// client.createIndex(indexName, 3, 1);
 	}
 
 	@After
@@ -266,7 +266,7 @@ public class SearchTest {
 
 	@Test
 	public void testBulkInsertListOfT() {
-		//client.addMapping(indexName, "userInfo", mapping);
+		// client.addMapping(indexName, "userInfo", mapping);
 		List<User> datas = new ArrayList<>();
 		User user1 = new User("105", "Test ABC 芦玉Match123", 31, new Date());
 		User user2 = new User("106", "test 开发 芦match玉", 41, new Date());
@@ -383,14 +383,29 @@ public class SearchTest {
 
 	@Test
 	public void testSearchMatch() {
-		//testBulkInsertListOfT();
-		//client.refresh();
+		// testBulkInsertListOfT();
+		// client.refresh();
 		List<SearchCriteria> searchCriterias = new ArrayList<>();
 		SearchCriteria searchCriteria = new SearchCriteria("name", "芦玉",
 				new SearchOption(SearchOption.SearchLogic.should, SearchOption.SearchType.match, TermOperator.AND));
 		searchCriterias.add(searchCriteria);
 		Result<User> result = client.search(searchCriterias, 0, 10, null, User.class);
 		assertTrue(result.getCount() == 2);
+	}
+
+	@Test
+	public void testSearchRange() {
+		// testBulkInsertListOfT();
+		// client.refresh();
+		List<SearchCriteria> searchCriterias = new ArrayList<>();
+		SearchCriteria searchCriteria = new SearchCriteria("id",
+				new SearchOption(SearchOption.SearchLogic.must, SearchOption.SearchType.range));
+		List<Object> values = new ArrayList<>();
+		values.add(125);
+		searchCriteria.setFieldValue(values);
+		searchCriterias.add(searchCriteria);
+		Result<User> result = client.search(searchCriterias, 0, 10, null, User.class);
+		assertTrue(result.getCount() == 1);
 	}
 
 	@Test
@@ -654,7 +669,7 @@ public class SearchTest {
 	@Test
 	public void testCreateIndex() {
 		// 先删除
-		//client.deleteIndex(indexName);
+		// client.deleteIndex(indexName);
 		assertTrue(client.createIndex("user", 2, 1));
 	}
 
@@ -697,10 +712,10 @@ public class SearchTest {
 		// + " }" + " }";
 		//
 		// assertTrue(client.addMapping("user", "userInfo1", mapping1));
-//		if (client.existIndex("user")) {
-//			client.deleteIndex("user");
-//		}
-		//client.createIndex("user", 2, 1);
+		// if (client.existIndex("user")) {
+		// client.deleteIndex("user");
+		// }
+		// client.createIndex("user", 2, 1);
 		String mapping2 = "{"
 				+ "     	\"userId\" :  {\"type\" : \"string\", \"store\" : \"yes\",\"index\": \"not_analyzed\"},"
 				+ "       	\"name\" : {\"type\" : \"string\", \"store\" : \"yes\"},"
