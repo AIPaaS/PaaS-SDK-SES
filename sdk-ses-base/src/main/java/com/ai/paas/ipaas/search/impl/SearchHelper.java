@@ -168,6 +168,7 @@ public class SearchHelper {
 					formatValue = obj.toString().trim().replaceAll("\\*", "");// 格式化搜索数据
 					formatValue = formatValue.replaceAll("\\^", "");// 格式化搜索数据
 					formatValue = QueryParser.escape(formatValue);
+					formatValue = formatValue.replaceAll("\\\\-", "-");
 					if (mySearchOption.getSearchType() == SearchOption.SearchType.querystring) {
 						if (formatValue.length() == 1) {
 							/*
@@ -239,11 +240,13 @@ public class SearchHelper {
 				begin = begin.toString().trim().replaceAll("\\*", "");// 格式化搜索数据
 				begin = begin.replaceAll("\\^", "");// 格式化搜索数据
 				begin = QueryParser.escape(begin);
+				begin = begin.replaceAll("\\\\-", "-");
 			}
 			if (null != end) {
 				end = end.toString().trim().replaceAll("\\*", "");// 格式化搜索数据
 				end = end.replaceAll("\\^", "");// 格式化搜索数据
 				end = QueryParser.escape(end);
+				end = end.replaceAll("\\\\-", "-");
 			}
 		}
 		if (StringUtil.isBlank(end))

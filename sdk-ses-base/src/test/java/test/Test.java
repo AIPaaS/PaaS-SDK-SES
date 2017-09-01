@@ -33,6 +33,8 @@ public class Test {
 		String test="dsfsdfsdfds^sdfsdf^dsfsdf";
 		System.out.println(test.replaceAll("\\^", ""));
 		
+		String dd="b9a37901\\-8dfd\\-11e7\\-bc9e\\-54e1ad007ebc";
+		System.out.println(dd.replaceAll("\\\\-", "-"));
 	}
 
 }
