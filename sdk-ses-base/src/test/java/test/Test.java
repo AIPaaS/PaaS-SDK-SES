@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.codehaus.jackson.map.ObjectMapper;
 
+import com.ai.paas.ipaas.search.vo.SearchOption;
 import com.ai.paas.ipaas.search.vo.Sort;
 import com.ai.paas.ipaas.search.vo.Sort.SortOrder;
 
@@ -35,6 +36,8 @@ public class Test {
 		
 		String dd="b9a37901\\-8dfd\\-11e7\\-bc9e\\-54e1ad007ebc";
 		System.out.println(dd.replaceAll("\\\\-", "-"));
+		SearchOption option=new SearchOption(SearchOption.SearchLogic.must, SearchOption.SearchType.match);
+		System.out.println(option);
 	}
 
 }

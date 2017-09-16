@@ -17,7 +17,7 @@ public class SearchOption implements Serializable {
 	private static final long serialVersionUID = 1L;
 	private SearchLogic searchLogic = SearchLogic.must;
 	private SearchType searchType = SearchType.querystring;
-	private DataFilter dataFilter = null;
+	private DataFilter dataFilter = DataFilter.none;
 	private TermOperator termOperator = TermOperator.OR;
 	/* querystring精度，取值[1-100]的整数 */
 	private String queryStringPrecision = "90%";
@@ -131,7 +131,7 @@ public class SearchOption implements Serializable {
 	 */
 	public enum DataFilter {
 		/* 只显示有值的 *//* 显示没有值的 *//* 显示全部 */
-		exists(1), notExists(2), all(3);
+		exists(1), notExists(2), all(3), none(4);
 		private final int value;
 
 		DataFilter(int v) {
@@ -154,6 +154,10 @@ public class SearchOption implements Serializable {
 
 		}
 
+	}
+
+	public SearchOption(SearchLogic searchLogic) {
+		this.setSearchLogic(searchLogic);
 	}
 
 	public SearchOption(SearchLogic searchLogic, SearchType searchType, String queryStringPrecision,
