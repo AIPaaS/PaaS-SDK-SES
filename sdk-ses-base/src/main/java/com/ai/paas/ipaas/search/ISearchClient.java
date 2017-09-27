@@ -1,8 +1,11 @@
 package com.ai.paas.ipaas.search;
 
+import com.ai.paas.ipaas.search.common.DynamicMatchOption;
+
 //接口定义
 
 import com.ai.paas.ipaas.search.common.JsonBuilder;
+import com.ai.paas.ipaas.search.common.TypeGetter;
 import com.ai.paas.ipaas.search.vo.AggField;
 import com.ai.paas.ipaas.search.vo.AggResult;
 import com.ai.paas.ipaas.search.vo.Result;
@@ -332,6 +335,19 @@ public interface ISearchClient {
 	 */
 	public <T> Result<T> search(List<SearchCriteria> searchCriterias, int from, int offset, @Nullable List<Sort> sorts,
 			Class<T> clazz);
+	
+	/**
+	 * 按照查询对象进行查询，查询条件对象支持各种嵌套
+	 * @param searchCriterias 查询条件对象列表
+	 * @param from  分页查询起始位置
+	 * @param offset 分页每页数量
+	 * @param sorts  排序对象列表，可NULL
+	 * @param typeGetter 类型获取器，主要用来支持泛型类型，使用方式：TypeGetter<List<String>> typeGetter=TypeGetter<List<String>>() {};
+	 * 其中里面为泛型的具体使用方式
+	 * @return
+	 */
+	public <T> Result<T> search(List<SearchCriteria> searchCriterias, int from, int offset, @Nullable List<Sort> sorts,
+			@SuppressWarnings("rawtypes") TypeGetter typeGetter);
 
 	/**
 	 * 按照查询条件分页查询
@@ -348,6 +364,19 @@ public interface ISearchClient {
 	public <T> Result<T> search(List<SearchCriteria> searchCriterias, int from, int offset, @Nullable List<Sort> sorts,
 			Class<T> clazz, String[] resultFields);
 
+	/**
+	 * 按照查询对象进行查询，查询条件对象支持各种嵌套
+	 * @param searchCriterias 查询条件对象列表
+	 * @param from  分页查询起始位置
+	 * @param offset 分页每页数量
+	 * @param sorts  排序对象列表，可NULL
+	 * @param typeGetter 类型获取器，主要用来支持泛型类型，使用方式：TypeGetter<List<String>> typeGetter=TypeGetter<List<String>>() {};
+	 * 其中里面为泛型的具体使用方式
+	 * @param resultFields 需要返回的列数组
+	 * @return
+	 */
+	public <T> Result<T> search(List<SearchCriteria> searchCriterias, int from, int offset, @Nullable List<Sort> sorts,
+			@SuppressWarnings("rawtypes") TypeGetter typeGetter, String[] resultFields);
 	/**
 	 * @param searchCriterias
 	 * @param from
@@ -626,6 +655,16 @@ public interface ISearchClient {
 	 * @return 增加模型是否成功
 	 */
 	public boolean addMapping(String indexName, String type, String json, boolean addDynamicTemplate);
+	
+	/**
+	 * 动态模板的mapping创建，支持指定那些值得进行分词，哪些不进行分词，由matchs控制，注意顺序，前面的匹配就进行前面的规则了，一定要配置一条默认规则
+	 * @param indexName
+	 * @param type
+	 * @param json
+	 * @param matchs
+	 * @return
+	 */
+	public boolean addMapping(String indexName, String type, String json, List<DynamicMatchOption> matchs);
 
 	/**
 	 * 按照指定的主键和设置创建索引

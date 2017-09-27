@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+  <Appenders>
+    <Console name="STDOUT" target="SYSTEM_OUT">
+      <PatternLayout pattern="%d %-5p [%t] %C{2} (%F:%L) - %m%n"/>
+    </Console>
+    <RollingFile name="RollingFile" fileName="logs/chan-common-tool.log"
+                     filePattern="logs/$${date:yyyy-MM}/chan-common-tool-%d{yyyy-MM-dd}-%i.log">
+       <PatternLayout>
+         <Pattern>%d %-5p [%t] %C{2} (%F:%L) - %m%n</Pattern>
+       </PatternLayout>
+       <Policies>
+         <TimeBasedTriggeringPolicy />
+         <SizeBasedTriggeringPolicy size="50 MB"/>
+       </Policies>
+       <DefaultRolloverStrategy max="10"/>
+     </RollingFile>
+    <Async name="ASYNC">
+      <AppenderRef ref="RollingFile"/>
+      <AppenderRef ref="STDOUT"/>
+    </Async>
+  </Appenders>
+  <Loggers>
+    <logger name="com.ai.chan.common" level="debug" additivity="false">
+         <AppenderRef ref="RollingFile" />
+         <AppenderRef ref="STDOUT" />
+    </logger>
+    <Root level="info">
+      <AppenderRef ref="RollingFile" />
+      <AppenderRef ref="STDOUT" />
+    </Root>
+  </Loggers>
+</Configuration>

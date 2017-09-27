@@ -54,7 +54,9 @@ import org.slf4j.LoggerFactory;
 import com.ai.paas.ipaas.PaaSConstant;
 import com.ai.paas.ipaas.search.ISearchClient;
 import com.ai.paas.ipaas.search.SearchRuntimeException;
+import com.ai.paas.ipaas.search.common.DynamicMatchOption;
 import com.ai.paas.ipaas.search.common.JsonBuilder;
+import com.ai.paas.ipaas.search.common.TypeGetter;
 import com.ai.paas.ipaas.search.vo.AggField;
 import com.ai.paas.ipaas.search.vo.AggResult;
 import com.ai.paas.ipaas.search.vo.Result;
@@ -596,6 +598,12 @@ public class SearchClientImpl implements ISearchClient {
 
 	private <T> Result<T> search(QueryBuilder queryBuilder, int from, int offset, List<Sort> sorts, Class<T> clazz,
 			List<SearchCriteria> searchCriterias, String[] resultFields) {
+		return search(queryBuilder, from, offset, sorts, clazz, null, searchCriterias, resultFields);
+	}
+
+	private <T> Result<T> search(QueryBuilder queryBuilder, int from, int offset, List<Sort> sorts, Class<T> clazz,
+			@SuppressWarnings("rawtypes") TypeGetter typeGetter, List<SearchCriteria> searchCriterias,
+			String[] resultFields) {
 		Result<T> result = new Result<>();
 		result.setResultCode(PaaSConstant.ExceptionCode.SYSTEM_ERROR);
 		try {
@@ -621,9 +629,9 @@ public class SearchClientImpl implements ISearchClient {
 				searchRequestBuilder = SearchHelper.createHighlight(searchRequestBuilder, searchCriterias,
 						highlightCSS);
 			}
-			logger.info("--ES search:" + searchRequestBuilder.toString());
+			logger.info("--ES search:\r\n" + searchRequestBuilder.toString());
 			SearchResponse searchResponse = searchRequestBuilder.setFetchSource(resultFields, null).get();
-			List<T> list = SearchHelper.getSearchResult(client, searchResponse, clazz, from, offset);
+			List<T> list = SearchHelper.getSearchResult(client, searchResponse, clazz, typeGetter, from, offset);
 
 			result.setContents(list);
 			result.setCounts(searchResponse.getHits().getTotalHits());
@@ -779,7 +787,7 @@ public class SearchClientImpl implements ISearchClient {
 					.setSize(100).setExplain(true).setHighlighterRequireFieldMatch(true);
 			SearchResponse response = searchRequestBuilder.get();
 
-			List<T> list = SearchHelper.getSearchResult(client, response, clazz, from, offset);
+			List<T> list = SearchHelper.getSearchResult(client, response, clazz, null, from, offset);
 
 			result.setContents(list);
 			result.setCounts(response.getHits().totalHits());
@@ -830,7 +838,7 @@ public class SearchClientImpl implements ISearchClient {
 			}
 			SearchResponse response = searchRequestBuilder.get();
 
-			List<T> list = SearchHelper.getSearchResult(client, response, clazz, from, offset);
+			List<T> list = SearchHelper.getSearchResult(client, response, clazz, null, from, offset);
 
 			result.setContents(list);
 			result.setCounts(response.getHits().totalHits());
@@ -875,7 +883,7 @@ public class SearchClientImpl implements ISearchClient {
 				+ "               \"type\": \"custom\"," + "               \"tokenizer\": \"ik_max_word\","
 				+ "               \"filter\": [" + "                  \"stop\"," + "                  \"nGram_filter\""
 				+ "               ]" + "            }" + "         }" + "      }" + "   " + "}";
-		
+
 		CreateIndexResponse createResponse = client.admin().indices().prepareCreate(indexName).setSettings(setting)
 				.get();
 		if (createResponse.isAcknowledged()) {
@@ -1006,6 +1014,88 @@ public class SearchClientImpl implements ISearchClient {
 
 		PutMappingResponse putMappingResponse = client.admin().indices().preparePutMapping(indexName).setType(type)
 				.setSource(esgson.toJson(typeObj)).get();
+		if (putMappingResponse.isAcknowledged())
+			return true;
+		else
+			return false;
+	}
+
+	@Override
+	public <T> Result<T> search(List<SearchCriteria> searchCriterias, int from, int offset, List<Sort> sorts,
+			@SuppressWarnings("rawtypes") TypeGetter typeGetter, String[] resultFields) {
+		QueryBuilder queryBuilder = SearchHelper.createQueryBuilder(searchCriterias);
+		return search(queryBuilder, from, offset, sorts, null, typeGetter, searchCriterias, resultFields);
+	}
+
+	@Override
+	public <T> Result<T> search(List<SearchCriteria> searchCriterias, int from, int offset, List<Sort> sorts,
+			@SuppressWarnings("rawtypes") TypeGetter typeGetter) {
+		QueryBuilder queryBuilder = SearchHelper.createQueryBuilder(searchCriterias);
+		return search(queryBuilder, from, offset, sorts, null, typeGetter, searchCriterias, null);
+	}
+
+	@Override
+	public boolean addMapping(String indexName, String type, String json, List<DynamicMatchOption> matchs) {
+		// 这里要做些处理，如果用户没有type,或者对应不上应该报错
+		Assert.notNull(indexName, "Index Name can not null");
+		Assert.notNull(type, "type can not null");
+		Assert.notNull(json, "mapping can not null");
+		// 转换成json看看
+		JsonObject typeObj = null;
+		JsonObject jsonObj = esgson.fromJson(json, JsonObject.class);
+		if (null == jsonObj.get(type)) {
+			// 看看有没有properties
+			// 这里好办了,补上两层
+			JsonObject properties = new JsonObject();
+			properties.add("properties", jsonObj);
+			if (null != matchs) {
+				JsonArray dynamicTemplates = new JsonArray();
+				StringBuilder sb = new StringBuilder();
+				for (DynamicMatchOption match : matchs) {
+					sb.delete(0, sb.length());
+					sb.append("{ \"").append(match.getName()).append("\": {");
+					sb.append("\"match_mapping_type\": \"string\",");
+					switch (match.getMatchType()) {
+					case PATTERN:
+						sb.append("\"match_pattern\": \"regex\",");
+						sb.append("\"match\":\"");
+						sb.append(match.getMatch()).append("\",");
+						break;
+					case PATH:
+						sb.append("\"path_match\":\"").append(match.getMatch()).append("\",");
+						if (!StringUtil.isBlank(match.getUnmatch()))
+							sb.append("\"path_unmatch\":\"").append(match.getMatch()).append("\",");
+						break;
+					default:
+						sb.append("\"match\":\"").append(match.getMatch()).append("\",");
+					}
+					sb.append("  \"mapping\": {" + "      \"type\":           \"string\",");
+					if (match.isAnalyzed()){
+						sb.append("      \"analyzer\":       \"");
+						sb.append("ik_max_word\"");
+					}else{
+						sb.append("      \"index\":       \"");
+						sb.append("not_analyzed\"");
+					}
+					sb.append("   } }}");
+					logger.info("dynamic mapping:\r\n"+sb.toString());
+					JsonObject dynamicT = esgson.fromJson(sb.toString(), JsonObject.class);
+					dynamicTemplates.add(dynamicT);
+				}
+				properties.add("dynamic_templates", dynamicTemplates);
+			}
+			typeObj = new JsonObject();
+			typeObj.add(type, properties);
+
+			// 这里也好办了,补上一层
+		} else {
+			// 存在就看自己是否正确构造
+			typeObj = jsonObj;
+		}
+
+		PutMappingResponse putMappingResponse = client.admin().indices().preparePutMapping(indexName).setType(type)
+				.setSource(esgson.toJson(typeObj)).get();
+		logger.info("add mapping:\r\n"+typeObj);
 		if (putMappingResponse.isAcknowledged())
 			return true;
 		else

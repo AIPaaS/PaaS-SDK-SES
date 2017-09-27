@@ -26,6 +26,7 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsBuilder;
 
 import com.ai.paas.ipaas.search.SearchRuntimeException;
+import com.ai.paas.ipaas.search.common.TypeGetter;
 import com.ai.paas.ipaas.search.vo.AggField;
 import com.ai.paas.ipaas.search.vo.AggResult;
 import com.ai.paas.ipaas.search.vo.SearchCriteria;
@@ -256,8 +257,8 @@ public class SearchHelper {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <T> List<T> getSearchResult(TransportClient client, SearchResponse response, Class<T> clazz, int from,
-			int offset) {
+	public static <T> List<T> getSearchResult(TransportClient client, SearchResponse response, Class<T> clazz,
+			@SuppressWarnings("rawtypes") TypeGetter typeGetter, int from, int offset) {
 		try {
 			List<T> results = new ArrayList<>();
 			SearchHits hits = response.getHits();
@@ -273,10 +274,13 @@ public class SearchHelper {
 					if (start >= from && start < (from + offset)) {
 						// 找到位置，开始存储，到偏移就结束
 						String source = hit.getSourceAsString();
-						if (null != clazz && !clazz.getName().equals(String.class.getName()))
+						if (null != clazz && !clazz.getName().equals(String.class.getName())) {
 							results.add(gson.fromJson(source, clazz));
-						else
+						} else if (null != typeGetter) {
+							results.add((T) gson.fromJson(source, typeGetter.getType()));
+						} else {
 							results.add((T) source);
+						}
 					} else if (start >= (from + offset)) {
 						// 退到外层
 						break;

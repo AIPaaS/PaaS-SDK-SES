@@ -1,0 +1,21 @@
+2017-09-27 16:02:36,755 INFO  [main] search.SearchCmpClientFactory (SearchCmpClientFactory.java:39) - ElasticSearch info is Hosts:127.0.0.1:9300,index:user,id:id
+2017-09-27 16:02:36,757 INFO  [main] search.SearchCmpClientFactory (SearchCmpClientFactory.java:44) - ElasticSearch client key is 127001:9300_user.
+2017-09-27 16:02:36,875 INFO  [main] plugins.PluginsService (PluginsService.java:180) - [Native] modules [], plugins [], sites []
+2017-09-27 16:02:55,672 INFO  [main] search.SearchCmpClientFactory (SearchCmpClientFactory.java:39) - ElasticSearch info is Hosts:127.0.0.1:9300,index:user,id:id
+2017-09-27 16:02:55,674 INFO  [main] search.SearchCmpClientFactory (SearchCmpClientFactory.java:44) - ElasticSearch client key is 127001:9300_user.
+2017-09-27 16:02:55,783 INFO  [main] plugins.PluginsService (PluginsService.java:180) - [La Lunatica] modules [], plugins [], sites []
+2017-09-27 16:03:01,483 INFO  [main] impl.SearchClientImpl (SearchClientImpl.java:632) - --ES search:
+{
+  "size" : 100,
+  "query" : {
+    "bool" : {
+      "must" : {
+        "terms" : {
+          "address" : [ "东城区" ],
+          "boost" : 1.0
+        }
+      }
+    }
+  },
+  "explain" : true
+}

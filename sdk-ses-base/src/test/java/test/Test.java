@@ -2,6 +2,7 @@ package test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.codehaus.jackson.map.ObjectMapper;
 
@@ -29,15 +30,26 @@ public class Test {
 		TestVO testVO = new TestVO();
 		testVO.setSorts(sorts);
 		System.out.println(mapper.writeValueAsString(testVO));
-		
-		
-		String test="dsfsdfsdfds^sdfsdf^dsfsdf";
+
+		String test = "dsfsdfsdfds^sdfsdf^dsfsdf";
 		System.out.println(test.replaceAll("\\^", ""));
-		
-		String dd="b9a37901\\-8dfd\\-11e7\\-bc9e\\-54e1ad007ebc";
+		com.ai.paas.ipaas.search.common.TypeGetter<List<String>> t = new com.ai.paas.ipaas.search.common.TypeGetter<List<String>>() {
+		};
+		System.out.println(t.getType());
+
+		String dd = "b9a37901\\-8dfd\\-11e7\\-bc9e\\-54e1ad007ebc";
 		System.out.println(dd.replaceAll("\\\\-", "-"));
-		SearchOption option=new SearchOption(SearchOption.SearchLogic.must, SearchOption.SearchType.match);
+		SearchOption option = new SearchOption(SearchOption.SearchLogic.must, SearchOption.SearchType.match);
 		System.out.println(option);
+		// 测试下正则匹配
+		String pt = "^\\S*?(id)$";
+		System.out.println(Pattern.matches(pt, "t.id"));
+		String pt1="^\\S*?[(name)|(content)|(desc)]\\S*?$";
+		System.out.println(Pattern.matches(pt1, "t.name"));
+		System.out.println(Pattern.matches(pt1, "t.desc"));
+		System.out.println(Pattern.matches(pt1, "content"));
+		
+		
 	}
 
 }
