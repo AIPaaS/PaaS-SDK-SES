@@ -384,7 +384,8 @@ public class SearchClientImpl implements ISearchClient {
 
 	private void logBulkRespone(BulkResponse bulkResponse) {
 		for (BulkItemResponse response : bulkResponse.getItems()) {
-			logger.error("insert error," + response.getId() + "," + response.getFailureMessage());
+			logger.error("insert error," + response.getId() + " hasFailure=" + response.isFailed() + ", failure msg:"
+					+ response.getFailureMessage());
 		}
 	}
 
@@ -1070,15 +1071,15 @@ public class SearchClientImpl implements ISearchClient {
 						sb.append("\"match\":\"").append(match.getMatch()).append("\",");
 					}
 					sb.append("  \"mapping\": {" + "      \"type\":           \"string\",");
-					if (match.isAnalyzed()){
+					if (match.isAnalyzed()) {
 						sb.append("      \"analyzer\":       \"");
 						sb.append("ik_max_word\"");
-					}else{
+					} else {
 						sb.append("      \"index\":       \"");
 						sb.append("not_analyzed\"");
 					}
 					sb.append("   } }}");
-					logger.info("dynamic mapping:\r\n"+sb.toString());
+					logger.info("dynamic mapping:\r\n" + sb.toString());
 					JsonObject dynamicT = esgson.fromJson(sb.toString(), JsonObject.class);
 					dynamicTemplates.add(dynamicT);
 				}
@@ -1095,7 +1096,7 @@ public class SearchClientImpl implements ISearchClient {
 
 		PutMappingResponse putMappingResponse = client.admin().indices().preparePutMapping(indexName).setType(type)
 				.setSource(esgson.toJson(typeObj)).get();
-		logger.info("add mapping:\r\n"+typeObj);
+		logger.info("add mapping:\r\n" + typeObj);
 		if (putMappingResponse.isAcknowledged())
 			return true;
 		else

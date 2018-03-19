@@ -61,15 +61,15 @@ public class SearchTest {
 
 	@Before
 	public void setUp() throws Exception {
-		// if (client.existIndex(indexName))
-		// client.deleteIndex(indexName);
-		// client.createIndex(indexName, 3, 1);
+		if (client.existIndex(indexName))
+			client.deleteIndex(indexName);
+		client.createIndex(indexName, 3, 1);
 	}
 
 	@After
 	public void tearDown() throws Exception {
-		// if (client.existIndex(indexName))
-		// client.deleteIndex(indexName);
+		//if (client.existIndex(indexName))
+		//	client.deleteIndex(indexName);
 	}
 
 	@Test
@@ -270,10 +270,12 @@ public class SearchTest {
 		List<User> datas = new ArrayList<>();
 		User user1 = new User("105", "Test ABC 芦玉Match123", 31, new Date());
 		User user2 = new User("106", "test 开发 芦match玉", 41, new Date());
-		User user3 = new User("107", "This 开发 is a 芦玉test", 51, new Date());
+		User user3 = new User("", "This 开发 is a 芦玉test", 31, null);
+		User user4 = new User("", "This 开发 is a 芦玉test", 31, null);
 		datas.add(user1);
 		datas.add(user2);
 		datas.add(user3);
+		datas.add(user4);
 		assertTrue(client.bulkInsert(datas));
 	}
 
@@ -284,7 +286,7 @@ public class SearchTest {
 		JsonBuilder jsonBuilder2 = new JsonBuilder().startObject().field("userId", 107).field("name", "每逢佳节倍思亲")
 				.field("age", 31).field("created", new Date()).endObject();
 		JsonBuilder jsonBuilder3 = new JsonBuilder().startObject().field("userId", 108).field("name", "每逢佳节倍思亲")
-				.field("age", 31).field("created", new Date()).endObject();
+				.field("age", 31).field("created", "2017-09-18 22:10:04").endObject();
 		Set<JsonBuilder> datas = new HashSet<>();
 		datas.add(jsonBuilder1);
 		datas.add(jsonBuilder2);
