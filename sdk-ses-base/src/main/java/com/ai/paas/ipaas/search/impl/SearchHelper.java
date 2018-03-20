@@ -200,7 +200,7 @@ public class SearchHelper {
 							.operator(mySearchOption.getTermOperator() == SearchOption.TermOperator.AND
 									? MatchQueryBuilder.Operator.AND : MatchQueryBuilder.Operator.OR)
 							.minimumShouldMatch(mySearchOption.getQueryStringPrecision())
-							;
+							.type(MatchQueryBuilder.Type.PHRASE);
 
 				}
 			}
