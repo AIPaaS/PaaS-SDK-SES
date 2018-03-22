@@ -82,6 +82,7 @@ public class SearchClientImpl implements ISearchClient {
 	private TransportClient client;
 	private Gson esgson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ").create();
 	private Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
+	private final int batchSize=1000;
 
 	public SearchClientImpl(String hosts, String indexName, String id) {
 		this.indexName = indexName;
@@ -417,9 +418,9 @@ public class SearchClientImpl implements ISearchClient {
 			} else {
 				bulkRequest.add(client.prepareIndex(indexName, indexName).setSource(data));
 			}
-			if (bulkRequest.numberOfActions() > 100) {
+			if (bulkRequest.numberOfActions() > batchSize) {
 				bulkResponse = bulkRequest.setRefresh(rebuidIndex).get();
-				logger.info("rebuildIndex(): indexed {}, hasFailures: {}", bulkRequest.numberOfActions(),
+				logger.debug("add documents: indexed {}, hasFailures: {}", bulkRequest.numberOfActions(),
 						bulkResponse.hasFailures());
 			}
 		}
@@ -453,9 +454,9 @@ public class SearchClientImpl implements ISearchClient {
 			} else {
 				bulkRequest.add(client.prepareIndex(indexName, indexName).setSource(json));
 			}
-			if (bulkRequest.numberOfActions() > 100) {
+			if (bulkRequest.numberOfActions() > batchSize) {
 				bulkResponse = bulkRequest.setRefresh(rebuidIndex).get();
-				logger.info("rebuildIndex(): indexed {}, hasFailures: {}", bulkRequest.numberOfActions(),
+				logger.debug("add documents: indexed {}, hasFailures: {}", bulkRequest.numberOfActions(),
 						bulkResponse.hasFailures());
 			}
 		}
@@ -507,9 +508,9 @@ public class SearchClientImpl implements ISearchClient {
 			} else {
 				bulkRequest.add(client.prepareIndex(indexName, indexName).setSource(jsonBuilder.getBuilder()));
 			}
-			if (bulkRequest.numberOfActions() > 100) {
+			if (bulkRequest.numberOfActions() > batchSize) {
 				bulkResponse = bulkRequest.setRefresh(rebuidIndex).get();
-				logger.info("rebuildIndex(): indexed {}, hasFailures: {}", bulkRequest.numberOfActions(),
+				logger.debug("add documents: indexed {}, hasFailures: {}", bulkRequest.numberOfActions(),
 						bulkResponse.hasFailures());
 			}
 		}
