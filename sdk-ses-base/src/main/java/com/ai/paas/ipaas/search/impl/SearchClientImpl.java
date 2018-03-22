@@ -212,13 +212,18 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public boolean bulkDelete(List<String> ids) {
+		return bulkDelete(ids, true);
+	}
+
+	@Override
+	public boolean bulkDelete(List<String> ids, boolean rebuildIndex) {
 		if (null == ids || ids.size() <= 0)
 			return false;
 		BulkRequestBuilder bulkRequest = client.prepareBulk();
 		for (String id : ids) {
 			bulkRequest.add(client.prepareDelete(indexName, indexName, id));
 		}
-		BulkResponse bulkResponse = bulkRequest.setRefresh(true).get();
+		BulkResponse bulkResponse = bulkRequest.setRefresh(rebuildIndex).get();
 		if (!bulkResponse.hasFailures()) {
 			return true;
 		} else {
@@ -232,6 +237,11 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public boolean delete(List<SearchCriteria> searchCriteria) {
+		return delete(searchCriteria, true);
+	}
+
+	@Override
+	public boolean delete(List<SearchCriteria> searchCriteria, boolean rebuidIndex) {
 		if (null == searchCriteria || searchCriteria.size() <= 0)
 			return false;
 		// 此处要先scan出来，然后再批量删除
@@ -252,7 +262,7 @@ public class SearchClientImpl implements ISearchClient {
 				break;
 			}
 		}
-		return bulkDelete(ids);
+		return bulkDelete(ids, rebuidIndex);
 	}
 
 	@Override
@@ -391,6 +401,11 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public boolean bulkMapInsert(List<Map<String, Object>> datas) {
+		return bulkMapInsert(datas, true);
+	}
+
+	@Override
+	public boolean bulkMapInsert(List<Map<String, Object>> datas, boolean rebuidIndex) {
 		if (null == datas || datas.size() <= 0)
 			return false;
 		BulkRequestBuilder bulkRequest = client.prepareBulk();
@@ -402,13 +417,13 @@ public class SearchClientImpl implements ISearchClient {
 				bulkRequest.add(client.prepareIndex(indexName, indexName).setSource(data));
 			}
 			if (bulkRequest.numberOfActions() > 100) {
-				bulkResponse = bulkRequest.get();
+				bulkResponse = bulkRequest.setRefresh(rebuidIndex).get();
 				logger.info("rebuildIndex(): indexed {}, hasFailures: {}", bulkRequest.numberOfActions(),
 						bulkResponse.hasFailures());
 			}
 		}
 		if (bulkRequest.numberOfActions() > 0) {
-			bulkResponse = bulkRequest.setRefresh(true).get();
+			bulkResponse = bulkRequest.setRefresh(rebuidIndex).get();
 		}
 		if (!bulkResponse.hasFailures()) {
 			return true;
@@ -421,6 +436,11 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public boolean bulkJsonInsert(List<String> jsons) {
+		return bulkJsonInsert(jsons, true);
+	}
+
+	@Override
+	public boolean bulkJsonInsert(List<String> jsons, boolean rebuidIndex) {
 		if (null == jsons || jsons.size() <= 0)
 			return false;
 		BulkRequestBuilder bulkRequest = client.prepareBulk();
@@ -433,13 +453,13 @@ public class SearchClientImpl implements ISearchClient {
 				bulkRequest.add(client.prepareIndex(indexName, indexName).setSource(json));
 			}
 			if (bulkRequest.numberOfActions() > 100) {
-				bulkResponse = bulkRequest.setRefresh(true).get();
+				bulkResponse = bulkRequest.setRefresh(rebuidIndex).get();
 				logger.info("rebuildIndex(): indexed {}, hasFailures: {}", bulkRequest.numberOfActions(),
 						bulkResponse.hasFailures());
 			}
 		}
 		if (bulkRequest.numberOfActions() > 0) {
-			bulkResponse = bulkRequest.setRefresh(true).get();
+			bulkResponse = bulkRequest.setRefresh(rebuidIndex).get();
 		}
 		if (!bulkResponse.hasFailures()) {
 			return true;
@@ -452,17 +472,27 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public <T> boolean bulkInsert(List<T> datas) {
+		return bulkInsert(datas, true);
+	}
+
+	@Override
+	public <T> boolean bulkInsert(List<T> datas, boolean rebuidIndex) {
 		if (null == datas || datas.size() <= 0)
 			return false;
 		List<String> jsons = new ArrayList<>();
 		for (T t : datas) {
 			jsons.add(esgson.toJson(t));
 		}
-		return bulkJsonInsert(jsons);
+		return bulkJsonInsert(jsons, rebuidIndex);
 	}
 
 	@Override
 	public boolean bulkInsert(Set<JsonBuilder> jsonBuilders) {
+		return bulkInsert(jsonBuilders, true);
+	}
+
+	@Override
+	public boolean bulkInsert(Set<JsonBuilder> jsonBuilders, boolean rebuidIndex) {
 		if (null == jsonBuilders || jsonBuilders.size() <= 0)
 			return false;
 		BulkRequestBuilder bulkRequest = client.prepareBulk();
@@ -477,13 +507,13 @@ public class SearchClientImpl implements ISearchClient {
 				bulkRequest.add(client.prepareIndex(indexName, indexName).setSource(jsonBuilder.getBuilder()));
 			}
 			if (bulkRequest.numberOfActions() > 100) {
-				bulkResponse = bulkRequest.setRefresh(true).get();
+				bulkResponse = bulkRequest.setRefresh(rebuidIndex).get();
 				logger.info("rebuildIndex(): indexed {}, hasFailures: {}", bulkRequest.numberOfActions(),
 						bulkResponse.hasFailures());
 			}
 		}
 		if (bulkRequest.numberOfActions() > 0) {
-			bulkResponse = bulkRequest.setRefresh(true).get();
+			bulkResponse = bulkRequest.setRefresh(rebuidIndex).get();
 		}
 		if (!bulkResponse.hasFailures()) {
 			return true;
@@ -496,6 +526,11 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public boolean bulkMapUpdate(List<String> ids, List<Map<String, Object>> datas) {
+		return bulkMapUpdate(ids, datas, true);
+	}
+
+	@Override
+	public boolean bulkMapUpdate(List<String> ids, List<Map<String, Object>> datas, boolean rebuidIndex) {
 		if (null == ids || null == datas || ids.size() != datas.size())
 			throw new SearchRuntimeException("Null parameters or size not equal!");
 		BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
@@ -505,7 +540,7 @@ public class SearchClientImpl implements ISearchClient {
 					.setDoc(datas.get(i++)));
 		}
 
-		BulkResponse bulkResponse = bulkRequestBuilder.setRefresh(true).get();
+		BulkResponse bulkResponse = bulkRequestBuilder.setRefresh(rebuidIndex).get();
 		if (!bulkResponse.hasFailures())
 			return true;
 		else {
@@ -517,6 +552,11 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public boolean bulkJsonUpdate(List<String> ids, List<String> jsons) {
+		return bulkJsonUpdate(ids, jsons, true);
+	}
+
+	@Override
+	public boolean bulkJsonUpdate(List<String> ids, List<String> jsons, boolean rebuidIndex) {
 		if (null == ids || null == jsons || ids.size() != jsons.size())
 			throw new SearchRuntimeException("Null parameters or size not equal!");
 		BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
@@ -526,7 +566,7 @@ public class SearchClientImpl implements ISearchClient {
 					.setDoc(jsons.get(i++)));
 		}
 
-		BulkResponse bulkResponse = bulkRequestBuilder.setRefresh(true).get();
+		BulkResponse bulkResponse = bulkRequestBuilder.setRefresh(rebuidIndex).get();
 		if (!bulkResponse.hasFailures())
 			return true;
 		else {
@@ -538,6 +578,11 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public <T> boolean bulkUpdate(List<String> ids, List<T> datas) {
+		return bulkUpdate(ids, datas, true);
+	}
+
+	@Override
+	public <T> boolean bulkUpdate(List<String> ids, List<T> datas, boolean rebuidIndex) {
 		if (null == ids || null == datas || ids.size() != datas.size())
 			throw new SearchRuntimeException("Null parameters or size not equal!");
 		BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
@@ -547,7 +592,7 @@ public class SearchClientImpl implements ISearchClient {
 					.setUpsert(esgson.toJson(datas.get(i))).setDoc(esgson.toJson(datas.get(i++))));
 		}
 
-		BulkResponse bulkResponse = bulkRequestBuilder.setRefresh(true).get();
+		BulkResponse bulkResponse = bulkRequestBuilder.setRefresh(rebuidIndex).get();
 		if (!bulkResponse.hasFailures())
 			return true;
 		else {
@@ -559,6 +604,11 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public boolean bulkUpdate(List<String> ids, Set<JsonBuilder> jsonBuilders) {
+		return bulkUpdate(ids, jsonBuilders, true);
+	}
+
+	@Override
+	public boolean bulkUpdate(List<String> ids, Set<JsonBuilder> jsonBuilders, boolean rebuidIndex) {
 		if (null == ids || null == jsonBuilders || ids.size() != jsonBuilders.size())
 			throw new SearchRuntimeException("Null parameters or size not equal!");
 		BulkRequestBuilder bulkRequestBuilder = client.prepareBulk();
@@ -567,7 +617,7 @@ public class SearchClientImpl implements ISearchClient {
 			bulkRequestBuilder.add(client.prepareUpdate(indexName, indexName, ids.get(i++))
 					.setUpsert(jsonBuilder.getBuilder()).setDoc(jsonBuilder.getBuilder()));
 		}
-		BulkResponse bulkResponse = bulkRequestBuilder.setRefresh(true).get();
+		BulkResponse bulkResponse = bulkRequestBuilder.setRefresh(rebuidIndex).get();
 		if (!bulkResponse.hasFailures())
 			return true;
 		else {
@@ -583,8 +633,18 @@ public class SearchClientImpl implements ISearchClient {
 	}
 
 	@Override
+	public boolean bulkMapUpsert(List<String> ids, List<Map<String, Object>> datas, boolean rebuidIndex) {
+		return bulkMapUpdate(ids, datas, rebuidIndex);
+	}
+
+	@Override
 	public boolean bulkJsonUpsert(List<String> ids, List<String> jsons) {
 		return bulkJsonUpdate(ids, jsons);
+	}
+
+	@Override
+	public boolean bulkJsonUpsert(List<String> ids, List<String> jsons, boolean rebuidIndex) {
+		return bulkJsonUpdate(ids, jsons, rebuidIndex);
 	}
 
 	@Override
@@ -593,8 +653,18 @@ public class SearchClientImpl implements ISearchClient {
 	}
 
 	@Override
+	public <T> boolean bulkUpsert(List<String> ids, List<T> datas, boolean rebuidIndex) {
+		return bulkUpdate(ids, datas, rebuidIndex);
+	}
+
+	@Override
 	public boolean bulkUpsert(List<String> ids, Set<JsonBuilder> jsonBuilders) {
 		return bulkUpsert(ids, jsonBuilders);
+	}
+
+	@Override
+	public boolean bulkUpsert(List<String> ids, Set<JsonBuilder> jsonBuilders, boolean rebuidIndex) {
+		return bulkUpsert(ids, jsonBuilders, rebuidIndex);
 	}
 
 	private <T> Result<T> search(QueryBuilder queryBuilder, int from, int offset, List<Sort> sorts, Class<T> clazz,

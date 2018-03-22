@@ -70,6 +70,16 @@ public interface ISearchClient {
 	public boolean bulkDelete(List<String> ids);
 
 	/**
+	 * 删除多条数据
+	 * 
+	 * @param ids
+	 * @param rebuildIndex
+	 *            是否重建索引，重建索引会引起性能问题
+	 * @return 是否删除成功，所有删除成功则成功，否则失败
+	 */
+	public boolean bulkDelete(List<String> ids, boolean rebuildIndex);
+
+	/**
 	 * 根据查询条件删除多条数据
 	 * 
 	 * @param searchCriteria
@@ -77,6 +87,17 @@ public interface ISearchClient {
 	 * @return 是否删除成功，所有删除成功则成功，否则失败
 	 */
 	public boolean delete(List<SearchCriteria> searchCriteria);
+
+	/**
+	 * 根据查询条件删除多条数据
+	 * 
+	 * @param searchCriteria
+	 *            查询条件
+	 * @param rebuildIndex
+	 *            是否重建索引，重建索引会引起性能问题
+	 * @return 是否删除成功，所有删除成功则成功，否则失败
+	 */
+	public boolean delete(List<SearchCriteria> searchCriteria, boolean rebuildIndex);
 
 	/**
 	 * 全部清空，危险操作
@@ -166,12 +187,32 @@ public interface ISearchClient {
 	public boolean bulkMapInsert(List<Map<String, Object>> datas);
 
 	/**
+	 * 插入多条数据，数据为Map格式
+	 * 
+	 * @param datas
+	 * @param rebuidIndex
+	 *            是否重建索引，数据量大时设置为false
+	 * @return 插入是否成功,如果有一条插入错误，则返回否
+	 */
+	public boolean bulkMapInsert(List<Map<String, Object>> datas, boolean rebuidIndex);
+
+	/**
 	 * 插入多条数据，数据为json格式
 	 *
 	 * @param jsons
 	 * @return 插入是否成功,如果有一条插入错误，则返回否
 	 */
 	public boolean bulkJsonInsert(List<String> jsons);
+
+	/**
+	 * 插入多条数据，数据为json格式
+	 * 
+	 * @param jsons
+	 * @param rebuidIndex
+	 *            是否重建索引，数据量大时设置为false
+	 * @return 插入是否成功,如果有一条插入错误，则返回否
+	 */
+	public boolean bulkJsonInsert(List<String> jsons, boolean rebuidIndex);
 
 	/**
 	 * 通过泛型类插入多条数据，必须序列化泛型类，数据类型所有字段都会插入
@@ -182,12 +223,32 @@ public interface ISearchClient {
 	public <T> boolean bulkInsert(List<T> datas);
 
 	/**
+	 * 通过泛型类插入多条数据，必须序列化泛型类，数据类型所有字段都会插入
+	 * 
+	 * @param datas
+	 * @param rebuidIndex
+	 *            是否重建索引，数据量大时设置为false
+	 * @return 插入是否成功,如果有一条插入错误，则返回否
+	 */
+	public <T> boolean bulkInsert(List<T> datas, boolean rebuidIndex);
+
+	/**
 	 * 通过builder插入多条数据
 	 * 
 	 * @param jsonBuilders
 	 * @return 插入是否成功,如果有一条插入错误，则返回否
 	 */
 	public boolean bulkInsert(Set<JsonBuilder> jsonBuilders);
+
+	/**
+	 * 通过builder插入多条数据
+	 * 
+	 * @param jsonBuilders
+	 * @param rebuidIndex
+	 *            是否重建索引，数据量大时设置为false
+	 * @return 插入是否成功,如果有一条插入错误，则返回否
+	 */
+	public boolean bulkInsert(Set<JsonBuilder> jsonBuilders, boolean rebuidIndex);
 
 	/**
 	 * 更新多个文档，合并模式
@@ -202,10 +263,32 @@ public interface ISearchClient {
 	 * 更新多个文档，合并模式
 	 * 
 	 * @param ids
+	 * @param datas
+	 * @param rebuidIndex
+	 *            是否重建索引，数据量大时设置为false
+	 * @return 更新是否成功,如果有一条更新失败，则返回失败
+	 */
+	public boolean bulkMapUpdate(List<String> ids, List<Map<String, Object>> datas, boolean rebuidIndex);
+
+	/**
+	 * 更新多个文档，合并模式
+	 * 
+	 * @param ids
 	 * @param jsons
 	 * @return 更新是否成功,如果有一条更新失败，则返回失败
 	 */
 	public boolean bulkJsonUpdate(List<String> ids, List<String> jsons);
+
+	/**
+	 * 更新多个文档，合并模式
+	 * 
+	 * @param ids
+	 * @param jsons
+	 * @param rebuidIndex
+	 *            是否重建索引，数据量大时设置为false
+	 * @return 更新是否成功,如果有一条更新失败，则返回失败
+	 */
+	public boolean bulkJsonUpdate(List<String> ids, List<String> jsons, boolean rebuidIndex);
 
 	/**
 	 * 更新多个文档，合并模式
@@ -220,10 +303,32 @@ public interface ISearchClient {
 	 * 更新多个文档，合并模式
 	 * 
 	 * @param ids
+	 * @param datas
+	 * @param rebuidIndex
+	 *            是否重建索引，数据量大时设置为false
+	 * @return 更新是否成功,如果有一条更新失败，则返回失败
+	 */
+	public <T> boolean bulkUpdate(List<String> ids, List<T> datas, boolean rebuidIndex);
+
+	/**
+	 * 更新多个文档，合并模式
+	 * 
+	 * @param ids
 	 * @param jsonBuilders
 	 * @return 更新是否成功,如果有一条更新失败，则返回失败
 	 */
 	public boolean bulkUpdate(List<String> ids, Set<JsonBuilder> jsonBuilders);
+
+	/**
+	 * 更新多个文档，合并模式
+	 * 
+	 * @param ids
+	 * @param jsonBuilders
+	 * @param rebuidIndex
+	 *            是否重建索引，数据量大时设置为false
+	 * @return 更新是否成功,如果有一条更新失败，则返回失败
+	 */
+	public boolean bulkUpdate(List<String> ids, Set<JsonBuilder> jsonBuilders, boolean rebuidIndex);
 
 	/**
 	 * 更新多个文档，不存在就插入
@@ -238,6 +343,17 @@ public interface ISearchClient {
 	 * 更新多个文档，不存在就插入
 	 * 
 	 * @param ids
+	 * @param datas
+	 * @param rebuidIndex
+	 *            是否重建索引，数据量大时设置为false
+	 * @return 更新是否成功,如果有一条更新失败，则返回失败
+	 */
+	public boolean bulkMapUpsert(List<String> ids, List<Map<String, Object>> datas, boolean rebuidIndex);
+
+	/**
+	 * 更新多个文档，不存在就插入
+	 * 
+	 * @param ids
 	 * @param jsons
 	 * @return 更新是否成功,如果有一条更新失败，则返回失败
 	 */
@@ -247,10 +363,30 @@ public interface ISearchClient {
 	 * 更新多个文档，不存在就插入
 	 * 
 	 * @param ids
+	 * @param jsons
+	 * @param rebuidIndex
+	 *            是否重建索引，数据量大时设置为false
+	 * @return 更新是否成功,如果有一条更新失败，则返回失败
+	 */
+	public boolean bulkJsonUpsert(List<String> ids, List<String> jsons, boolean rebuidIndex);
+
+	/**
+	 * 更新多个文档，不存在就插入
+	 * 
+	 * @param ids
 	 * @param datas
 	 * @return 批量更新插入是否成功，有一个错误则失败
 	 */
 	public <T> boolean bulkUpsert(List<String> ids, List<T> datas);
+	
+	/**
+	 * 更新多个文档，不存在就插入
+	 * @param ids
+	 * @param datas
+	 * @param rebuidIndex 是否重建索引，数据量大时设置为false
+	 * @return 批量更新插入是否成功，有一个错误则失败
+	 */
+	public <T> boolean bulkUpsert(List<String> ids, List<T> datas, boolean rebuidIndex);
 
 	/**
 	 * 更新多个文档，不存在就插入
@@ -260,6 +396,15 @@ public interface ISearchClient {
 	 * @return 批量更新插入是否成功，有一个错误则失败
 	 */
 	public boolean bulkUpsert(List<String> ids, Set<JsonBuilder> jsonBuilders);
+	
+	/**
+	 * 更新多个文档，不存在就插入
+	 * @param ids
+	 * @param jsonBuilders
+	 * @param rebuidIndex 是否重建索引，数据量大时设置为false
+	 * @return 批量更新插入是否成功，有一个错误则失败
+	 */
+	public boolean bulkUpsert(List<String> ids, Set<JsonBuilder> jsonBuilders, boolean rebuidIndex);
 
 	/**
 	 * 按照条件查询，age:(>=10 AND <50) | age:(>=10 AND <50) AND name:1234
@@ -335,15 +480,21 @@ public interface ISearchClient {
 	 */
 	public <T> Result<T> search(List<SearchCriteria> searchCriterias, int from, int offset, @Nullable List<Sort> sorts,
 			Class<T> clazz);
-	
+
 	/**
 	 * 按照查询对象进行查询，查询条件对象支持各种嵌套
-	 * @param searchCriterias 查询条件对象列表
-	 * @param from  分页查询起始位置
-	 * @param offset 分页每页数量
-	 * @param sorts  排序对象列表，可NULL
-	 * @param typeGetter 类型获取器，主要用来支持泛型类型，使用方式：TypeGetter<List<String>> typeGetter=TypeGetter<List<String>>() {};
-	 * 其中里面为泛型的具体使用方式
+	 * 
+	 * @param searchCriterias
+	 *            查询条件对象列表
+	 * @param from
+	 *            分页查询起始位置
+	 * @param offset
+	 *            分页每页数量
+	 * @param sorts
+	 *            排序对象列表，可NULL
+	 * @param typeGetter
+	 *            类型获取器，主要用来支持泛型类型，使用方式：TypeGetter<List<String>>
+	 *            typeGetter=TypeGetter<List<String>>() {}; 其中里面为泛型的具体使用方式
 	 * @return
 	 */
 	public <T> Result<T> search(List<SearchCriteria> searchCriterias, int from, int offset, @Nullable List<Sort> sorts,
@@ -366,17 +517,25 @@ public interface ISearchClient {
 
 	/**
 	 * 按照查询对象进行查询，查询条件对象支持各种嵌套
-	 * @param searchCriterias 查询条件对象列表
-	 * @param from  分页查询起始位置
-	 * @param offset 分页每页数量
-	 * @param sorts  排序对象列表，可NULL
-	 * @param typeGetter 类型获取器，主要用来支持泛型类型，使用方式：TypeGetter<List<String>> typeGetter=TypeGetter<List<String>>() {};
-	 * 其中里面为泛型的具体使用方式
-	 * @param resultFields 需要返回的列数组
+	 * 
+	 * @param searchCriterias
+	 *            查询条件对象列表
+	 * @param from
+	 *            分页查询起始位置
+	 * @param offset
+	 *            分页每页数量
+	 * @param sorts
+	 *            排序对象列表，可NULL
+	 * @param typeGetter
+	 *            类型获取器，主要用来支持泛型类型，使用方式：TypeGetter<List<String>>
+	 *            typeGetter=TypeGetter<List<String>>() {}; 其中里面为泛型的具体使用方式
+	 * @param resultFields
+	 *            需要返回的列数组
 	 * @return
 	 */
 	public <T> Result<T> search(List<SearchCriteria> searchCriterias, int from, int offset, @Nullable List<Sort> sorts,
 			@SuppressWarnings("rawtypes") TypeGetter typeGetter, String[] resultFields);
+
 	/**
 	 * @param searchCriterias
 	 * @param from
@@ -655,9 +814,10 @@ public interface ISearchClient {
 	 * @return 增加模型是否成功
 	 */
 	public boolean addMapping(String indexName, String type, String json, boolean addDynamicTemplate);
-	
+
 	/**
 	 * 动态模板的mapping创建，支持指定那些值得进行分词，哪些不进行分词，由matchs控制，注意顺序，前面的匹配就进行前面的规则了，一定要配置一条默认规则
+	 * 
 	 * @param indexName
 	 * @param type
 	 * @param json
