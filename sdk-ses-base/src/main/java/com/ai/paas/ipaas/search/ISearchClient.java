@@ -849,6 +849,11 @@ public interface ISearchClient {
 	public boolean refresh();
 
 	/**
+	 * 设置索引重建索引的时间， 
+	 * @param seconds 秒数，-1表示不刷新
+	 */
+	public boolean setRefeshTime(long seconds);
+	/**
 	 * 关闭
 	 */
 	public void close();

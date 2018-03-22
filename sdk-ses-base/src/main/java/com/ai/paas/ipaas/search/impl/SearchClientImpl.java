@@ -21,6 +21,7 @@ import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsRequest;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsResponse;
+import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -1168,6 +1169,18 @@ public class SearchClientImpl implements ISearchClient {
 				.setSource(esgson.toJson(typeObj)).get();
 		logger.info("add mapping:\r\n" + typeObj);
 		if (putMappingResponse.isAcknowledged())
+			return true;
+		else
+			return false;
+	}
+
+	@Override
+	public boolean setRefeshTime(long seconds) {
+		Settings settings = Settings.settingsBuilder().put("index.refresh_interval", seconds).build();
+
+		UpdateSettingsResponse usrp = client.admin().indices().prepareUpdateSettings().setIndices(indexName)
+				.setSettings(settings).get();
+		if (usrp.isAcknowledged())
 			return true;
 		else
 			return false;
