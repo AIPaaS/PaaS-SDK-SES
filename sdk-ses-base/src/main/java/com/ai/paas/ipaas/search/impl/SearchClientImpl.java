@@ -1177,7 +1177,7 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public boolean setRefeshTime(long seconds) {
-		Settings settings = Settings.settingsBuilder().put("index.refresh_interval", seconds).build();
+		Settings settings = Settings.settingsBuilder().put("index.refresh_interval", seconds+"s").build();
 
 		UpdateSettingsResponse usrp = client.admin().indices().prepareUpdateSettings().setIndices(indexName)
 				.setSettings(settings).get();
