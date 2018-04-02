@@ -82,7 +82,7 @@ public class SearchClientImpl implements ISearchClient {
 	private TransportClient client;
 	private Gson esgson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ").create();
 	private Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
-	private final int batchSize=1000;
+	private final int batchSize = 1000;
 
 	public SearchClientImpl(String hosts, String indexName, String id) {
 		this.indexName = indexName;
@@ -92,6 +92,9 @@ public class SearchClientImpl implements ISearchClient {
 	}
 
 	public void initClient() {
+		// 如果客户端不为空，且还连接到某个节点则复用
+		if (null != client && !client.connectedNodes().isEmpty())
+			return;
 		List<String> clusterList = new ArrayList<String>();
 		try {
 			client = TransportClient.builder().settings(settings).build();
@@ -704,7 +707,7 @@ public class SearchClientImpl implements ISearchClient {
 			}
 			logger.info("--ES search:\r\n" + searchRequestBuilder.toString());
 			SearchResponse searchResponse;
-			if(null== resultFields || resultFields.length ==0 )
+			if (null == resultFields || resultFields.length == 0)
 				searchResponse = searchRequestBuilder.get();
 			else
 				searchResponse = searchRequestBuilder.setFetchSource(resultFields, null).get();
@@ -1181,7 +1184,7 @@ public class SearchClientImpl implements ISearchClient {
 
 	@Override
 	public boolean setRefeshTime(long seconds) {
-		Settings settings = Settings.settingsBuilder().put("index.refresh_interval", seconds+"s").build();
+		Settings settings = Settings.settingsBuilder().put("index.refresh_interval", seconds + "s").build();
 
 		UpdateSettingsResponse usrp = client.admin().indices().prepareUpdateSettings().setIndices(indexName)
 				.setSettings(settings).get();
