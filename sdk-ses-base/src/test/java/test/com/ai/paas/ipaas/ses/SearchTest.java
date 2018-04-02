@@ -43,7 +43,7 @@ public class SearchTest {
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
 		// String hosts = "10.1.235.22:9300,10.1.235.23:9300,10.1.235.24:9300";
-		String hosts = "127.0.0.1:9300";
+		String hosts = "10.19.10.84:39300";
 		mapping = "{" + "   \"userInfo\" : {" + "     \"properties\" : {"
 				+ "     	\"userId\" :  {\"type\" : \"string\", \"store\" : \"yes\",\"index\": \"not_analyzed\"},"
 				+ "       	\"name\" : {\"type\" : \"string\", \"store\" : \"yes\",\"analyzer\":\"nGram_analyzer\"},"
@@ -61,9 +61,9 @@ public class SearchTest {
 
 	@Before
 	public void setUp() throws Exception {
-		if (client.existIndex(indexName))
-			client.deleteIndex(indexName);
-		client.createIndex(indexName, 3, 1);
+		//if (client.existIndex(indexName))
+		//	client.deleteIndex(indexName);
+		//client.createIndex(indexName, 3, 1);
 	}
 
 	@After
@@ -727,5 +727,9 @@ public class SearchTest {
 
 		assertTrue(client.addMapping("user", "userInfo", mapping2, false));
 	}
-
+	@Test
+	public void testExistingMapping() {
+		assertTrue(client.existMapping("mgmt-chl-index", "mgmt-chl-index"));
+	}
+	
 }

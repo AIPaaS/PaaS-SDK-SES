@@ -703,7 +703,11 @@ public class SearchClientImpl implements ISearchClient {
 						highlightCSS);
 			}
 			logger.info("--ES search:\r\n" + searchRequestBuilder.toString());
-			SearchResponse searchResponse = searchRequestBuilder.setFetchSource(resultFields, null).get();
+			SearchResponse searchResponse;
+			if(null== resultFields || resultFields.length ==0 )
+				searchResponse = searchRequestBuilder.get();
+			else
+				searchResponse = searchRequestBuilder.setFetchSource(resultFields, null).get();
 			List<T> list = SearchHelper.getSearchResult(client, searchResponse, clazz, typeGetter, from, offset);
 
 			result.setContents(list);
