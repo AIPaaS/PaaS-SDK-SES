@@ -5,8 +5,10 @@ package com.ai.paas.ipaas.search.impl;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.elasticsearch.action.WriteConsistencyLevel;
@@ -68,6 +70,7 @@ import com.ai.paas.ipaas.util.StringUtil;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 public class SearchClientImpl implements ISearchClient {
@@ -1189,6 +1192,27 @@ public class SearchClientImpl implements ISearchClient {
 		UpdateSettingsResponse usrp = client.admin().indices().prepareUpdateSettings().setIndices(indexName)
 				.setSettings(settings).get();
 		if (usrp.isAcknowledged())
+			return true;
+		else
+			return false;
+	}
+
+	@Override
+	public boolean addMapping(String indexName, String json) {
+		// 这里要做些处理，如果用户没有type,或者对应不上应该报错
+		Assert.notNull(indexName, "Index Name can not null");
+		Assert.notNull(json, "mapping can not null");
+		JsonObject jsonObj = esgson.fromJson(json, JsonObject.class);
+		String type = null;
+		Iterator<Entry<String, JsonElement>> iter = jsonObj.entrySet().iterator();
+		while (iter.hasNext()) {
+			type = iter.next().getKey();
+			break;
+		}
+		PutMappingResponse putMappingResponse = client.admin().indices().preparePutMapping(indexName).setType(type)
+				.setSource(json).get();
+		logger.info("add mapping:\r\n" + json);
+		if (putMappingResponse.isAcknowledged())
 			return true;
 		else
 			return false;

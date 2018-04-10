@@ -106,5 +106,14 @@ public class SearchDynamicTempleteTest {
 		matchs.add(defaultNotAnalyzed);
 		assertTrue(client.addMapping(indexName, indexName, mapping, matchs));
 	}
+	
+	@Test
+	public void testAddJsonMapping() {
+		if (client.existIndex(indexName))
+			client.deleteIndex(indexName);
+		client.createIndex(indexName, 3, 0);
+		String m="{ \"userInfo\":{ \"properties\":{ \"address\":{\"type\":\"string\",\"store\":\"yes\",\"analyzer\":\"ik_max_word\"},\"dxf\":{\"type\":\"string\",\"store\":\"yes\",\"index\":\"not_analyzed\"}},\"dynamic_templates\":[{\"NotAnalyzed\":{\"match_mapping_type\":\"string\",\"match_pattern\":\"regex\",\"match\":\"^\\\\S*?(id)$\",\"mapping\":{\"type\":\"string\",\"index\":\"not_analyzed\"}}},{\"Analyzed\":{\"match_mapping_type\":\"string\",\"match_pattern\":\"regex\",\"match\":\"^\\\\S*?[(name)|(content)|(desc)]\\\\S*?$\",\"mapping\":{\"type\":\"string\",\"analyzer\":\"ik_max_word\"}}},{\"default\":{\"match_mapping_type\":\"string\",\"match\":\"*\",\"mapping\":{\"type\":\"string\",\"index\":\"not_analyzed\"}}}]}}";
+		assertTrue(client.addMapping(indexName, m));
+	}
 
 }

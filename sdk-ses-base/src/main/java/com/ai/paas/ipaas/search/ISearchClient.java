@@ -764,6 +764,61 @@ public interface ISearchClient {
 	 */
 	public boolean existMapping(String indexName, String mapping);
 
+	
+	/**
+	 * 直接创建mapping,需要自己准备好全部部分
+	 * {
+		*	"user": {
+		*		"properties": {
+		*			"address": {
+		*				"type": "string",
+		*				"store": "yes",
+		*				"analyzer": "ik_max_word"
+		*			},
+		*			"dxf": {
+		*				"type": "string",
+		*				"store": "yes",
+		*				"index": "not_analyzed"
+		*			}
+		*		},
+		*		"dynamic_templates": [{
+		*			"NotAnalyzed": {
+		*				"match_mapping_type": "string",
+		*				"match_pattern": "regex",
+		*				"match": "^\\S*?(id)$",
+		*				"mapping": {
+		*					"type": "string",
+		*					"index": "not_analyzed"
+		*				}
+		*			}
+		*		}, {
+		*			"Analyzed": {
+		*				"match_mapping_type": "string",
+		*				"match_pattern": "regex",
+		*				"match": "^\\S*?[(name)|(content)|(desc)]\\S*?$",
+		*				"mapping": {
+		*					"type": "string",
+		*					"analyzer": "ik_max_word"
+		*				}
+		*			}
+		*		}, {
+		*			"default": {
+		*				"match_mapping_type": "string",
+		*				"match": "*",
+		*				"mapping": {
+		*					"type": "string",
+		*					"index": "not_analyzed"
+		*				}
+		*			}
+		*		}]
+		*	}
+		*}
+	 * @param indexName
+	 * @param json
+	 * @return
+	 */
+	public boolean addMapping(String indexName, String json);
+	
 	/**
 	 * 增加索引对象定义，自从2.0以后，不支持在设置ID为文档的某个字段，需要在 插入或获取时自己指定
 	 * 
@@ -774,14 +829,14 @@ public interface ISearchClient {
 	 * @param json
 	 * 
 	 *            <pre>
-	 * {
-	 *   "userInfo" : {
+	 * 
+	 *    {
 	 *     "properties" : {
 	 *     	 "userId" :  {"type" : "string", "store" : "yes","index": "not_analyzed"}
 	 *       "message" : {"type" : "string", "store" : "yes"}
 	 *     }
 	 *   }
-	 * }
+	 * 
 	 *            </pre>
 	 * 
 	 * @return 增加模型是否成功
