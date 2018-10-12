@@ -37,6 +37,8 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 
 public class SearchHelper {
+	
+	private static final int MATCH_PHRASE_SLOP=50;
 	private SearchHelper() {
 
 	}
@@ -200,7 +202,7 @@ public class SearchHelper {
 							.operator(mySearchOption.getTermOperator() == SearchOption.TermOperator.AND
 									? MatchQueryBuilder.Operator.AND : MatchQueryBuilder.Operator.OR)
 							.minimumShouldMatch(mySearchOption.getQueryStringPrecision())
-							.type(MatchQueryBuilder.Type.PHRASE);
+							.type(MatchQueryBuilder.Type.PHRASE).slop(MATCH_PHRASE_SLOP);
 
 				}
 			}

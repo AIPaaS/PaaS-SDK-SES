@@ -43,7 +43,8 @@ public class SearchTest {
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
 		// String hosts = "10.1.235.22:9300,10.1.235.23:9300,10.1.235.24:9300";
-		String hosts = "10.19.10.84:39300";
+		//String hosts = "10.19.10.84:39300";
+		String hosts = "10.15.16.130:9805";
 		mapping = "{" + "   \"userInfo\" : {" + "     \"properties\" : {"
 				+ "     	\"userId\" :  {\"type\" : \"string\", \"store\" : \"yes\",\"index\": \"not_analyzed\"},"
 				+ "       	\"name\" : {\"type\" : \"string\", \"store\" : \"yes\",\"analyzer\":\"nGram_analyzer\"},"
