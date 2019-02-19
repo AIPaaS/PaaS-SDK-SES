@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.elasticsearch.index.query.QueryBuilder;
+
 public class SearchCriteria implements Serializable {
 
 	private static final long serialVersionUID = 9152243091714512036L;
@@ -12,6 +14,17 @@ public class SearchCriteria implements Serializable {
 	private SearchOption option;
 
 	private List<SearchCriteria> subCriterias;
+
+	//原生的查询条件
+	private QueryBuilder builder;
+	
+	public QueryBuilder getBuilder() {
+		return builder;
+	}
+
+	public void setBuilder(QueryBuilder builder) {
+		this.builder = builder;
+	}
 
 	public SearchCriteria() {
 		values = new ArrayList<Object>();

@@ -1,9 +1,11 @@
 package com.ai.paas.ipaas.search.impl;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
@@ -24,6 +26,7 @@ import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsBuilder;
+import org.elasticsearch.search.sort.GeoDistanceSortBuilder;
 
 import com.ai.paas.ipaas.search.SearchRuntimeException;
 import com.ai.paas.ipaas.search.common.TypeGetter;
@@ -31,6 +34,7 @@ import com.ai.paas.ipaas.search.vo.AggField;
 import com.ai.paas.ipaas.search.vo.AggResult;
 import com.ai.paas.ipaas.search.vo.SearchCriteria;
 import com.ai.paas.ipaas.search.vo.SearchOption;
+import com.ai.paas.ipaas.search.vo.Sort;
 import com.ai.paas.ipaas.util.StringUtil;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -116,15 +120,24 @@ public class SearchHelper {
 					}
 				}
 
-				String field = getLowerFormatField(searchCriteria.getField());
-				if (!StringUtil.isBlank(field)) {
-					SearchOption searchOption = searchCriteria.getOption();
-					QueryBuilder queryBuilder = createSingleFieldQueryBuilder(field, searchCriteria.getFieldValue(),
-							searchOption);
-					if (queryBuilder != null) {
-						searchCriteria.getOption().getSearchLogic().convertQueryBuilder(rootQueryBuilder, queryBuilder);
-					}
+				QueryBuilder builder=searchCriteria.getBuilder();
+				//如果原生的查询不为空，则优先用原生的查询条件。gucl--20190219
+				if(builder!=null) {
+					searchCriteria.getOption().getSearchLogic().convertQueryBuilder(rootQueryBuilder, builder);
 				}
+				//原生的查询条件为空时，按自定义的查询条件
+				else {
+					String field = getLowerFormatField(searchCriteria.getField());
+					if (!StringUtil.isBlank(field)) {
+						SearchOption searchOption = searchCriteria.getOption();
+						QueryBuilder queryBuilder = createSingleFieldQueryBuilder(field, searchCriteria.getFieldValue(),
+								searchOption);
+						if (queryBuilder != null) {
+							searchCriteria.getOption().getSearchLogic().convertQueryBuilder(rootQueryBuilder, queryBuilder);
+						}
+					}//end if
+				}
+				
 
 			}
 			return rootQueryBuilder;
@@ -260,8 +273,11 @@ public class SearchHelper {
 
 	@SuppressWarnings("unchecked")
 	public static <T> List<T> getSearchResult(TransportClient client, SearchResponse response, Class<T> clazz,
-			@SuppressWarnings("rawtypes") TypeGetter typeGetter, int from, int offset) {
+			@SuppressWarnings("rawtypes") TypeGetter typeGetter, int from, int offset, List<Sort> sorts) {
 		try {
+			//判断sorts中是否包含geo经纬度排序 为-1说明不存在
+			int geoSortIndex=getGeoSortIndex(sorts);
+			
 			List<T> results = new ArrayList<>();
 			SearchHits hits = response.getHits();
 			if (hits.getTotalHits() == 0) {
@@ -274,8 +290,21 @@ public class SearchHelper {
 					// from， offset处
 					// Handle the hit...
 					if (start >= from && start < (from + offset)) {
+						//存在经纬度排序，则计算直线距离 --gucl -20190219
+						Map<String, Object> hitMap=null;
+						if(geoSortIndex>-1) {
+							// 获取距离值，并保留两位小数点
+				            BigDecimal geoDis = new BigDecimal((Double) hit.getSortValues()[geoSortIndex]);
+				            hitMap = hit.getSource();
+				            // 在创建MAPPING的时候，属性名的不可为geoDistance。
+				            hitMap.put("geoDistance", geoDis.setScale(5, BigDecimal.ROUND_HALF_DOWN));
+						}
+						
 						// 找到位置，开始存储，到偏移就结束
 						String source = hit.getSourceAsString();
+						if(hitMap!=null) {
+							source=gson.toJson(hitMap);
+						}
 						if (null != clazz && !clazz.getName().equals(String.class.getName())) {
 							results.add(gson.fromJson(source, clazz));
 						} else if (null != typeGetter) {
@@ -303,6 +332,22 @@ public class SearchHelper {
 		} catch (Exception e) {
 			throw new SearchRuntimeException("ES search error", e);
 		}
+	}
+
+	//获取地理位置排序的索引
+	private static int getGeoSortIndex(List<Sort> sorts) {
+		int res=-1;
+		if(sorts!=null&&sorts.size()>0) {
+			for(int i=0;i<sorts.size();i++) {
+				Sort sort=sorts.get(i);
+				//获取地理位置索引
+				if(sort.getSortBuilder() instanceof GeoDistanceSortBuilder) {
+					res=i;
+					break;
+				}
+			}
+		}
+		return res;
 	}
 
 	public static String getSearchResult(SearchResponse response) {

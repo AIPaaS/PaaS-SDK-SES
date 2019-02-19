@@ -697,10 +697,16 @@ public class SearchClientImpl implements ISearchClient {
 			} else {
 				/* 如果需要排序 */
 				for (Sort sort : sorts) {
-					SortOrder sortOrder = sort.getOrder().compareTo(Sort.SortOrder.DESC) == 0 ? SortOrder.DESC
-							: SortOrder.ASC;
-
-					searchRequestBuilder = searchRequestBuilder.addSort(sort.getSortBy(), sortOrder);
+					//优先使用原生的搜索条件--gucl--20190219
+					if(sort.getSortBuilder()!=null) {
+						searchRequestBuilder = searchRequestBuilder.addSort(sort.getSortBuilder());
+					}
+					else {
+						SortOrder sortOrder = sort.getOrder().compareTo(Sort.SortOrder.DESC) == 0 ? SortOrder.DESC
+								: SortOrder.ASC;
+						
+						searchRequestBuilder = searchRequestBuilder.addSort(sort.getSortBy(), sortOrder);
+					}
 				}
 			}
 			// 增加高亮
@@ -714,7 +720,7 @@ public class SearchClientImpl implements ISearchClient {
 				searchResponse = searchRequestBuilder.get();
 			else
 				searchResponse = searchRequestBuilder.setFetchSource(resultFields, null).get();
-			List<T> list = SearchHelper.getSearchResult(client, searchResponse, clazz, typeGetter, from, offset);
+			List<T> list = SearchHelper.getSearchResult(client, searchResponse, clazz, typeGetter, from, offset,sorts);
 
 			result.setContents(list);
 			result.setCounts(searchResponse.getHits().getTotalHits());
@@ -870,7 +876,7 @@ public class SearchClientImpl implements ISearchClient {
 					.setSize(100).setExplain(true).setHighlighterRequireFieldMatch(true);
 			SearchResponse response = searchRequestBuilder.get();
 
-			List<T> list = SearchHelper.getSearchResult(client, response, clazz, null, from, offset);
+			List<T> list = SearchHelper.getSearchResult(client, response, clazz, null, from, offset,sorts);
 
 			result.setContents(list);
 			result.setCounts(response.getHits().totalHits());
@@ -921,7 +927,7 @@ public class SearchClientImpl implements ISearchClient {
 			}
 			SearchResponse response = searchRequestBuilder.get();
 
-			List<T> list = SearchHelper.getSearchResult(client, response, clazz, null, from, offset);
+			List<T> list = SearchHelper.getSearchResult(client, response, clazz, null, from, offset,sorts);
 
 			result.setContents(list);
 			result.setCounts(response.getHits().totalHits());

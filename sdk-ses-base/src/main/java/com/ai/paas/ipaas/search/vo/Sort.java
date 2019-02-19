@@ -2,6 +2,8 @@ package com.ai.paas.ipaas.search.vo;
 
 import java.io.Serializable;
 
+import org.elasticsearch.search.sort.SortBuilder;
+
 import com.ai.paas.ipaas.util.StringUtil;
 
 public class Sort implements Serializable {
@@ -37,6 +39,17 @@ public class Sort implements Serializable {
 
 	private String sortBy;
 	private SortOrder order = SortOrder.DESC;
+
+	//原生的sortbuilder---gucl 20190219
+	SortBuilder sortBuilder;
+	
+	public SortBuilder getSortBuilder() {
+		return sortBuilder;
+	}
+
+	public void setSortBuilder(SortBuilder sortBuilder) {
+		this.sortBuilder = sortBuilder;
+	}
 
 	public Sort() {
 
