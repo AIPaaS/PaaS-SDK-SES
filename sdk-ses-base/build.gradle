@@ -77,8 +77,8 @@ publishing {
     repositories {
          maven {
             credentials {
-                username = publishUserName
-                password = publishUserPassword
+                username = repoUser
+                password = repoPassword
             }
             if(moduleVersion.endsWith('-SNAPSHOT')) {
                 url publishSnapShotsURL
