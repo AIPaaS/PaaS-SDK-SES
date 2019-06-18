@@ -701,6 +701,26 @@ public interface ISearchClient {
     public StatResult stat(List<SearchCriteria> searchCriterias, String field);
 
     /**
+     * 根据查询条件返回所有的记录条数
+     * 
+     * @param searchCriterias
+     * @param field           统计字段
+     * @param groupBy         分组字段
+     * @return 返回结果仅有记录数
+     */
+    public List<StatResult> count(List<SearchCriteria> searchCriterias, String field, String groupBy);
+
+    /**
+     * 根据查询条件返回统计结果，结果包括条数、最小值、最大值、合计值、平均值
+     * 
+     * @param searchCriterias
+     * @param field           统计字段
+     * @param groupBy         分组字段
+     * @return
+     */
+    public List<StatResult> stat(List<SearchCriteria> searchCriterias, String field, String groupBy);
+
+    /**
      * 创建索引
      * 
      * @param indexName

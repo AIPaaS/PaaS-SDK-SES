@@ -1287,4 +1287,86 @@ public class SearchClientImpl implements ISearchClient {
         return result;
     }
 
+    @Override
+    public List<StatResult> stat(List<SearchCriteria> searchCriterias, String field, String groupBy) {
+        if (null == searchCriterias || StringUtil.isBlank(field) || StringUtil.isBlank(groupBy)
+                || searchCriterias.size() <= 0)
+            throw new SearchRuntimeException("IllegelArguments! null");
+        List<StatResult> results = new ArrayList<>();
+        try {
+            QueryBuilder queryBuilder = SearchHelper.createQueryBuilder(searchCriterias);
+            if (queryBuilder == null)
+                return results;
+            SearchRequestBuilder searchRequestBuilder = client.prepareSearch(indexName)
+                    .setSearchType(SearchType.DEFAULT).setQuery(queryBuilder);
+
+            TermsBuilder tb = AggregationBuilders.terms("groupAggs").field(groupBy)
+                    .subAggregation(AggregationBuilders.stats("agg").field(field).missing(0));
+            searchRequestBuilder.addAggregation(tb);
+            SearchResponse searchResponse = searchRequestBuilder.setSize(0).get();
+            // 得到所有桶
+            Terms aggs = searchResponse.getAggregations().get("groupAggs");
+            if (null == aggs)
+                return null;
+            StatResult sr = null;
+            for (Terms.Bucket entry : aggs.getBuckets()) {
+                sr = new StatResult();
+                sr.setGroupField(groupBy);
+                sr.setGroupKey(entry.getKeyAsString());
+                Stats agg = entry.getAggregations().get("agg");
+                sr.setCount(agg.getCount());
+                sr.setMin(agg.getMin());
+                sr.setMax(agg.getMax());
+                sr.setAvg(agg.getAvg());
+                sr.setSum(agg.getSum());
+                sr.setMinTxt(agg.getAvgAsString());
+                sr.setMaxTxt(agg.getMaxAsString());
+                sr.setAvgTxt(agg.getAvgAsString());
+                sr.setSumTxt(agg.getSumAsString());
+                results.add(sr);
+            }
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            throw new SearchRuntimeException("ES simpleAggregation error", e);
+        }
+        return results;
+    }
+
+    @Override
+    public List<StatResult> count(List<SearchCriteria> searchCriterias, String field, String groupBy) {
+        if (null == searchCriterias || StringUtil.isBlank(field) || StringUtil.isBlank(groupBy)
+                || searchCriterias.size() <= 0)
+            throw new SearchRuntimeException("IllegelArguments! null");
+        List<StatResult> results = new ArrayList<>();
+        try {
+            QueryBuilder queryBuilder = SearchHelper.createQueryBuilder(searchCriterias);
+            if (queryBuilder == null)
+                return results;
+            SearchRequestBuilder searchRequestBuilder = client.prepareSearch(indexName)
+                    .setSearchType(SearchType.DEFAULT).setQuery(queryBuilder);
+
+            TermsBuilder tb = AggregationBuilders.terms("groupAggs").field(groupBy)
+                    .subAggregation(AggregationBuilders.count("agg").field(field).missing(0));
+            searchRequestBuilder.addAggregation(tb);
+            SearchResponse searchResponse = searchRequestBuilder.setSize(0).get();
+            // 得到所有桶
+            Terms aggs = searchResponse.getAggregations().get("groupAggs");
+            if (null == aggs)
+                return null;
+            StatResult sr = null;
+            for (Terms.Bucket entry : aggs.getBuckets()) {
+                sr = new StatResult();
+                sr.setGroupField(groupBy);
+                sr.setGroupKey(entry.getKeyAsString());
+                ValueCount vc = entry.getAggregations().get("agg");
+                sr.setCount(vc.getValue());
+                results.add(sr);
+            }
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            throw new SearchRuntimeException("ES simpleAggregation error", e);
+        }
+        return results;
+    }
+
 }

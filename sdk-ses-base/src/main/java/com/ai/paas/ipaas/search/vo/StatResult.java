@@ -3,8 +3,10 @@ package com.ai.paas.ipaas.search.vo;
 import java.io.Serializable;
 
 public class StatResult implements Serializable {
-    
+
     private static final long serialVersionUID = -8965221403236079982L;
+    private String groupKey;
+    private String groupField;
     private long count;
     private double min;
     private double max;
@@ -14,6 +16,22 @@ public class StatResult implements Serializable {
     private String maxTxt;
     private String avgTxt;
     private String sumTxt;
+
+    public String getGroupField() {
+        return groupField;
+    }
+
+    public void setGroupField(String groupField) {
+        this.groupField = groupField;
+    }
+
+    public String getGroupKey() {
+        return groupKey;
+    }
+
+    public void setGroupKey(String groupKey) {
+        this.groupKey = groupKey;
+    }
 
     public long getCount() {
         return count;

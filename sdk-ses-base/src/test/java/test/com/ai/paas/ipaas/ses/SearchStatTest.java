@@ -55,7 +55,7 @@ public class SearchStatTest {
         StatResult sr = client.count(searchCriterias, "serviceNum");
         assertTrue(sr.getCount() == 6);
     }
-    
+
     @Test
     public void testStat() {
         List<SearchCriteria> searchCriterias = new ArrayList<>();
@@ -67,6 +67,32 @@ public class SearchStatTest {
         searchCriterias.add(subCriteria);
         StatResult sr = client.stat(searchCriterias, "activeTime");
         assertTrue(sr.getCount() == 6);
-        assertTrue(sr.getMaxTxt().equalsIgnoreCase("2019-06-04T02:40:25.000Z") );
+        assertTrue(sr.getMaxTxt().equalsIgnoreCase("2019-06-04T02:40:25.000Z"));
+    }
+
+    @Test
+    public void testCountGroupBy() {
+        List<SearchCriteria> searchCriterias = new ArrayList<>();
+        SearchCriteria subCriteria = new SearchCriteria();
+        subCriteria.setOption(new SearchOption(SearchLogic.must, SearchType.range));
+        subCriteria.setField("activeTime");
+        subCriteria.addFieldValue("2019-05-16T17:43:43+0800");
+        subCriteria.addFieldValue("2019-06-04T10:40:25+0800");
+        searchCriterias.add(subCriteria);
+        List<StatResult> results = client.count(searchCriterias, "serviceNum", "serviceNum");
+        assertTrue(results.size() == 4);
+    }
+
+    @Test
+    public void testStatGroupBy() {
+        List<SearchCriteria> searchCriterias = new ArrayList<>();
+        SearchCriteria subCriteria = new SearchCriteria();
+        subCriteria.setOption(new SearchOption(SearchLogic.must, SearchType.range));
+        subCriteria.setField("activeTime");
+        subCriteria.addFieldValue("2019-05-16T17:43:43+0800");
+        subCriteria.addFieldValue("2019-06-04T10:40:25+0800");
+        searchCriterias.add(subCriteria);
+        List<StatResult> results = client.stat(searchCriterias, "activeTime","serviceNum");
+        assertTrue(results.size() == 4);
     }
 }
