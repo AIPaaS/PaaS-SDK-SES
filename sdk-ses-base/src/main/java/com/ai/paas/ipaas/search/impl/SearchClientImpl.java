@@ -103,10 +103,11 @@ public class SearchClientImpl implements ISearchClient {
     }
 
     @Override
-    public void setESDateFmt(String dateFmt) {
-        this.esDateFmt = dateFmt;
-        esgson = new GsonBuilder().setDateFormat(esDateFmt).create();
-        SearchHelper.setDateFmt(esDateFmt);
+    public void setESDateFmt(String esDateFmt, String dateFmt) {
+        this.esDateFmt = esDateFmt;
+        esgson = new GsonBuilder().setDateFormat(this.esDateFmt).create();
+        SearchHelper.setDateFmt(this.esDateFmt);
+        gson = new GsonBuilder().setDateFormat(dateFmt).create();
     }
 
     public void initClient() {

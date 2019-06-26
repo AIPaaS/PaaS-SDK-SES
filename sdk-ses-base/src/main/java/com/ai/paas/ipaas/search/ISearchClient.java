@@ -22,10 +22,10 @@ import java.util.Set;
 public interface ISearchClient {
     /**
      * 设置ES的时间格式，需要在插入数据前设置，只设置一次
-     * 
-     * @param dateFmt
+     * @param esDateFmt ES的时间格式
+     * @param dateFmt   ES查询出来后转换的时间格式
      */
-    public void setESDateFmt(String dateFmt);
+    public void setESDateFmt(String esDateFmt, String dateFmt);
 
     /**
      * 插入单条索引数据
