@@ -106,6 +106,7 @@ public class SearchClientImpl implements ISearchClient {
     public void setESDateFmt(String dateFmt) {
         this.esDateFmt = dateFmt;
         esgson = new GsonBuilder().setDateFormat(esDateFmt).create();
+        SearchHelper.setDateFmt(esDateFmt);
     }
 
     public void initClient() {

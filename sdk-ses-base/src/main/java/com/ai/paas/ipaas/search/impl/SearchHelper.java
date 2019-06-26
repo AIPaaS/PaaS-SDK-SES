@@ -51,6 +51,10 @@ public class SearchHelper {
 
     private static Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create();
 
+    public static void setDateFmt(String dateFmt) {
+        gson = new GsonBuilder().setDateFormat(dateFmt).create();
+    }
+
     public static String getId(String json, String id) {
         JsonObject obj = gson.fromJson(json, JsonObject.class);
         if (null != obj.get(id))
