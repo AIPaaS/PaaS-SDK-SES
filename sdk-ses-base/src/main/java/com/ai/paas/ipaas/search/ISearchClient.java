@@ -20,6 +20,12 @@ import java.util.Map;
 import java.util.Set;
 
 public interface ISearchClient {
+    /**
+     * 设置ES的时间格式，需要在插入数据前设置，只设置一次
+     * 
+     * @param dateFmt
+     */
+    public void setESDateFmt(String dateFmt);
 
     /**
      * 插入单条索引数据
