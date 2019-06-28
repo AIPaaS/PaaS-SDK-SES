@@ -1189,6 +1189,7 @@ public class SearchClientImpl implements ISearchClient {
 
             ValueCountBuilder vcb = AggregationBuilders.count("agg").field(field).missing(0);
             searchRequestBuilder.addAggregation(vcb);
+            logger.info("--ES count search:\r\n{}", searchRequestBuilder);
             SearchResponse searchResponse = searchRequestBuilder.setSize(0).get();
 
             ValueCount agg = searchResponse.getAggregations().get("agg");
@@ -1214,6 +1215,7 @@ public class SearchClientImpl implements ISearchClient {
 
             StatsBuilder sb = AggregationBuilders.stats("agg").field(field).missing(0);
             searchRequestBuilder.addAggregation(sb);
+            logger.info("--ES stat search:\r\n{}", searchRequestBuilder);
             SearchResponse searchResponse = searchRequestBuilder.setSize(0).get();
 
             Stats agg = searchResponse.getAggregations().get("agg");
@@ -1248,6 +1250,7 @@ public class SearchClientImpl implements ISearchClient {
             TermsBuilder tb = AggregationBuilders.terms("groupAggs").field(groupBy)
                     .subAggregation(AggregationBuilders.stats("agg").field(field).missing(0));
             searchRequestBuilder.addAggregation(tb);
+            logger.info("--ES stat search:\r\n{}", searchRequestBuilder);
             SearchResponse searchResponse = searchRequestBuilder.setSize(0).get();
             // 得到所有桶
             Terms aggs = searchResponse.getAggregations().get("groupAggs");
@@ -1292,6 +1295,7 @@ public class SearchClientImpl implements ISearchClient {
             TermsBuilder tb = AggregationBuilders.terms("groupAggs").field(groupBy)
                     .subAggregation(AggregationBuilders.count("agg").field(field).missing(0));
             searchRequestBuilder.addAggregation(tb);
+            logger.info("--ES count search:\r\n{}", searchRequestBuilder);
             SearchResponse searchResponse = searchRequestBuilder.setSize(0).get();
             // 得到所有桶
             Terms aggs = searchResponse.getAggregations().get("groupAggs");
