@@ -93,20 +93,21 @@ public class SearchClientImpl implements ISearchClient {
     private Gson esgson = new GsonBuilder().setDateFormat(esDateFmt).create();
     private Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create();
     private static final int BATCH_SIZE = 1000;
+    private SearchHelper searchHelper = new SearchHelper();
 
     public SearchClientImpl(String hosts, String indexName, String id) {
         this.indexName = indexName;
         this.id = id;
         this.hosts = hosts;
         initClient();
-
+        searchHelper.setDateFmt(this.esDateFmt);
     }
 
     @Override
     public void setESDateFmt(String esDateFmt, String dateFmt) {
         this.esDateFmt = esDateFmt;
         esgson = new GsonBuilder().setDateFormat(this.esDateFmt).create();
-        SearchHelper.setDateFmt(this.esDateFmt);
+        searchHelper.setDateFmt(this.esDateFmt);
         gson = new GsonBuilder().setDateFormat(dateFmt).create();
     }
 
@@ -178,7 +179,7 @@ public class SearchClientImpl implements ISearchClient {
             return false;
         IndexResponse response = null;
         // 判断一下是否有id字段
-        String parsedId = SearchHelper.getId(json, this.id);
+        String parsedId = searchHelper.getId(json, this.id);
         if (StringUtil.isBlank(parsedId)) {
             response = client.prepareIndex(indexName, indexName).setOpType(IndexRequest.OpType.CREATE).setSource(json)
                     .get();
@@ -208,7 +209,7 @@ public class SearchClientImpl implements ISearchClient {
         XContentBuilder builder = null;
         try {
             builder = jsonBuilder.getBuilder();
-            SearchHelper.hasId(builder, id);
+            searchHelper.hasId(builder, id);
             IndexResponse response = client.prepareIndex(indexName, indexName).setSource(builder).setRefresh(true)
                     .get();
             if (null != response && response.isCreated()) {
@@ -269,7 +270,7 @@ public class SearchClientImpl implements ISearchClient {
         // 此处要先scan出来，然后再批量删除
         List<String> ids = new ArrayList<>();
         QueryBuilder queryBuilder = null;
-        queryBuilder = SearchHelper.createQueryBuilder(searchCriteria);
+        queryBuilder = searchHelper.createQueryBuilder(searchCriteria);
         SearchResponse scrollResp = client.prepareSearch(indexName).setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setScroll(new TimeValue(60000)).setQuery(queryBuilder).setSize(100).execute().actionGet();
         while (true) {
@@ -445,9 +446,9 @@ public class SearchClientImpl implements ISearchClient {
         BulkRequestBuilder bulkRequest = client.prepareBulk();
         BulkResponse bulkResponse = null;
         for (String json : jsons) {
-            if (SearchHelper.hasId(json, id)) {
+            if (searchHelper.hasId(json, id)) {
                 bulkRequest
-                        .add(client.prepareIndex(indexName, indexName, SearchHelper.getId(json, id)).setSource(json));
+                        .add(client.prepareIndex(indexName, indexName, searchHelper.getId(json, id)).setSource(json));
             } else {
                 bulkRequest.add(client.prepareIndex(indexName, indexName).setSource(json));
             }
@@ -495,9 +496,9 @@ public class SearchClientImpl implements ISearchClient {
         BulkRequestBuilder bulkRequest = client.prepareBulk();
         BulkResponse bulkResponse = null;
         for (JsonBuilder jsonBuilder : jsonBuilders) {
-            if (SearchHelper.hasId(jsonBuilder.getBuilder(), id)) {
+            if (searchHelper.hasId(jsonBuilder.getBuilder(), id)) {
                 bulkRequest
-                        .add(client.prepareIndex(indexName, indexName, SearchHelper.getId(jsonBuilder.getBuilder(), id))
+                        .add(client.prepareIndex(indexName, indexName, searchHelper.getId(jsonBuilder.getBuilder(), id))
                                 .setSource(jsonBuilder.getBuilder()));
             } else {
                 bulkRequest.add(client.prepareIndex(indexName, indexName).setSource(jsonBuilder.getBuilder()));
@@ -692,7 +693,7 @@ public class SearchClientImpl implements ISearchClient {
             }
             // 增加高亮
             if (null != searchCriterias) {
-                searchRequestBuilder = SearchHelper.createHighlight(searchRequestBuilder, searchCriterias,
+                searchRequestBuilder = searchHelper.createHighlight(searchRequestBuilder, searchCriterias,
                         highlightCSS);
             }
             logger.info("--ES search:\r\n{}", searchRequestBuilder);
@@ -701,7 +702,7 @@ public class SearchClientImpl implements ISearchClient {
                 searchResponse = searchRequestBuilder.get();
             else
                 searchResponse = searchRequestBuilder.setFetchSource(resultFields, null).get();
-            List<T> list = SearchHelper.getSearchResult(client, searchResponse, clazz, typeGetter, from, offset, sorts);
+            List<T> list = searchHelper.getSearchResult(client, searchResponse, clazz, typeGetter, from, offset, sorts);
 
             result.setContents(list);
             result.setCounts(searchResponse.getHits().getTotalHits());
@@ -715,7 +716,7 @@ public class SearchClientImpl implements ISearchClient {
     @Override
     public <T> Result<T> searchBySQL(String query, int from, int offset, List<Sort> sorts, Class<T> clazz) {
         // 创建query
-        QueryBuilder queryBuilder = SearchHelper.createStringSQLBuilder(query);
+        QueryBuilder queryBuilder = searchHelper.createStringSQLBuilder(query);
         return search(queryBuilder, from, offset, sorts, clazz, null, null);
     }
 
@@ -723,7 +724,7 @@ public class SearchClientImpl implements ISearchClient {
     public <T> Result<T> searchBySQL(String querySQL, int from, int offset, List<Sort> sorts, Class<T> clazz,
             String[] resultFields) {
         // 创建query
-        QueryBuilder queryBuilder = SearchHelper.createStringSQLBuilder(querySQL);
+        QueryBuilder queryBuilder = searchHelper.createStringSQLBuilder(querySQL);
         return search(queryBuilder, from, offset, sorts, clazz, null, resultFields);
     }
 
@@ -741,7 +742,7 @@ public class SearchClientImpl implements ISearchClient {
     public <T> Result<T> search(List<SearchCriteria> searchCriterias, int from, int offset, List<Sort> sorts,
             Class<T> clazz) {
         // 创建query
-        QueryBuilder queryBuilder = SearchHelper.createQueryBuilder(searchCriterias);
+        QueryBuilder queryBuilder = searchHelper.createQueryBuilder(searchCriterias);
         return search(queryBuilder, from, offset, sorts, clazz, searchCriterias, null);
     }
 
@@ -749,7 +750,7 @@ public class SearchClientImpl implements ISearchClient {
     public <T> Result<T> search(List<SearchCriteria> searchCriterias, int from, int offset, List<Sort> sorts,
             Class<T> clazz, String[] resultFields) {
         // 创建query
-        QueryBuilder queryBuilder = SearchHelper.createQueryBuilder(searchCriterias);
+        QueryBuilder queryBuilder = searchHelper.createQueryBuilder(searchCriterias);
         return search(queryBuilder, from, offset, sorts, clazz, searchCriterias, resultFields);
     }
 
@@ -791,7 +792,7 @@ public class SearchClientImpl implements ISearchClient {
         Result<Map<String, Long>> result = new Result<>();
         result.setResultCode(PaaSConstant.ExceptionCode.SYSTEM_ERROR);
         try {
-            QueryBuilder queryBuilder = SearchHelper.createQueryBuilder(searchCriterias);
+            QueryBuilder queryBuilder = searchHelper.createQueryBuilder(searchCriterias);
             if (queryBuilder == null)
                 return result;
             SearchResponse searchResponse = client.prepareSearch(indexName).setSearchType(SearchType.DEFAULT)
@@ -818,7 +819,7 @@ public class SearchClientImpl implements ISearchClient {
         Result<List<AggResult>> result = new Result<>();
         result.setResultCode(PaaSConstant.ExceptionCode.SYSTEM_ERROR);
         try {
-            QueryBuilder queryBuilder = SearchHelper.createQueryBuilder(searchCriterias);
+            QueryBuilder queryBuilder = searchHelper.createQueryBuilder(searchCriterias);
             if (queryBuilder == null)
                 return result;
             result.setResultCode(PaaSConstant.RPC_CALL_OK);
@@ -830,13 +831,13 @@ public class SearchClientImpl implements ISearchClient {
                 TermsBuilder termBuilder = AggregationBuilders.terms(aggField.getField() + "_aggs")
                         .field(aggField.getField() + ".raw").size(0);
                 // 循环创建子聚合
-                termBuilder = SearchHelper.addSubAggs(termBuilder, aggField.getSubAggs());
+                termBuilder = searchHelper.addSubAggs(termBuilder, aggField.getSubAggs());
                 searchRequestBuilder.addAggregation(termBuilder);
             }
             SearchResponse searchResponse = searchRequestBuilder.setSize(0).get();
 
             result.setCounts(searchResponse.getHits().getTotalHits());
-            result.setAggs(SearchHelper.getAgg(searchResponse, fields));
+            result.setAggs(searchHelper.getAgg(searchResponse, fields));
         } catch (Exception e) {
             throw new SearchRuntimeException("aggregation error", e);
         }
@@ -854,7 +855,7 @@ public class SearchClientImpl implements ISearchClient {
                     .setSize(100).setExplain(true).setHighlighterRequireFieldMatch(true);
             SearchResponse response = searchRequestBuilder.get();
 
-            List<T> list = SearchHelper.getSearchResult(client, response, clazz, null, from, offset, sorts);
+            List<T> list = searchHelper.getSearchResult(client, response, clazz, null, from, offset, sorts);
 
             result.setContents(list);
             result.setCounts(response.getHits().totalHits());
@@ -899,16 +900,16 @@ public class SearchClientImpl implements ISearchClient {
                 TermsBuilder termBuilder = AggregationBuilders.terms(aggField.getField() + "_aggs")
                         .field(aggField.getField() + ".raw").size(0);
                 // 循环创建子聚合
-                termBuilder = SearchHelper.addSubAggs(termBuilder, aggField.getSubAggs());
+                termBuilder = searchHelper.addSubAggs(termBuilder, aggField.getSubAggs());
                 searchRequestBuilder.addAggregation(termBuilder);
             }
             SearchResponse response = searchRequestBuilder.get();
 
-            List<T> list = SearchHelper.getSearchResult(client, response, clazz, null, from, offset, sorts);
+            List<T> list = searchHelper.getSearchResult(client, response, clazz, null, from, offset, sorts);
 
             result.setContents(list);
             result.setCounts(response.getHits().totalHits());
-            result.setAggs(SearchHelper.getAgg(response, aggFields));
+            result.setAggs(searchHelper.getAgg(response, aggFields));
             result.setResultCode(PaaSConstant.RPC_CALL_OK);
         } catch (Exception e) {
             throw new SearchRuntimeException("ES searchIndex error", e);
@@ -1072,14 +1073,14 @@ public class SearchClientImpl implements ISearchClient {
     @Override
     public <T> Result<T> search(List<SearchCriteria> searchCriterias, int from, int offset, List<Sort> sorts,
             @SuppressWarnings("rawtypes") TypeGetter typeGetter, String[] resultFields) {
-        QueryBuilder queryBuilder = SearchHelper.createQueryBuilder(searchCriterias);
+        QueryBuilder queryBuilder = searchHelper.createQueryBuilder(searchCriterias);
         return search(queryBuilder, from, offset, sorts, null, typeGetter, searchCriterias, resultFields);
     }
 
     @Override
     public <T> Result<T> search(List<SearchCriteria> searchCriterias, int from, int offset, List<Sort> sorts,
             @SuppressWarnings("rawtypes") TypeGetter typeGetter) {
-        QueryBuilder queryBuilder = SearchHelper.createQueryBuilder(searchCriterias);
+        QueryBuilder queryBuilder = searchHelper.createQueryBuilder(searchCriterias);
         return search(queryBuilder, from, offset, sorts, null, typeGetter, searchCriterias, null);
     }
 
@@ -1181,7 +1182,7 @@ public class SearchClientImpl implements ISearchClient {
             throw new SearchRuntimeException("parameters is null");
         StatResult result = new StatResult();
         try {
-            QueryBuilder queryBuilder = SearchHelper.createQueryBuilder(searchCriterias);
+            QueryBuilder queryBuilder = searchHelper.createQueryBuilder(searchCriterias);
             if (queryBuilder == null)
                 return result;
             SearchRequestBuilder searchRequestBuilder = client.prepareSearch(indexName)
@@ -1196,7 +1197,7 @@ public class SearchClientImpl implements ISearchClient {
             long value = agg.getValue();
             result.setCount(value);
         } catch (Exception e) {
-            throw new SearchRuntimeException("ES simpleAggregation error", e);
+            throw new SearchRuntimeException("ES simple Aggregation error", e);
         }
         return result;
     }
@@ -1207,7 +1208,7 @@ public class SearchClientImpl implements ISearchClient {
             throw new SearchRuntimeException("stat parameters can not null!");
         StatResult result = new StatResult();
         try {
-            QueryBuilder queryBuilder = SearchHelper.createQueryBuilder(searchCriterias);
+            QueryBuilder queryBuilder = searchHelper.createQueryBuilder(searchCriterias);
             if (queryBuilder == null)
                 return result;
             SearchRequestBuilder searchRequestBuilder = client.prepareSearch(indexName)
@@ -1241,7 +1242,7 @@ public class SearchClientImpl implements ISearchClient {
             throw new SearchRuntimeException("IllegelArguments! null");
         List<StatResult> results = new ArrayList<>();
         try {
-            QueryBuilder queryBuilder = SearchHelper.createQueryBuilder(searchCriterias);
+            QueryBuilder queryBuilder = searchHelper.createQueryBuilder(searchCriterias);
             if (queryBuilder == null)
                 return results;
             SearchRequestBuilder searchRequestBuilder = client.prepareSearch(indexName)
@@ -1286,7 +1287,7 @@ public class SearchClientImpl implements ISearchClient {
             throw new SearchRuntimeException("IllegelArguments! null");
         List<StatResult> results = new ArrayList<>();
         try {
-            QueryBuilder queryBuilder = SearchHelper.createQueryBuilder(searchCriterias);
+            QueryBuilder queryBuilder = searchHelper.createQueryBuilder(searchCriterias);
             if (queryBuilder == null)
                 return results;
             SearchRequestBuilder searchRequestBuilder = client.prepareSearch(indexName)

@@ -45,17 +45,16 @@ public class SearchHelper {
 
     private static final int MATCH_PHRASE_SLOP = 50;
 
-    private SearchHelper() {
+    private String dtFmt = "yyyy-MM-dd'T'HH:mm:ssZZZ";
 
-    }
+    private Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create();
 
-    private static Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create();
-
-    public static void setDateFmt(String dateFmt) {
+    public void setDateFmt(String dateFmt) {
         gson = new GsonBuilder().setDateFormat(dateFmt).create();
+        this.dtFmt = dateFmt;
     }
 
-    public static String getId(String json, String id) {
+    public String getId(String json, String id) {
         JsonObject obj = gson.fromJson(json, JsonObject.class);
         if (null != obj.get(id))
             return obj.get(id).getAsString();
@@ -63,7 +62,7 @@ public class SearchHelper {
             return null;
     }
 
-    public static String getId(XContentBuilder builder, String id) {
+    public String getId(XContentBuilder builder, String id) {
         String json;
         try {
             json = builder.string();
@@ -73,7 +72,7 @@ public class SearchHelper {
         }
     }
 
-    public static boolean hasId(XContentBuilder builder, String id) {
+    public boolean hasId(XContentBuilder builder, String id) {
         String json;
         try {
             json = builder.string();
@@ -83,13 +82,13 @@ public class SearchHelper {
         }
     }
 
-    public static boolean hasId(String json, String id) {
+    public boolean hasId(String json, String id) {
 
         JsonObject obj = gson.fromJson(json, JsonObject.class);
         return null != obj.get(id);
     }
 
-    public static QueryBuilder createStringSQLBuilder(String query) {
+    public QueryBuilder createStringSQLBuilder(String query) {
         try {
             if (StringUtil.isBlank(query)) {
                 return null;
@@ -107,7 +106,7 @@ public class SearchHelper {
      * @param searchCriterias
      * @return 索引对象
      */
-    public static QueryBuilder createQueryBuilder(List<SearchCriteria> searchCriterias) {
+    public QueryBuilder createQueryBuilder(List<SearchCriteria> searchCriterias) {
         try {
             if (searchCriterias == null || searchCriterias.isEmpty()) {
                 return null;
@@ -150,7 +149,7 @@ public class SearchHelper {
         }
     }
 
-    private static String getLowerFormatField(String field) {
+    private String getLowerFormatField(String field) {
         if (StringUtil.isBlank(field))
             return null;
         return field;
@@ -159,8 +158,7 @@ public class SearchHelper {
     /*
      * 创建过滤条件
      */
-    public static QueryBuilder createSingleFieldQueryBuilder(String field, List<Object> values,
-            SearchOption mySearchOption) {
+    public QueryBuilder createSingleFieldQueryBuilder(String field, List<Object> values, SearchOption mySearchOption) {
         try {
 
             if (mySearchOption.getSearchType() == SearchOption.SearchType.range) {
@@ -228,7 +226,7 @@ public class SearchHelper {
         }
     }
 
-    private static RangeQueryBuilder createRangeQueryBuilder(String field, List<Object> valuesSet) {
+    private RangeQueryBuilder createRangeQueryBuilder(String field, List<Object> valuesSet) {
         // 这里需要判断下范围，是单值也可以
         if (null == valuesSet || valuesSet.isEmpty()) {
             return null;
@@ -248,9 +246,9 @@ public class SearchHelper {
              * （2）请确定mapping中是date类型，格式化格式是yyyy-MM-dd HH:mm:ss （3）请确定索引里的值是类似2012-01-01
              * 00:00:00的格式 （4）如果是从数据库导出的数据，请确定数据库字段是char或者varchar类型，而不是date类型（此类型可能会有问题）
              */
-            begin = SearchOption.formatDate(values[0]);
+            begin = SearchOption.formatDate(this.dtFmt, values[0]);
             if (values.length > 1)
-                end = SearchOption.formatDate(values[1]);
+                end = SearchOption.formatDate(this.dtFmt, values[1]);
         } else {
             begin = null == values[0] ? null : values[0].toString();
             if (values.length > 1)
@@ -275,7 +273,7 @@ public class SearchHelper {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> List<T> getSearchResult(TransportClient client, SearchResponse response, Class<T> clazz,
+    public <T> List<T> getSearchResult(TransportClient client, SearchResponse response, Class<T> clazz,
             @SuppressWarnings("rawtypes") TypeGetter typeGetter, int from, int offset, List<Sort> sorts) {
         try {
             // 判断sorts中是否包含geo经纬度排序 为-1说明不存在
@@ -338,7 +336,7 @@ public class SearchHelper {
     }
 
     // 获取地理位置排序的索引
-    private static int getGeoSortIndex(List<Sort> sorts) {
+    private int getGeoSortIndex(List<Sort> sorts) {
         int res = -1;
         if (sorts != null && !sorts.isEmpty()) {
             for (int i = 0; i < sorts.size(); i++) {
@@ -353,7 +351,7 @@ public class SearchHelper {
         return res;
     }
 
-    public static String getSearchResult(SearchResponse response) {
+    public String getSearchResult(SearchResponse response) {
         try {
             SearchHits hits = response.getHits();
             if (hits.getTotalHits() == 0) {
@@ -371,7 +369,7 @@ public class SearchHelper {
         }
     }
 
-    public static SearchRequestBuilder createHighlight(SearchRequestBuilder searchRequestBuilder,
+    public SearchRequestBuilder createHighlight(SearchRequestBuilder searchRequestBuilder,
             List<SearchCriteria> searchCriterias, String highlightCSS) {
         for (SearchCriteria searchCriteria : searchCriterias) {
             String field = getLowerFormatField(searchCriteria.getField());
@@ -392,7 +390,7 @@ public class SearchHelper {
         return searchRequestBuilder;
     }
 
-    public static List<AggResult> getAgg(SearchResponse searchResponse, List<AggField> fields) {
+    public List<AggResult> getAgg(SearchResponse searchResponse, List<AggField> fields) {
         List<AggResult> aggResults = new ArrayList<>();
         for (AggField field : fields) {
             Terms sortAggregate = searchResponse.getAggregations().get(field.getField() + "_aggs");
@@ -411,7 +409,7 @@ public class SearchHelper {
         return aggResults;
     }
 
-    private static List<AggResult> getSubAgg(Terms.Bucket entry, List<AggField> fields) {
+    private List<AggResult> getSubAgg(Terms.Bucket entry, List<AggField> fields) {
         List<AggResult> aggResults = new ArrayList<>();
         if (null == entry || null == fields || fields.isEmpty())
             return aggResults;
@@ -435,7 +433,7 @@ public class SearchHelper {
         return aggResults;
     }
 
-    public static TermsBuilder addSubAggs(TermsBuilder termBuilder, List<AggField> subFields) {
+    public TermsBuilder addSubAggs(TermsBuilder termBuilder, List<AggField> subFields) {
         if (null == subFields || subFields.isEmpty())
             return termBuilder;
         for (AggField field : subFields) {
