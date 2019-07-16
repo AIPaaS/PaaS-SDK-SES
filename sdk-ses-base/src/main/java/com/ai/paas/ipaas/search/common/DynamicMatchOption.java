@@ -3,6 +3,9 @@ package com.ai.paas.ipaas.search.common;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
 /**
  * 设置动态模板是哪些字段用于分词，哪些分词不使用分词，特别对于String类型。
  * 构造参数里面，当使用simple时，使用*xx，或者xx*模式，如*Id,会匹配userId,
@@ -22,12 +25,12 @@ public class DynamicMatchOption {
 			value = v;
 		}
 
-		@org.codehaus.jackson.annotate.JsonValue
+		@JsonValue
 		public int value() {
 			return value;
 		}
 
-		@org.codehaus.jackson.annotate.JsonCreator
+		@JsonCreator
 		public static MatchType fromValue(int typeCode) {
 			for (MatchType c : MatchType.values()) {
 				if (c.value == typeCode) {

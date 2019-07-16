@@ -1,4 +1,4 @@
-package test.com.ai.paas.ipaas.ses;
+package com.ai.paas.ipaas.ses;
 
 import java.util.Date;
 

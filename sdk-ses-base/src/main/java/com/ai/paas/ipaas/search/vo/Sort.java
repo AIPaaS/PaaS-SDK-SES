@@ -2,88 +2,77 @@ package com.ai.paas.ipaas.search.vo;
 
 import java.io.Serializable;
 
-import org.elasticsearch.search.sort.SortBuilder;
-
-import com.ai.paas.ipaas.util.StringUtil;
+import com.ai.paas.util.StringUtil;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 public class Sort implements Serializable {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -7214829498157852617L;
+    /**
+     * 
+     */
+    private static final long serialVersionUID = -7214829498157852617L;
 
-	public enum SortOrder {
-		ASC(1), DESC(2);
-		private final int value;
+    public enum SortOrder {
+        ASC(1), DESC(2);
+        private final int value;
 
-		SortOrder(int v) {
-			value = v;
-		}
+        SortOrder(int v) {
+            value = v;
+        }
 
-		@org.codehaus.jackson.annotate.JsonValue
-		public int value() {
-			return value;
-		}
+        @JsonValue
+        public int value() {
+            return value;
+        }
 
-		@org.codehaus.jackson.annotate.JsonCreator
-		public static SortOrder fromValue(int typeCode) {
-			for (SortOrder c : SortOrder.values()) {
-				if (c.value == typeCode) {
-					return c;
-				}
-			}
-			throw new IllegalArgumentException("Invalid Status type code: " + typeCode);
+        @JsonCreator
+        public static SortOrder fromValue(int typeCode) {
+            for (SortOrder c : SortOrder.values()) {
+                if (c.value == typeCode) {
+                    return c;
+                }
+            }
+            throw new IllegalArgumentException("Invalid Status type code: " + typeCode);
 
-		}
-	}
+        }
+    }
 
-	private String sortBy;
-	private SortOrder order = SortOrder.DESC;
+    private String sortBy;
+    private SortOrder order = SortOrder.DESC;
 
-	//原生的sortbuilder---gucl 20190219
-	SortBuilder sortBuilder;
-	
-	public SortBuilder getSortBuilder() {
-		return sortBuilder;
-	}
+    public Sort() {
 
-	public void setSortBuilder(SortBuilder sortBuilder) {
-		this.sortBuilder = sortBuilder;
-	}
+    }
 
-	public Sort() {
+    public Sort(String order, String sortBy) {
+        this.sortBy = sortBy;
+        if (!StringUtil.isBlank(order) && "ASC".equalsIgnoreCase(order))
+            this.order = SortOrder.ASC;
+    }
 
-	}
+    public Sort(String sortBy, SortOrder order) {
+        this.sortBy = sortBy;
+        this.order = order;
+    }
 
-	public Sort(String order, String sortBy) {
-		this.sortBy = sortBy;
-		if (!StringUtil.isBlank(order) && "ASC".equalsIgnoreCase(order))
-			this.order = SortOrder.ASC;
-	}
+    public Sort(String sortBy) {
+        this(sortBy, SortOrder.DESC);
+    }
 
-	public Sort(String sortBy, SortOrder order) {
-		this.sortBy = sortBy;
-		this.order = order;
-	}
+    public String getSortBy() {
+        return sortBy;
+    }
 
-	public Sort(String sortBy) {
-		this(sortBy, SortOrder.DESC);
-	}
+    public void setSortBy(String sortBy) {
+        this.sortBy = sortBy;
+    }
 
-	public String getSortBy() {
-		return sortBy;
-	}
+    public SortOrder getOrder() {
+        return order;
+    }
 
-	public void setSortBy(String sortBy) {
-		this.sortBy = sortBy;
-	}
-
-	public SortOrder getOrder() {
-		return order;
-	}
-
-	public void setOrder(SortOrder order) {
-		this.order = order;
-	}
+    public void setOrder(SortOrder order) {
+        this.order = order;
+    }
 
 }

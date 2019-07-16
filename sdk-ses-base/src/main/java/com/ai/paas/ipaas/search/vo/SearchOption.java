@@ -10,6 +10,9 @@ import java.util.regex.Pattern;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
 public class SearchOption implements Serializable {
 
     /**
@@ -35,12 +38,12 @@ public class SearchOption implements Serializable {
             value = v;
         }
 
-        @org.codehaus.jackson.annotate.JsonValue
+        @JsonValue
         public int value() {
             return value;
         }
 
-        @org.codehaus.jackson.annotate.JsonCreator
+        @JsonCreator
         public static TermOperator fromValue(int typeCode) {
             for (TermOperator c : TermOperator.values()) {
                 if (c.value == typeCode) {
@@ -63,12 +66,12 @@ public class SearchOption implements Serializable {
             value = v;
         }
 
-        @org.codehaus.jackson.annotate.JsonValue
+        @JsonValue
         public int value() {
             return value;
         }
 
-        @org.codehaus.jackson.annotate.JsonCreator
+        @JsonCreator
         public static SearchType fromValue(int typeCode) {
             for (SearchType c : SearchType.values()) {
                 if (c.value == typeCode) {
@@ -90,12 +93,12 @@ public class SearchOption implements Serializable {
             value = v;
         }
 
-        @org.codehaus.jackson.annotate.JsonValue
+        @JsonValue
         public int value() {
             return value;
         }
 
-        @org.codehaus.jackson.annotate.JsonCreator
+        @JsonCreator
         public static SearchLogic fromValue(int typeCode) {
             for (SearchLogic c : SearchLogic.values()) {
                 if (c.value == typeCode) {
@@ -139,12 +142,12 @@ public class SearchOption implements Serializable {
             value = v;
         }
 
-        @org.codehaus.jackson.annotate.JsonValue
+        @JsonValue
         public int value() {
             return value;
         }
 
-        @org.codehaus.jackson.annotate.JsonCreator
+        @JsonCreator
         public static DataFilter fromValue(int typeCode) {
             for (DataFilter c : DataFilter.values()) {
                 if (c.value == typeCode) {
@@ -297,21 +300,27 @@ public class SearchOption implements Serializable {
             }
         }
         SimpleDateFormat gmt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ");
+        SimpleDateFormat gmtSt = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
         SimpleDateFormat normal = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         SimpleDateFormat simple = new SimpleDateFormat("yyyy-MM-dd");
         try {
             Date value = gmt.parse(date);
-            return SearchOption.formatDateFromDate(null, value);
+            return SearchOption.formatDateFromDate(dtFmt, value);
+        } catch (Exception e) {
+        }
+        try {
+            Date value = gmtSt.parse(date);
+            return SearchOption.formatDateFromDate(dtFmt, value);
         } catch (Exception e) {
         }
         try {
             Date value = normal.parse(date);
-            return SearchOption.formatDateFromDate(null, value);
+            return SearchOption.formatDateFromDate(dtFmt, value);
         } catch (Exception e) {
         }
         try {
             Date value = simple.parse(date);
-            return SearchOption.formatDateFromDate(null, value);
+            return SearchOption.formatDateFromDate(dtFmt, value);
         } catch (Exception e) {
 
         }

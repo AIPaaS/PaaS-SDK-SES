@@ -1,53 +1,86 @@
 package com.ai.paas.ipaas.search.impl;
 
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.queryparser.classic.QueryParser;
-import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.bulk.BulkProcessor;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.action.search.SearchScrollRequest;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.unit.ByteSizeUnit;
+import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.index.query.RangeQueryBuilder;
+import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
-import org.elasticsearch.search.aggregations.bucket.terms.TermsBuilder;
-import org.elasticsearch.search.sort.GeoDistanceSortBuilder;
+import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.ai.paas.ipaas.search.SearchRuntimeException;
 import com.ai.paas.ipaas.search.common.TypeGetter;
 import com.ai.paas.ipaas.search.vo.AggField;
 import com.ai.paas.ipaas.search.vo.AggResult;
+import com.ai.paas.ipaas.search.vo.GeoLocation;
 import com.ai.paas.ipaas.search.vo.SearchCriteria;
 import com.ai.paas.ipaas.search.vo.SearchOption;
-import com.ai.paas.ipaas.search.vo.Sort;
-import com.ai.paas.ipaas.util.StringUtil;
+import com.ai.paas.util.StringUtil;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 
 public class SearchHelper {
+    private Logger logger = LoggerFactory.getLogger(SearchHelper.class);
 
     private static final int MATCH_PHRASE_SLOP = 50;
 
     private String dtFmt = "yyyy-MM-dd'T'HH:mm:ssZZZ";
 
     private Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create();
+    private Gson simpleGson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create();
+
+    public BulkProcessor init(final RestHighLevelClient client, int batchSize) {
+        BulkProcessor.Listener listener = new BulkProcessor.Listener() {
+            @Override
+            public void beforeBulk(long executionId, BulkRequest request) {
+                logger.info("--- Bulk OP: try to action {} documents---", request.numberOfActions());
+            }
+
+            @Override
+            public void afterBulk(long executionId, BulkRequest request, BulkResponse response) {
+                logger.info("---Bulk OP: bulk operation succeeded for {} documents---", request.numberOfActions());
+            }
+
+            @Override
+            public void afterBulk(long executionId, BulkRequest request, Throwable failure) {
+                logger.error("---Bulk OP: bulk operation fail ---", failure);
+            }
+        };
+
+        return BulkProcessor
+                .builder((request, bulkListener) -> client.bulkAsync(request, RequestOptions.DEFAULT, bulkListener),
+                        listener)
+                .setBulkActions(batchSize).setBulkSize(new ByteSizeValue(5, ByteSizeUnit.MB))
+                .setFlushInterval(TimeValue.timeValueSeconds(5)).setConcurrentRequests(5).build();
+    }
 
     public void setDateFmt(String dateFmt) {
         gson = new GsonBuilder().setDateFormat(dateFmt).create();
@@ -64,22 +97,14 @@ public class SearchHelper {
 
     public String getId(XContentBuilder builder, String id) {
         String json;
-        try {
-            json = builder.string();
-            return getId(json, id);
-        } catch (IOException e) {
-            throw new SearchRuntimeException(builder.toString(), e);
-        }
+        json = Strings.toString(builder);
+        return getId(json, id);
     }
 
     public boolean hasId(XContentBuilder builder, String id) {
         String json;
-        try {
-            json = builder.string();
-            return hasId(json, id);
-        } catch (IOException e) {
-            throw new SearchRuntimeException(builder.toString(), e);
-        }
+        json = Strings.toString(builder);
+        return hasId(json, id);
     }
 
     public boolean hasId(String json, String id) {
@@ -206,17 +231,12 @@ public class SearchHelper {
                                     ? "\\\"" + qryValue + "\\\""
                                     : qryValue)
                             .defaultOperator(mySearchOption.getTermOperator() == SearchOption.TermOperator.AND
-                                    ? QueryStringQueryBuilder.Operator.AND
-                                    : QueryStringQueryBuilder.Operator.OR)
+                                    ? QueryStringQueryBuilder.DEFAULT_OPERATOR.AND
+                                    : QueryStringQueryBuilder.DEFAULT_OPERATOR.OR)
                             .minimumShouldMatch(mySearchOption.getQueryStringPrecision());
                     queryBuilder = queryStringQueryBuilder.field(field).boost(mySearchOption.getBoost());
                 } else if (mySearchOption.getSearchType() == SearchOption.SearchType.match) {
-                    queryBuilder = QueryBuilders.matchQuery(field, qryValue)
-                            .operator(mySearchOption.getTermOperator() == SearchOption.TermOperator.AND
-                                    ? MatchQueryBuilder.Operator.AND
-                                    : MatchQueryBuilder.Operator.OR)
-                            .minimumShouldMatch(mySearchOption.getQueryStringPrecision())
-                            .type(MatchQueryBuilder.Type.PHRASE).slop(MATCH_PHRASE_SLOP);
+                    queryBuilder = QueryBuilders.matchPhraseQuery(field, qryValue).slop(MATCH_PHRASE_SLOP);
 
                 }
             }
@@ -272,18 +292,37 @@ public class SearchHelper {
             return QueryBuilders.rangeQuery(field).from(begin).to(end);
     }
 
-    @SuppressWarnings("unchecked")
-    public <T> List<T> getSearchResult(TransportClient client, SearchResponse response, Class<T> clazz,
-            @SuppressWarnings("rawtypes") TypeGetter typeGetter, int from, int offset, List<Sort> sorts) {
-        try {
-            // 判断sorts中是否包含geo经纬度排序 为-1说明不存在
-            int geoSortIndex = getGeoSortIndex(sorts);
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    private <T> T fromJson(String source, Class clazz, TypeGetter typeGetter) {
+        T t = null;
+        if (null != clazz && !clazz.isAssignableFrom(String.class)) {
+            try {
+                t = (T) gson.fromJson(source, clazz);
+            } catch (Exception e) {
+                t = (T) simpleGson.fromJson(source, clazz);
+            }
+        } else if (null != typeGetter) {
+            try {
+                t = gson.fromJson(source, typeGetter.getType());
+            } catch (Exception e) {
+                t = simpleGson.fromJson(source, typeGetter.getType());
+            }
+        } else {
+            t = (T) source;
+        }
+        return t;
 
+    }
+
+    public <T> List<T> getSearchResult(RestHighLevelClient client, Scroll scroll, SearchResponse response,
+            Class<T> clazz, @SuppressWarnings("rawtypes") TypeGetter typeGetter, int from, int offset) {
+        try {
             List<T> results = new ArrayList<>();
             SearchHits hits = response.getHits();
-            if (hits.getTotalHits() == 0) {
+            if (hits.getTotalHits().value == 0) {
                 return results;
             }
+
             int start = -1;
             while (true) {
                 for (SearchHit hit : response.getHits().getHits()) {
@@ -291,28 +330,8 @@ public class SearchHelper {
                     // from， offset处
                     // Handle the hit...
                     if (start >= from && start < (from + offset)) {
-                        // 存在经纬度排序，则计算直线距离 --gucl -20190219
-                        Map<String, Object> hitMap = null;
-                        if (geoSortIndex > -1) {
-                            // 获取距离值，并保留两位小数点
-                            BigDecimal geoDis = BigDecimal.valueOf((Double) hit.getSortValues()[geoSortIndex]);
-                            hitMap = hit.getSource();
-                            // 在创建MAPPING的时候，属性名的不可为geoDistance。
-                            hitMap.put("geoDistance", geoDis.setScale(5, RoundingMode.HALF_DOWN));
-                        }
-
-                        // 找到位置，开始存储，到偏移就结束
                         String source = hit.getSourceAsString();
-                        if (hitMap != null) {
-                            source = gson.toJson(hitMap);
-                        }
-                        if (null != clazz && !clazz.isAssignableFrom(String.class)) {
-                            results.add(gson.fromJson(source, clazz));
-                        } else if (null != typeGetter) {
-                            results.add((T) gson.fromJson(source, typeGetter.getType()));
-                        } else {
-                            results.add((T) source);
-                        }
+                        results.add(fromJson(source, clazz, typeGetter));
                     } else if (start >= (from + offset)) {
                         // 退到外层
                         break;
@@ -322,8 +341,9 @@ public class SearchHelper {
                     // 退出while
                     break;
                 }
-                response = client.prepareSearchScroll(response.getScrollId()).setScroll(new TimeValue(60000)).execute()
-                        .actionGet();
+                SearchScrollRequest scrollRequest = new SearchScrollRequest(response.getScrollId());
+                scrollRequest.scroll(scroll);
+                response = client.scroll(scrollRequest, RequestOptions.DEFAULT);
                 // Break condition: No hits are returned
                 if (response.getHits().getHits().length == 0) {
                     break;
@@ -335,26 +355,55 @@ public class SearchHelper {
         }
     }
 
-    // 获取地理位置排序的索引
-    private int getGeoSortIndex(List<Sort> sorts) {
-        int res = -1;
-        if (sorts != null && !sorts.isEmpty()) {
-            for (int i = 0; i < sorts.size(); i++) {
-                Sort sort = sorts.get(i);
-                // 获取地理位置索引
-                if (sort.getSortBuilder() instanceof GeoDistanceSortBuilder) {
-                    res = i;
+    public <T extends GeoLocation> List<T> getGeoResult(RestHighLevelClient client, Scroll scroll,
+            SearchResponse response, Class<T> clazz, @SuppressWarnings("rawtypes") TypeGetter typeGetter, int from,
+            int offset) {
+        try {
+            List<T> results = new ArrayList<>();
+            SearchHits hits = response.getHits();
+            if (hits.getTotalHits().value == 0) {
+                return results;
+            }
+
+            int start = -1;
+            while (true) {
+                for (SearchHit hit : response.getHits().getHits()) {
+                    start++;
+                    // from， offset处
+                    // Handle the hit...
+                    if (start >= from && start < (from + offset)) {
+                        String source = hit.getSourceAsString();
+                        T t = fromJson(source, clazz, typeGetter);
+                        // 加上地理的距离
+                        t.setDistance((double) hit.getSortValues()[0]);
+                        results.add(t);
+                    } else if (start >= (from + offset)) {
+                        // 退到外层
+                        break;
+                    }
+                }
+                if (start >= (from + offset)) {
+                    // 退出while
+                    break;
+                }
+                SearchScrollRequest scrollRequest = new SearchScrollRequest(response.getScrollId());
+                scrollRequest.scroll(scroll);
+                response = client.scroll(scrollRequest, RequestOptions.DEFAULT);
+                // Break condition: No hits are returned
+                if (response.getHits().getHits().length == 0) {
                     break;
                 }
             }
+            return results;
+        } catch (Exception e) {
+            throw new SearchRuntimeException("ES search error", e);
         }
-        return res;
     }
 
     public String getSearchResult(SearchResponse response) {
         try {
             SearchHits hits = response.getHits();
-            if (hits.getTotalHits() == 0) {
+            if (hits.getTotalHits().value == 0) {
                 return null;
             }
             String source = null;
@@ -369,7 +418,7 @@ public class SearchHelper {
         }
     }
 
-    public SearchRequestBuilder createHighlight(SearchRequestBuilder searchRequestBuilder,
+    public SearchSourceBuilder createHighlight(SearchSourceBuilder searchSourceBuilder,
             List<SearchCriteria> searchCriterias, String highlightCSS) {
         for (SearchCriteria searchCriteria : searchCriterias) {
             String field = getLowerFormatField(searchCriteria.getField());
@@ -380,14 +429,28 @@ public class SearchHelper {
                  * 
                  * fragment_size设置成1000，默认值会造成返回的数据被截断
                  */
-                searchRequestBuilder = searchRequestBuilder.addHighlightedField(field, 1000)
-                        .setHighlighterPreTags("<" + highlightCSS.split(",")[0] + ">")
-                        .setHighlighterPostTags("</" + highlightCSS.split(",")[1] + ">");
+                HighlightBuilder highlightBuilder = new HighlightBuilder().field(field, 1000)
+                        .preTags("<" + highlightCSS.split(",")[0] + ">")
+                        .postTags("</" + highlightCSS.split(",")[1] + ">");
+                searchSourceBuilder.highlighter(highlightBuilder);
 
             }
         }
 
-        return searchRequestBuilder;
+        return searchSourceBuilder;
+    }
+
+    public TermsAggregationBuilder addSubAggs(TermsAggregationBuilder termBuilder, List<AggField> subFields) {
+        if (null == subFields || subFields.isEmpty())
+            return termBuilder;
+        for (AggField field : subFields) {
+            termBuilder
+                    .subAggregation(
+                            AggregationBuilders.terms(field.getField() + "_aggs").field(field.getField() + ".raw"))
+                    .size(100);
+            termBuilder = addSubAggs(termBuilder, field.getSubAggs());
+        }
+        return termBuilder;
     }
 
     public List<AggResult> getAgg(SearchResponse searchResponse, List<AggField> fields) {
@@ -431,19 +494,6 @@ public class SearchHelper {
             }
         }
         return aggResults;
-    }
-
-    public TermsBuilder addSubAggs(TermsBuilder termBuilder, List<AggField> subFields) {
-        if (null == subFields || subFields.isEmpty())
-            return termBuilder;
-        for (AggField field : subFields) {
-            termBuilder
-                    .subAggregation(
-                            AggregationBuilders.terms(field.getField() + "_aggs").field(field.getField() + ".raw"))
-                    .size(100);
-            termBuilder = addSubAggs(termBuilder, field.getSubAggs());
-        }
-        return termBuilder;
     }
 
 }

@@ -1,4 +1,4 @@
-package test.com.ai.paas.ipaas.ses;
+package com.ai.paas.ipaas.ses;
 
 public class Bar<T> {
 	private T t;

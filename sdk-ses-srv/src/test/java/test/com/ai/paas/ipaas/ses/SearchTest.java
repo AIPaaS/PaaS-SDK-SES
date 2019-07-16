@@ -29,6 +29,7 @@ import com.ai.paas.ipaas.search.vo.SearchOption.SearchLogic;
 import com.ai.paas.ipaas.search.vo.SearchOption.SearchType;
 import com.ai.paas.ipaas.search.vo.Sort;
 import com.ai.paas.ipaas.search.vo.Sort.SortOrder;
+import com.ai.paas.ipaas.ses.User;
 import com.ai.paas.ipaas.uac.vo.AuthDescriptor;
 import com.ai.paas.ipaas.util.DateTimeUtil;
 import com.google.gson.Gson;

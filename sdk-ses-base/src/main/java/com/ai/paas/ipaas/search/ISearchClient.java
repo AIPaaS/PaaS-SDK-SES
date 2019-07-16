@@ -8,12 +8,15 @@ import com.ai.paas.ipaas.search.common.JsonBuilder;
 import com.ai.paas.ipaas.search.common.TypeGetter;
 import com.ai.paas.ipaas.search.vo.AggField;
 import com.ai.paas.ipaas.search.vo.AggResult;
+import com.ai.paas.ipaas.search.vo.GeoLocation;
 import com.ai.paas.ipaas.search.vo.Result;
 import com.ai.paas.ipaas.search.vo.SearchCriteria;
 import com.ai.paas.ipaas.search.vo.Sort;
 import com.ai.paas.ipaas.search.vo.StatResult;
 
 import org.elasticsearch.common.Nullable;
+import org.elasticsearch.common.unit.DistanceUnit;
+import org.elasticsearch.index.query.QueryBuilder;
 
 import java.util.List;
 import java.util.Map;
@@ -22,6 +25,7 @@ import java.util.Set;
 public interface ISearchClient {
     /**
      * 设置ES的时间格式，需要在插入数据前设置，只设置一次
+     * 
      * @param esDateFmt ES的时间格式
      * @param dateFmt   ES查询出来后转换的时间格式
      */
@@ -71,35 +75,35 @@ public interface ISearchClient {
      * 删除多条数据
      * 
      * @param ids
-     * @return 是否删除成功，所有删除成功则成功，否则失败
+     * @return 返回成功删除的文档数量
      */
-    public boolean bulkDelete(List<String> ids);
+    public long bulkDelete(List<String> ids);
 
     /**
      * 删除多条数据
      * 
      * @param ids
      * @param rebuildIndex 是否重建索引，重建索引会引起性能问题
-     * @return 是否删除成功，所有删除成功则成功，否则失败
+     * @return 返回成功删除的文档数量
      */
-    public boolean bulkDelete(List<String> ids, boolean rebuildIndex);
+    public long bulkDelete(List<String> ids, boolean rebuildIndex);
 
     /**
      * 根据查询条件删除多条数据
      * 
      * @param searchCriteria 查询条件
-     * @return 是否删除成功，所有删除成功则成功，否则失败
+     * @return 返回成功删除的文档数量
      */
-    public boolean delete(List<SearchCriteria> searchCriteria);
+    public long delete(List<SearchCriteria> searchCriteria);
 
     /**
      * 根据查询条件删除多条数据
      * 
      * @param searchCriteria 查询条件
      * @param rebuildIndex   是否重建索引，重建索引会引起性能问题
-     * @return 是否删除成功，所有删除成功则成功，否则失败
+     * @return 返回成功删除的文档数量
      */
-    public boolean delete(List<SearchCriteria> searchCriteria, boolean rebuildIndex);
+    public long delete(List<SearchCriteria> searchCriteria, boolean rebuildIndex);
 
     /**
      * 全部清空，危险操作
@@ -186,7 +190,7 @@ public interface ISearchClient {
      * @param datas
      * @return 插入是否成功,如果有一条插入错误，则返回否
      */
-    public boolean bulkMapInsert(List<Map<String, Object>> datas);
+    public void bulkMapInsert(List<Map<String, Object>> datas);
 
     /**
      * 插入多条数据，数据为Map格式
@@ -195,7 +199,7 @@ public interface ISearchClient {
      * @param rebuidIndex 是否重建索引，数据量大时设置为false
      * @return 插入是否成功,如果有一条插入错误，则返回否
      */
-    public boolean bulkMapInsert(List<Map<String, Object>> datas, boolean rebuidIndex);
+    public void bulkMapInsert(List<Map<String, Object>> datas, boolean rebuidIndex);
 
     /**
      * 插入多条数据，数据为json格式
@@ -203,7 +207,7 @@ public interface ISearchClient {
      * @param jsons
      * @return 插入是否成功,如果有一条插入错误，则返回否
      */
-    public boolean bulkJsonInsert(List<String> jsons);
+    public void bulkJsonInsert(List<String> jsons);
 
     /**
      * 插入多条数据，数据为json格式
@@ -212,7 +216,7 @@ public interface ISearchClient {
      * @param rebuidIndex 是否重建索引，数据量大时设置为false
      * @return 插入是否成功,如果有一条插入错误，则返回否
      */
-    public boolean bulkJsonInsert(List<String> jsons, boolean rebuidIndex);
+    public void bulkJsonInsert(List<String> jsons, boolean rebuidIndex);
 
     /**
      * 通过泛型类插入多条数据，必须序列化泛型类，数据类型所有字段都会插入
@@ -220,7 +224,7 @@ public interface ISearchClient {
      * @param datas
      * @return 插入是否成功,如果有一条插入错误，则返回否
      */
-    public <T> boolean bulkInsert(List<T> datas);
+    public <T> void bulkInsert(List<T> datas);
 
     /**
      * 通过泛型类插入多条数据，必须序列化泛型类，数据类型所有字段都会插入
@@ -229,7 +233,7 @@ public interface ISearchClient {
      * @param rebuidIndex 是否重建索引，数据量大时设置为false
      * @return 插入是否成功,如果有一条插入错误，则返回否
      */
-    public <T> boolean bulkInsert(List<T> datas, boolean rebuidIndex);
+    public <T> void bulkInsert(List<T> datas, boolean rebuidIndex);
 
     /**
      * 通过builder插入多条数据
@@ -237,7 +241,7 @@ public interface ISearchClient {
      * @param jsonBuilders
      * @return 插入是否成功,如果有一条插入错误，则返回否
      */
-    public boolean bulkInsert(Set<JsonBuilder> jsonBuilders);
+    public void bulkInsert(Set<JsonBuilder> jsonBuilders);
 
     /**
      * 通过builder插入多条数据
@@ -246,7 +250,7 @@ public interface ISearchClient {
      * @param rebuidIndex  是否重建索引，数据量大时设置为false
      * @return 插入是否成功,如果有一条插入错误，则返回否
      */
-    public boolean bulkInsert(Set<JsonBuilder> jsonBuilders, boolean rebuidIndex);
+    public void bulkInsert(Set<JsonBuilder> jsonBuilders, boolean rebuidIndex);
 
     /**
      * 更新多个文档，合并模式
@@ -255,7 +259,7 @@ public interface ISearchClient {
      * @param datas
      * @return 更新是否成功,如果有一条更新失败，则返回失败
      */
-    public boolean bulkMapUpdate(List<String> ids, List<Map<String, Object>> datas);
+    public long bulkMapUpdate(List<String> ids, List<Map<String, Object>> datas);
 
     /**
      * 更新多个文档，合并模式
@@ -265,7 +269,7 @@ public interface ISearchClient {
      * @param rebuidIndex 是否重建索引，数据量大时设置为false
      * @return 更新是否成功,如果有一条更新失败，则返回失败
      */
-    public boolean bulkMapUpdate(List<String> ids, List<Map<String, Object>> datas, boolean rebuidIndex);
+    public long bulkMapUpdate(List<String> ids, List<Map<String, Object>> datas, boolean rebuidIndex);
 
     /**
      * 更新多个文档，合并模式
@@ -274,7 +278,7 @@ public interface ISearchClient {
      * @param jsons
      * @return 更新是否成功,如果有一条更新失败，则返回失败
      */
-    public boolean bulkJsonUpdate(List<String> ids, List<String> jsons);
+    public long bulkJsonUpdate(List<String> ids, List<String> jsons);
 
     /**
      * 更新多个文档，合并模式
@@ -284,7 +288,7 @@ public interface ISearchClient {
      * @param rebuidIndex 是否重建索引，数据量大时设置为false
      * @return 更新是否成功,如果有一条更新失败，则返回失败
      */
-    public boolean bulkJsonUpdate(List<String> ids, List<String> jsons, boolean rebuidIndex);
+    public long bulkJsonUpdate(List<String> ids, List<String> jsons, boolean rebuidIndex);
 
     /**
      * 更新多个文档，合并模式
@@ -293,7 +297,7 @@ public interface ISearchClient {
      * @param datas
      * @return 更新是否成功,如果有一条更新失败，则返回失败
      */
-    public <T> boolean bulkUpdate(List<String> ids, List<T> datas);
+    public <T> long bulkUpdate(List<String> ids, List<T> datas);
 
     /**
      * 更新多个文档，合并模式
@@ -303,7 +307,7 @@ public interface ISearchClient {
      * @param rebuidIndex 是否重建索引，数据量大时设置为false
      * @return 更新是否成功,如果有一条更新失败，则返回失败
      */
-    public <T> boolean bulkUpdate(List<String> ids, List<T> datas, boolean rebuidIndex);
+    public <T> long bulkUpdate(List<String> ids, List<T> datas, boolean rebuidIndex);
 
     /**
      * 更新多个文档，合并模式
@@ -312,93 +316,93 @@ public interface ISearchClient {
      * @param jsonBuilders
      * @return 更新是否成功,如果有一条更新失败，则返回失败
      */
-    public boolean bulkUpdate(List<String> ids, Set<JsonBuilder> jsonBuilders);
+    public long bulkUpdate(List<String> ids, Set<JsonBuilder> jsonBuilders);
 
     /**
      * 更新多个文档，合并模式
-     * 
-     * @param ids
-     * @param jsonBuilders
-     * @param rebuidIndex  是否重建索引，数据量大时设置为false
-     * @return 更新是否成功,如果有一条更新失败，则返回失败
-     */
-    public boolean bulkUpdate(List<String> ids, Set<JsonBuilder> jsonBuilders, boolean rebuidIndex);
-
-    /**
-     * 更新多个文档，不存在就插入
-     * 
-     * @param ids
-     * @param datas
-     * @return 更新是否成功,如果有一条更新失败，则返回失败
-     */
-    public boolean bulkMapUpsert(List<String> ids, List<Map<String, Object>> datas);
-
-    /**
-     * 更新多个文档，不存在就插入
-     * 
-     * @param ids
-     * @param datas
-     * @param rebuidIndex 是否重建索引，数据量大时设置为false
-     * @return 更新是否成功,如果有一条更新失败，则返回失败
-     */
-    public boolean bulkMapUpsert(List<String> ids, List<Map<String, Object>> datas, boolean rebuidIndex);
-
-    /**
-     * 更新多个文档，不存在就插入
-     * 
-     * @param ids
-     * @param jsons
-     * @return 更新是否成功,如果有一条更新失败，则返回失败
-     */
-    public boolean bulkJsonUpsert(List<String> ids, List<String> jsons);
-
-    /**
-     * 更新多个文档，不存在就插入
-     * 
-     * @param ids
-     * @param jsons
-     * @param rebuidIndex 是否重建索引，数据量大时设置为false
-     * @return 更新是否成功,如果有一条更新失败，则返回失败
-     */
-    public boolean bulkJsonUpsert(List<String> ids, List<String> jsons, boolean rebuidIndex);
-
-    /**
-     * 更新多个文档，不存在就插入
-     * 
-     * @param ids
-     * @param datas
-     * @return 批量更新插入是否成功，有一个错误则失败
-     */
-    public <T> boolean bulkUpsert(List<String> ids, List<T> datas);
-
-    /**
-     * 更新多个文档，不存在就插入
-     * 
-     * @param ids
-     * @param datas
-     * @param rebuidIndex 是否重建索引，数据量大时设置为false
-     * @return 批量更新插入是否成功，有一个错误则失败
-     */
-    public <T> boolean bulkUpsert(List<String> ids, List<T> datas, boolean rebuidIndex);
-
-    /**
-     * 更新多个文档，不存在就插入
-     * 
-     * @param ids
-     * @param jsonBuilders
-     * @return 批量更新插入是否成功，有一个错误则失败
-     */
-    public boolean bulkUpsert(List<String> ids, Set<JsonBuilder> jsonBuilders);
-
-    /**
-     * 更新多个文档，不存在就插入
      * 
      * @param ids
      * @param jsonBuilders
      * @param rebuidIndex  是否重建索引，数据量大时设置为false
+     * @return 更新是否成功,如果有一条更新失败，则返回失败
+     */
+    public long bulkUpdate(List<String> ids, Set<JsonBuilder> jsonBuilders, boolean rebuidIndex);
+
+    /**
+     * 更新多个文档，不存在就插入
+     * 
+     * @param ids
+     * @param datas
+     * @return 更新是否成功,如果有一条更新失败，则返回失败
+     */
+    public long bulkMapUpsert(List<String> ids, List<Map<String, Object>> datas);
+
+    /**
+     * 更新多个文档，不存在就插入
+     * 
+     * @param ids
+     * @param datas
+     * @param rebuidIndex 是否重建索引，数据量大时设置为false
+     * @return 更新是否成功,如果有一条更新失败，则返回失败
+     */
+    public long bulkMapUpsert(List<String> ids, List<Map<String, Object>> datas, boolean rebuidIndex);
+
+    /**
+     * 更新多个文档，不存在就插入
+     * 
+     * @param ids
+     * @param jsons
+     * @return 更新是否成功,如果有一条更新失败，则返回失败
+     */
+    public long bulkJsonUpsert(List<String> ids, List<String> jsons);
+
+    /**
+     * 更新多个文档，不存在就插入
+     * 
+     * @param ids
+     * @param jsons
+     * @param rebuidIndex 是否重建索引，数据量大时设置为false
+     * @return 更新是否成功,如果有一条更新失败，则返回失败
+     */
+    public long bulkJsonUpsert(List<String> ids, List<String> jsons, boolean rebuidIndex);
+
+    /**
+     * 更新多个文档，不存在就插入
+     * 
+     * @param ids
+     * @param datas
      * @return 批量更新插入是否成功，有一个错误则失败
      */
-    public boolean bulkUpsert(List<String> ids, Set<JsonBuilder> jsonBuilders, boolean rebuidIndex);
+    public <T> long bulkUpsert(List<String> ids, List<T> datas);
+
+    /**
+     * 更新多个文档，不存在就插入
+     * 
+     * @param ids
+     * @param datas
+     * @param rebuidIndex 是否重建索引，数据量大时设置为false
+     * @return 批量更新插入是否成功，有一个错误则失败
+     */
+    public <T> long bulkUpsert(List<String> ids, List<T> datas, boolean rebuidIndex);
+
+    /**
+     * 更新多个文档，不存在就插入
+     * 
+     * @param ids
+     * @param jsonBuilders
+     * @return 批量更新插入是否成功，有一个错误则失败
+     */
+    public long bulkUpsert(List<String> ids, Set<JsonBuilder> jsonBuilders);
+
+    /**
+     * 更新多个文档，不存在就插入
+     * 
+     * @param ids
+     * @param jsonBuilders
+     * @param rebuidIndex  是否重建索引，数据量大时设置为false
+     * @return 批量更新插入是否成功，有一个错误则失败
+     */
+    public long bulkUpsert(List<String> ids, Set<JsonBuilder> jsonBuilders, boolean rebuidIndex);
 
     /**
      * 按照条件查询，age:(>=10 AND <50) | age:(>=10 AND <50) AND name:1234 查询结果受模型定义及分词定义影响
@@ -538,6 +542,111 @@ public interface ISearchClient {
             String[] resultFields);
 
     /**
+     * 查询条件下，距离指点坐标的距离内的文档，按距离由近到远的顺序排序，升序
+     * 
+     * @param searchCriterias
+     * @param from
+     * @param offset
+     * @param clazz
+     * @param geoWhere
+     * @param unit
+     * @return
+     */
+    public <T extends GeoLocation> Result<T> geoDistanceQuery(List<SearchCriteria> searchCriterias, int from,
+            int offset, Class<T> clazz, GeoLocation geoWhere, DistanceUnit unit);
+
+    /**
+     * 查询条件下，距离指点坐标的距离内的文档，按距离由近到远的顺序排序，升序
+     * 
+     * @param searchCriterias
+     * @param from
+     * @param offset
+     * @param clazz
+     * @param geoWhere
+     * @return
+     */
+    public <T extends GeoLocation> Result<T> geoDistanceQuery(List<SearchCriteria> searchCriterias, int from,
+            int offset, Class<T> clazz, GeoLocation geoWhere);
+
+    /**
+     * 查询条件下，距离指点坐标的距离内的文档，按距离由近到远的顺序排序，升序
+     * 
+     * @param queryBuilder
+     * @param from
+     * @param offset
+     * @param clazz
+     * @param geoWhere
+     * @param unit
+     * @return
+     */
+    public <T extends GeoLocation> Result<T> geoDistanceQuery(QueryBuilder queryBuilder, int from, int offset,
+            Class<T> clazz, GeoLocation geoWhere, DistanceUnit unit);
+
+    /**
+     * 查询条件下，距离指点坐标的距离内的文档，按距离由近到远的顺序排序，升序
+     * 
+     * @param queryBuilder
+     * @param from
+     * @param offset
+     * @param sorts
+     * @param clazz
+     * @param lat
+     * @param lon
+     * @param distance
+     * @return
+     */
+    public <T extends GeoLocation> Result<T> geoDistanceQuery(QueryBuilder queryBuilder, int from, int offset,
+            Class<T> clazz, GeoLocation geoWhere);
+
+    /**
+     * 自己定义各种查询条件和聚合进行分页查询
+     * 
+     * @param queryBuilder
+     * @param from
+     * @param offset
+     * @param sorts
+     * @param clazz
+     * @return
+     */
+    public <T> Result<T> search(QueryBuilder queryBuilder, int from, int offset, @Nullable List<Sort> sorts,
+            Class<T> clazz);
+
+    /**
+     * 自己定义各种查询条件和聚合进行不分页查询，仅适用于小数据量，最大1000条
+     * 
+     * @param queryBuilder
+     * @param sorts
+     * @param clazz
+     * @return
+     */
+    public <T> Result<T> search(QueryBuilder queryBuilder, @Nullable List<Sort> sorts, Class<T> clazz);
+
+    /**
+     * 自己定义各种查询条件和聚合进行分页查询
+     * 
+     * @param queryBuilder
+     * @param from
+     * @param offset
+     * @param sorts
+     * @param typeGetter
+     * @return
+     */
+    @SuppressWarnings("rawtypes")
+    public <T> Result<T> search(QueryBuilder queryBuilder, int from, int offset, @Nullable List<Sort> sorts,
+            TypeGetter typeGetter);
+
+    /**
+     * 自己定义各种查询条件和聚合进行不分页查询，仅适用于小数据量，最大1000条
+     * 
+     * @param queryBuilder
+     * @param sorts
+     * @param typeGetter
+     * @return
+     */
+    @SuppressWarnings("rawtypes")
+    public <T> Result<T> search(QueryBuilder queryBuilder, @Nullable List<Sort> sorts, TypeGetter typeGetter);
+
+    /**
      * DSL格式的查询
      * 
      * { "query": { "bool": { "must": [ { "match": { "name": "开发"}}, { "match": {
@@ -593,8 +702,9 @@ public interface ISearchClient {
     public String searchByDSL(String dslJson, int from, int offset, @Nullable List<Sort> sorts, String[] resultFields);
 
     /**
-     * 全文检索
+     * 全文检索 针对某个字段
      * 
+     * @param field
      * @param text
      * @param from
      * @param offset
@@ -602,7 +712,8 @@ public interface ISearchClient {
      * @param clazz
      * @return 查询结果对象
      */
-    public <T> Result<T> fullTextSearch(String text, int from, int offset, @Nullable List<Sort> sorts, Class<T> clazz);
+    public <T> Result<T> fullTextSearch(String field, String text, int from, int offset, @Nullable List<Sort> sorts,
+            Class<T> clazz);
 
     /**
      * 全文检索 指定对哪些字段进行全文索引，各字段是或者关系
@@ -620,8 +731,9 @@ public interface ISearchClient {
             int offset, @Nullable List<Sort> sorts, Class<T> clazz);
 
     /**
-     * 全文检索 对所有字段进行
+     * 全文检索 对某个字段进行，
      * 
+     * @param field     要全文索引的字段
      * @param text
      * @param aggFields
      * @param from
@@ -630,7 +742,7 @@ public interface ISearchClient {
      * @param clazz
      * @return 查询结果对象
      */
-    public <T> Result<T> fullTextSearch(String text, List<AggField> aggFields, int from, int offset,
+    public <T> Result<T> fullTextSearch(String field, String text, List<AggField> aggFields, int from, int offset,
             @Nullable List<Sort> sorts, Class<T> clazz);
 
     /**
@@ -651,7 +763,7 @@ public interface ISearchClient {
     public String getById(String id);
 
     /**
-     * 获得搜索提示
+     * 获得搜索提示，只会搜索以value开始的命中
      * 
      * @param field
      * @param value
@@ -660,15 +772,6 @@ public interface ISearchClient {
      * 
      */
     public List<String> getSuggest(String field, String value, int count);
-
-    /**
-     * 全局检索提示
-     * 
-     * @param value
-     * @param count
-     * @return 返回提示列表
-     */
-    public List<String> getSuggest(String value, int count);
 
     /**
      * 根据查询条件进行某个字段的聚合
@@ -778,25 +881,7 @@ public interface ISearchClient {
     public boolean existMapping(String indexName, String mapping);
 
     /**
-     * 直接创建mapping,需要自己准备好全部部分 { "user": { "properties": { "address": { "type":
-     * "string", "store": "yes", "analyzer": "ik_max_word" }, "dxf": { "type":
-     * "string", "store": "yes", "index": "not_analyzed" } }, "dynamic_templates":
-     * [{ "NotAnalyzed": { "match_mapping_type": "string", "match_pattern": "regex",
-     * "match": "^\\S*?(id)$", "mapping": { "type": "string", "index":
-     * "not_analyzed" } } }, { "Analyzed": { "match_mapping_type": "string",
-     * "match_pattern": "regex", "match": "^\\S*?[(name)|(content)|(desc)]\\S*?$",
-     * "mapping": { "type": "string", "analyzer": "ik_max_word" } } }, { "default":
-     * { "match_mapping_type": "string", "match": "*", "mapping": { "type":
-     * "string", "index": "not_analyzed" } } }] } }
-     * 
-     * @param indexName
-     * @param json
-     * @return
-     */
-    public boolean addMapping(String indexName, String json);
-
-    /**
-     * 增加索引对象定义，自从2.0以后，不支持在设置ID为文档的某个字段，需要在 插入或获取时自己指定
+     * 增加索引对象定义，自从7.0以后，不支持在设置ID为文档的某个字段，需要在 插入或获取时自己指定
      * 
      * @param indexName "user"
      * @param type      "userInfo"
@@ -815,7 +900,7 @@ public interface ISearchClient {
      * 
      * @return 增加模型是否成功
      */
-    public boolean addMapping(String indexName, String type, String json);
+    public boolean addMapping(String indexName, String json);
 
     /**
      * 增加索引对象定义，自从2.0以后，不支持在设置ID为文档的某个字段，需要在 插入或获取时自己指定
@@ -839,7 +924,7 @@ public interface ISearchClient {
      * 
      * @return 增加模型是否成功
      */
-    public boolean addMapping(String indexName, String type, String json, boolean addDynamicTemplate);
+    public boolean addMapping(String indexName, String json, boolean addDynamicTemplate);
 
     /**
      * 动态模板的mapping创建，支持指定那些值得进行分词，哪些不进行分词，由matchs控制，注意顺序，前面的匹配就进行前面的规则了，一定要配置一条默认规则
@@ -850,7 +935,7 @@ public interface ISearchClient {
      * @param matchs
      * @return
      */
-    public boolean addMapping(String indexName, String type, String json, List<DynamicMatchOption> matchs);
+    public boolean addMapping(String indexName, String json, List<DynamicMatchOption> matchs);
 
     /**
      * 按照指定的主键和设置创建索引
@@ -861,7 +946,7 @@ public interface ISearchClient {
      * @param id        主键字段
      * @return 增加模型是否成功
      */
-    public boolean addMapping(String indexName, String type, String json, String id);
+    public boolean addMapping(String indexName, String json, String id);
 
     /**
      * 刷新插入或者更新
