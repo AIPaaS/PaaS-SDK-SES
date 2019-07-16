@@ -21,17 +21,17 @@ publishing {
 						delegate.dependency {
 							delegate.groupId("com.ai")
 							delegate.artifactId("ipaas-ses-base")
-							delegate.version("0.7.3")
+							delegate.version("1.0")
 						}		                
 						delegate.dependency {
 							delegate.groupId("com.ai")
 							delegate.artifactId("ipaas-uac")
-							delegate.version("0.3")
+							delegate.version("1.0")
 						}
 						delegate.dependency {
 							delegate.groupId("com.ai")
 							delegate.artifactId("ipaas-ccs-inner")
-							delegate.version("0.3")
+							delegate.version("1.0")
 						}
 	                }
 	            }
@@ -48,17 +48,17 @@ publishing {
 						delegate.dependency {
 							delegate.groupId("com.ai")
 							delegate.artifactId("ipaas-ses-base")
-							delegate.version("0.7.3")
+							delegate.version("1.0")
 						}	
 						delegate.dependency {
 							delegate.groupId("com.ai")
 							delegate.artifactId("ipaas-uac")
-							delegate.version("0.3")
+							delegate.version("1.0")
 						}
 						delegate.dependency {
 							delegate.groupId("com.ai")
 							delegate.artifactId("ipaas-ccs-inner")
-							delegate.version("0.3")
+							delegate.version("1.0")
 						}
 	                }
 	            }
