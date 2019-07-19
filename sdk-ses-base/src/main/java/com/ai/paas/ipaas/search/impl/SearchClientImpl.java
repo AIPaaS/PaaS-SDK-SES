@@ -125,6 +125,9 @@ public class SearchClientImpl implements ISearchClient {
     private int socketTimeOut = 60000;
     private int connectionRequestTimeOut = 600000;
 
+    // 重试3次
+    private static final int RETRY_ON_CONFLICT = 3;
+
     public SearchClientImpl(String hosts, String indexName, String id) {
         this.indexName = indexName;
         this.id = id;
@@ -404,6 +407,7 @@ public class SearchClientImpl implements ISearchClient {
     private boolean update(UpdateRequest request) {
         UpdateResponse response = null;
         try {
+            request.retryOnConflict(RETRY_ON_CONFLICT);
             response = client.update(request, RequestOptions.DEFAULT);
         } catch (Exception e) {
             throw new SearchRuntimeException("update documents error...{}", Strings.toString(request), e);
@@ -609,6 +613,7 @@ public class SearchClientImpl implements ISearchClient {
         UpdateRequest request = null;
         for (String documentId : ids) {
             request = new UpdateRequest(indexName, documentId).doc(datas.get(i)).upsert(datas.get(i));
+            request.retryOnConflict(RETRY_ON_CONFLICT);
             bulkRequest.add(request);
         }
 
@@ -630,6 +635,7 @@ public class SearchClientImpl implements ISearchClient {
         for (String documentId : ids) {
             request = new UpdateRequest(indexName, documentId).doc(jsons.get(i), XContentType.JSON)
                     .upsert(jsons.get(i++), XContentType.JSON);
+            request.retryOnConflict(RETRY_ON_CONFLICT);
             bulkRequest.add(request);
         }
         return bulkUpdate(bulkRequest);
@@ -650,6 +656,7 @@ public class SearchClientImpl implements ISearchClient {
         for (String documentId : ids) {
             request = new UpdateRequest(indexName, documentId).doc(esgson.toJson(datas.get(i)), XContentType.JSON)
                     .upsert(esgson.toJson(datas.get(i++)), XContentType.JSON);
+            request.retryOnConflict(RETRY_ON_CONFLICT);
             bulkRequest.add(request);
         }
         return bulkUpdate(bulkRequest);
@@ -670,6 +677,7 @@ public class SearchClientImpl implements ISearchClient {
         for (JsonBuilder jsonBuilder : jsonBuilders) {
             request = new UpdateRequest(indexName, ids.get(i++)).doc(jsonBuilder.getBuilder())
                     .upsert(jsonBuilder.getBuilder());
+            request.retryOnConflict(RETRY_ON_CONFLICT);
             bulkRequest.add(request);
         }
         return bulkUpdate(bulkRequest);
